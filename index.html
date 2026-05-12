@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#D9301E">
+<meta name="description" content="ELLEMELLE — ambachtelijke chocopasta met 3× minder suiker. Door Ellis & Melle uit Haarlem.">
+<meta property="og:title" content="ELLEMELLE — Chocopasta door Ellis & Melle">
+<meta property="og:description" content="Ambachtelijke chocopasta. 3× minder suiker. Door Ellis & Melle uit Haarlem.">
+<meta property="og:image" content="/Images/product.png">
+<title>ELLEMELLE — Chocopasta door Ellis & Melle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #D9301E;
+    --red-dark: #8B1A0E;
+    --cream: #F5EFE6;
+    --cream-dark: #ECE3D2;
+    --black: #1A1A1A;
+    --white: #FFFFFF;
+    --gold: #FFD24A;
+    --shadow-card: 0 2px 10px rgba(139,26,14,0.08);
+    --shadow-cta: 0 6px 18px rgba(217,48,30,0.28);
+    --radius-lg: 22px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--cream);
+    color: var(--black);
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+
+  .display, .step-question, .wordmark, h1, h2 {
+    font-family: 'Bowlby One', Impact, system-ui, sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.2px;
+  }
+
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 14px 20px 64px;
+    position: relative;
+  }
+
+  /* Counter pill — sticky */
+  .counter-wrap {
+    position: sticky;
+    top: env(safe-area-inset-top, 0);
+    padding-top: 10px;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    margin: 0 -20px 16px;
+    pointer-events: none;
+  }
+  .counter-pill {
+    pointer-events: auto;
+    background: var(--red);
+    color: var(--white);
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1;
+    display: inline-flex; align-items: center; gap: 9px;
+    box-shadow: var(--shadow-cta);
+    transition: background 200ms;
+  }
+  .counter-pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--white);
+    animation: pulse 1.6s infinite;
+    box-shadow: 0 0 0 0 rgba(255,255,255,0.6);
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  }
+  .counter-pill.full { background: var(--black); }
+
+  /* Topbar */
+  .topbar {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+  .back-btn {
+    width: 40px; height: 40px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--red-dark);
+    font-size: 22px; line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 120ms;
+  }
+  .back-btn:hover, .back-btn:focus-visible { background: rgba(217,48,30,0.10); outline: none; }
+  .back-btn[hidden] { visibility: hidden; display: flex; }
+  .wordmark {
+    color: var(--red);
+    font-size: 22px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .progress-text {
+    color: var(--red-dark);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: right;
+    opacity: 0.55;
+  }
+
+  /* Steps */
+  .steps { position: relative; min-height: 360px; }
+  .step { display: none; animation: slideIn 260ms cubic-bezier(.2,.7,.2,1); }
+  .step.active { display: block; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .step-eyebrow {
+    color: var(--red);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.6px;
+    margin-bottom: 12px;
+  }
+  .step-question {
+    color: var(--red-dark);
+    font-size: 30px;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .step-subtitle {
+    color: var(--black);
+    opacity: 0.65;
+    font-size: 15px;
+    line-height: 1.45;
+    margin-bottom: 22px;
+  }
+
+  /* Inputs */
+  .field { margin-bottom: 10px; }
+  input[type="text"], input[type="tel"], input[type="email"] {
+    width: 100%;
+    min-height: 60px;
+    padding: 16px 18px;
+    font-size: 18px;
+    font-family: inherit;
+    background: var(--white);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    color: var(--black);
+    transition: border-color 140ms, box-shadow 140ms;
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card);
+  }
+  input::placeholder { color: rgba(0,0,0,0.32); }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 100px; gap: 10px; }
+
+  .address-confirm {
+    background: var(--white);
+    border-left: 4px solid var(--red);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    font-size: 15px;
+    color: var(--red-dark);
+    margin: 14px 0;
+    line-height: 1.4;
+  }
+  .address-confirm strong { display: block; font-size: 16px; margin-bottom: 2px; color: var(--black); }
+  .address-confirm small { color: rgba(0,0,0,0.55); }
+
+  .error {
+    color: var(--red);
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 10px;
+    display: none;
+    line-height: 1.35;
+  }
+  .error.visible { display: block; }
+
+  /* CTAs */
+  .btn-primary {
+    display: block;
+    width: 100%;
+    min-height: 60px;
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    margin-top: 22px;
+    box-shadow: var(--shadow-cta);
+    transition: transform 90ms ease, opacity 140ms;
+  }
+  .btn-primary:disabled {
+    background: #d4cfc4;
+    color: rgba(0,0,0,0.4);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btn-primary:not(:disabled):hover { transform: translateY(-1px); }
+  .btn-primary:not(:disabled):active { transform: translateY(1px); }
+
+  .btn-link {
+    background: transparent;
+    border: none;
+    color: var(--red-dark);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 6px;
+  }
+
+  /* Kanaal cards */
+  .kanaal-options { display: grid; gap: 12px; }
+  .kanaal-card {
+    display: flex; align-items: center; gap: 16px;
+    min-height: 88px;
+    padding: 18px 20px;
+    background: var(--white);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--red-dark);
+    font-family: inherit;
+    text-align: left;
+    box-shadow: var(--shadow-card);
+    transition: border-color 120ms, transform 90ms;
+    width: 100%;
+  }
+  .kanaal-card:hover { border-color: var(--red); transform: translateY(-1px); }
+  .kanaal-card .ic { font-size: 30px; line-height: 1; }
+  .kanaal-card .label { font-size: 18px; }
+  .kanaal-card .sub { font-size: 12px; opacity: 0.6; font-weight: 500; margin-top: 2px; display: block; }
+
+  /* Order summary */
+  .order-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    padding: 18px 18px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 14px;
+  }
+  .order-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 15px; }
+  .order-line.total {
+    border-top: 2px dashed var(--cream-dark);
+    padding-top: 12px; margin-top: 8px;
+    font-weight: 700; font-size: 19px; color: var(--red-dark);
+  }
+  .order-meta {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: rgba(0,0,0,0.72);
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--cream-dark);
+  }
+  .order-meta strong { color: var(--red-dark); }
+
+  .check-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 12px 0;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.6);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    user-select: none;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .check-row input {
+    width: 22px; height: 22px; flex-shrink: 0;
+    accent-color: var(--red);
+    cursor: pointer;
+    margin-top: 1px;
+  }
+
+  /* Success */
+  .step.success { text-align: center; }
+  .success .step-question { font-size: 30px; }
+  .success-emoji { font-size: 56px; margin-bottom: 6px; line-height: 1; }
+  .success-meta { color: var(--black); opacity: 0.7; font-size: 14px; margin: 12px 0 4px; line-height: 1.4; }
+
+  .pay-section {
+    margin: 24px 0 8px;
+  }
+  .pay-headline {
+    color: var(--red-dark);
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    margin-bottom: 12px;
+  }
+  .pay-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 380px) {
+    .pay-grid { grid-template-columns: 1fr; }
+  }
+  .pay-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    padding: 16px 12px;
+    box-shadow: var(--shadow-card);
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+    gap: 8px;
+    min-height: 230px;
+    justify-content: space-between;
+  }
+  .pay-card .pc-label { font-size: 12.5px; color: var(--red-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .pay-card .pc-sub { font-size: 12px; color: rgba(0,0,0,0.6); }
+  #qrcode { display: flex; justify-content: center; padding: 6px; background: white; border-radius: 8px; }
+  #qrcode img, #qrcode canvas { display: block; }
+
+  .pay-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%;
+    min-height: 56px;
+    background: var(--red);
+    color: var(--white);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: var(--shadow-cta);
+    margin-top: 8px;
+  }
+
+  .pay-tip {
+    background: rgba(255,210,74,0.20);
+    border: 1px solid rgba(255,210,74,0.45);
+    color: var(--red-dark);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    line-height: 1.45;
+    margin: 14px 0;
+    text-align: left;
+  }
+  .pay-tip strong { font-weight: 700; }
+
+  .iban-line {
+    font-size: 12px;
+    color: rgba(0,0,0,0.55);
+    margin-top: 10px;
+    line-height: 1.45;
+  }
+  .iban-line code {
+    font-family: 'DM Sans', monospace;
+    background: rgba(0,0,0,0.04);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  /* Bottom: product + USPs */
+  .bottom-section {
+    margin-top: 56px;
+    padding-top: 28px;
+    border-top: 1px dashed rgba(139,26,14,0.25);
+  }
+  .product-img {
+    width: 100%;
+    max-width: 340px;
+    height: auto;
+    display: block;
+    margin: 0 auto 28px;
+    filter: drop-shadow(0 8px 20px rgba(139,26,14,0.10));
+  }
+  .usps {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .usp {
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--red-dark);
+    font-weight: 600;
+  }
+  .usp .ic { display: block; font-size: 28px; margin-bottom: 6px; line-height: 1; }
+  .disclaimer {
+    font-size: 11.5px;
+    color: rgba(0,0,0,0.5);
+    text-align: center;
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+
+  /* Hide bottom-section on success step for focus */
+  body.on-success .bottom-section { opacity: 0.4; }
+
+  /* Confetti */
+  .confetti {
+    position: fixed;
+    width: 8px; height: 12px;
+    pointer-events: none;
+    z-index: 9999;
+    border-radius: 2px;
+    will-change: transform, opacity;
+  }
+</style>
+</head>
+<body>
+
+<!-- Hidden static form: lets Netlify Forms detect & capture submissions even when JS posts dynamically -->
+<form name="ellemelle-signup" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
+  <input name="voornaam" type="text">
+  <input name="telefoon" type="tel">
+  <input name="email"    type="email">
+  <input name="kanaal"   type="text">
+  <input name="straat"   type="text">
+  <input name="huisnummer" type="text">
+  <input name="toevoeging" type="text">
+  <input name="postcode" type="text">
+  <input name="plaats"   type="text">
+  <input name="bot-field" type="text">
+</form>
+
+<main id="app">
+
+  <!-- Sticky counter -->
+  <div class="counter-wrap">
+    <div class="counter-pill" id="counter">
+      <span class="dot"></span>
+      <span id="counter-text">– / 25 plekken geclaimed</span>
+    </div>
+  </div>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <button class="back-btn" id="back-btn" aria-label="Terug" hidden>←</button>
+    <span class="wordmark">ELLEMELLE</span>
+    <span class="progress-text" id="progress-text">1/6</span>
+  </div>
+
+  <!-- Step container -->
+  <div class="steps" id="steps">
+
+    <!-- STEP 1: Voornaam -->
+    <section class="step active" data-step="1">
+      <div class="step-eyebrow">Stap 1 — Welkom</div>
+      <h1 class="step-question">Hoe heet je?</h1>
+      <p class="step-subtitle">Zodat we je pot kunnen labelen 🏷️</p>
+      <div class="field">
+        <input id="input-voornaam" type="text" autocomplete="given-name" autocapitalize="words" placeholder="Je voornaam" maxlength="40">
+      </div>
+      <div class="error" data-step-error></div>
+      <button class="btn-primary" data-next>Volgende →</button>
+    </section>
+
+    <!-- STEP 2: Postcode -->
+    <section class="step" data-step="2">
+      <div class="step-eyebrow">Stap 2 — Bezorging</div>
+      <h1 class="step-question">Wat is je postcode, <span data-name-slot>…</span>?</h1>
+      <p class="step-subtitle">Ellis & Melle bezorgen alleen in Haarlem 🚲</p>
+      <div class="field">
+        <input id="input-postcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters" placeholder="2011 AA" maxlength="7" spellcheck="false">
+      </div>
+      <div class="error" data-step-error></div>
+      <button class="btn-primary" data-next>Volgende →</button>
+    </section>
+
+    <!-- STEP 3: Huisnummer + adres lookup -->
+    <section class="step" data-step="3">
+      <div class="step-eyebrow">Stap 3 — Adres</div>
+      <h1 class="step-question">Welk huisnummer?</h1>
+      <p class="step-subtitle">We vullen je straat automatisch in.</p>
+      <div class="row-2">
+        <div class="field">
+          <input id="input-huisnr" type="text" inputmode="numeric" autocomplete="address-line2" placeholder="Huisnummer" maxlength="6">
+        </div>
+        <div class="field">
+          <input id="input-toev" type="text" autocomplete="off" placeholder="Toev." maxlength="6">
+        </div>
+      </div>
+      <div class="address-confirm" id="address-confirm" hidden></div>
+      <div id="manual-address" hidden>
+        <div class="field" style="margin-top:10px;">
+          <input id="input-straat" type="text" autocomplete="street-address" placeholder="Straat (handmatig)">
+        </div>
+        <div class="field">
+          <input id="input-plaats" type="text" autocomplete="address-level2" placeholder="Plaats" value="Haarlem">
+        </div>
+      </div>
+      <div class="error" data-step-error></div>
+      <button class="btn-primary" data-next>Volgende →</button>
+    </section>
+
+    <!-- STEP 4: Kanaal -->
+    <section class="step" data-step="4">
+      <div class="step-eyebrow">Stap 4 — Updates</div>
+      <h1 class="step-question">Hoe willen we je laten weten wanneer we bezorgen?</h1>
+      <p class="step-subtitle">Eén bericht zodra Ellis & Melle aan de deur staan.</p>
+      <div class="kanaal-options">
+        <button class="kanaal-card" data-kanaal="whatsapp" type="button">
+          <span class="ic">📱</span>
+          <span><span class="label">WhatsApp</span><span class="sub">Snelste manier — bericht op je telefoon</span></span>
+        </button>
+        <button class="kanaal-card" data-kanaal="email" type="button">
+          <span class="ic">✉️</span>
+          <span><span class="label">E-mail</span><span class="sub">Liever per mail? Ook prima.</span></span>
+        </button>
+      </div>
+      <div class="error" data-step-error></div>
+    </section>
+
+    <!-- STEP 5: Contact -->
+    <section class="step" data-step="5">
+      <div class="step-eyebrow">Stap 5 — Contact</div>
+      <h1 class="step-question">En je <span id="contact-noun">06-nummer</span>?</h1>
+      <p class="step-subtitle" id="contact-sub">Hier sturen we de bezorgupdate naar — verder niks.</p>
+      <div class="field" id="field-tel" hidden>
+        <input id="input-tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" maxlength="14">
+      </div>
+      <div class="field" id="field-email" hidden>
+        <input id="input-email" type="email" inputmode="email" autocomplete="email" placeholder="naam@email.nl" spellcheck="false">
+      </div>
+      <div class="error" data-step-error></div>
+      <button class="btn-primary" data-next>Volgende →</button>
+    </section>
+
+    <!-- STEP 6: Bevestig -->
+    <section class="step" data-step="6">
+      <div class="step-eyebrow">Stap 6 — Bevestigen</div>
+      <h1 class="step-question">Klopt dit, <span data-name-slot>…</span>?</h1>
+      <p class="step-subtitle">Eén pot ELLEMELLE, betaal je zo via Tikkie.</p>
+      <div class="order-card" id="order-summary-content"></div>
+      <label class="check-row">
+        <input type="checkbox" id="confirm-checkbox">
+        <span>Ja, ik wil 1 pot ELLEMELLE chocopasta voor €6 (€5 + €1 statiegeld), bezorgd binnen 4 weken in Haarlem.</span>
+      </label>
+      <div class="error" data-step-error></div>
+      <button class="btn-primary" id="submit-btn" data-next>Plaats bestelling →</button>
+    </section>
+
+    <!-- STEP 7: Success -->
+    <section class="step success" data-step="7">
+      <div class="success-emoji">🎉</div>
+      <h1 class="step-question">Yes <span id="success-name">…</span>!<br>Je staat op de lijst</h1>
+      <p class="success-meta" id="success-contact"></p>
+
+      <div class="order-card" style="margin-top:18px;">
+        <div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>
+        <div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>
+        <div class="order-line total"><span>Te betalen</span><span>€6,00</span></div>
+      </div>
+
+      <div class="pay-section">
+        <div class="pay-headline">Betaal nu via Tikkie</div>
+        <div class="pay-grid">
+          <div class="pay-card">
+            <div class="pc-label">📱 Eigen telefoon</div>
+            <div id="qrcode"></div>
+            <div class="pc-sub">Scan met je camera</div>
+          </div>
+          <div class="pay-card">
+            <div class="pc-label">↗ Deze telefoon</div>
+            <a href="#" class="pay-btn" id="tikkie-btn" target="_blank" rel="noopener">Open Tikkie →</a>
+            <div class="pc-sub">Of direct hier betalen</div>
+          </div>
+        </div>
+        <div class="pay-tip">
+          💡 <strong>Tip:</strong> vul je <strong>voornaam</strong> in bij Tikkie zodat we weten dat jij betaald hebt.
+        </div>
+        <div class="iban-line">
+          Liever overmaken? <code>NL00 INGB 0000 0000 00</code> t.n.v. Ellis & Melle o.v.v. je naam.
+        </div>
+      </div>
+
+      <button class="btn-primary" id="reset-btn" style="margin-top:28px;">Volgende klant →</button>
+    </section>
+
+  </div>
+
+  <!-- Bottom section: product photo + USPs -->
+  <section class="bottom-section">
+    <img class="product-img" src="Images/product.png" alt="ELLEMELLE chocopasta pot" loading="lazy">
+    <div class="usps">
+      <div class="usp"><span class="ic">🌾</span>3× minder<br>suiker</div>
+      <div class="usp"><span class="ic">🌴</span>Geen<br>palmolie</div>
+      <div class="usp"><span class="ic">👧</span>Door Ellis<br>& Melle</div>
+    </div>
+    <p class="disclaimer">~12g suiker per 100g vs ~50g/100g bij reguliere chocopasta. Gezoet met carobsiroop, 72% hazelnoot, geen kunstmatige toevoegingen. Glazen pot herbruikbaar — €1 statiegeld retour bij volgende pot.</p>
+  </section>
+
+</main>
+
+<!-- QR code library (vanilla, ~3KB gzip) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
+
+<script>
+(function(){
+  'use strict';
+
+  // --- Config & state ----------------------------------------------------
+  const TIKKIE_FALLBACK = ['https://tikkie.example.com/A', 'https://tikkie.example.com/B'];
+  const TOTAL_STEPS = 6;
+  const formData = {
+    voornaam: '', telefoon: '', email: '', kanaal: '',
+    straat: '', huisnummer: '', toevoeging: '', postcode: '', plaats: ''
+  };
+  let currentStep = 1;
+  let counterCount = 0;
+  let counterMax = 25;
+  let configCache = null;
+  let lastLookup = '';
+
+  // --- DOM refs ----------------------------------------------------------
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+  const stepEls = $$('.step');
+  const progressEl = $('#progress-text');
+  const backBtn = $('#back-btn');
+  const counterEl = $('#counter');
+  const counterText = $('#counter-text');
+
+  // --- Step navigation ---------------------------------------------------
+  function showStep(n) {
+    stepEls.forEach(s => s.classList.toggle('active', parseInt(s.dataset.step, 10) === n));
+    if (n === 7) {
+      progressEl.textContent = '✓';
+      backBtn.hidden = true;
+      document.body.classList.add('on-success');
+    } else {
+      progressEl.textContent = n + '/' + TOTAL_STEPS;
+      backBtn.hidden = (n === 1);
+      document.body.classList.remove('on-success');
+    }
+    // focus first input
+    setTimeout(() => {
+      const active = $('.step.active');
+      if (!active) return;
+      const inp = active.querySelector('input:not([type=hidden]):not([hidden]):not([type=checkbox])');
+      // Only autofocus on non-touch — keyboards on mobile are intrusive on each step
+      if (inp && !('ontouchstart' in window)) {
+        try { inp.focus({ preventScroll: true }); } catch(e) { inp.focus(); }
+      }
+      // Scroll active step into view (smooth)
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 120);
+  }
+
+  function next() {
+    if (!validateStep(currentStep)) return;
+    if (currentStep === TOTAL_STEPS) {
+      submitOrder();
+      return;
+    }
+    currentStep++;
+    prepareStep(currentStep);
+    showStep(currentStep);
+  }
+
+  function back() {
+    if (currentStep > 1 && currentStep < 7) {
+      currentStep--;
+      hideError();
+      showStep(currentStep);
+    }
+  }
+
+  function prepareStep(n) {
+    // Substitute name slot
+    $$('[data-name-slot]').forEach(el => { el.textContent = formData.voornaam || 'jij'; });
+
+    if (n === 5) {
+      // Show right contact field based on kanaal
+      const isWA = formData.kanaal === 'whatsapp';
+      $('#field-tel').hidden = !isWA;
+      $('#field-email').hidden = isWA;
+      $('#contact-noun').textContent = isWA ? '06-nummer' : 'e-mailadres';
+      $('#contact-sub').textContent = isWA
+        ? 'Hier sturen we de bezorgupdate via WhatsApp naar.'
+        : 'Hier sturen we de bezorgupdate per e-mail naar.';
+    }
+    if (n === 6) renderOrderSummary();
+  }
+
+  // --- Validation --------------------------------------------------------
+  function showError(msg, root) {
+    const stepEl = root || $('.step.active');
+    const err = stepEl.querySelector('.error');
+    if (err) { err.textContent = msg; err.classList.add('visible'); }
+  }
+  function hideError() {
+    $$('.error').forEach(e => e.classList.remove('visible'));
+  }
+
+  function validateStep(n) {
+    hideError();
+    switch (n) {
+      case 1: {
+        const v = $('#input-voornaam').value.trim();
+        if (!v) { showError('Vul je voornaam in.'); return false; }
+        if (v.length > 40) { showError('Iets korter graag (max 40 tekens).'); return false; }
+        formData.voornaam = v;
+        return true;
+      }
+      case 2: {
+        const raw = $('#input-postcode').value.replace(/\s+/g, '').toUpperCase();
+        if (!raw) { showError('Vul je postcode in.'); return false; }
+        if (!/^\d{4}[A-Z]{2}$/.test(raw)) {
+          showError('Vul een geldige NL postcode in, bv. 2011 AA.'); return false;
+        }
+        if (!/^(20|21)/.test(raw)) {
+          showError('Sorry, Ellis & Melle bezorgen alleen in Haarlem 🚲'); return false;
+        }
+        formData.postcode = raw.slice(0,4) + ' ' + raw.slice(4);
+        return true;
+      }
+      case 3: {
+        const num = $('#input-huisnr').value.trim();
+        if (!num || !/^\d+/.test(num)) { showError('Vul je huisnummer in.'); return false; }
+        formData.huisnummer = num.replace(/\D/g, '').slice(0,6);
+        formData.toevoeging = $('#input-toev').value.trim().slice(0,6);
+        // If manual address visible, capture
+        if (!$('#manual-address').hidden) {
+          formData.straat = $('#input-straat').value.trim();
+          formData.plaats = $('#input-plaats').value.trim() || 'Haarlem';
+          if (!formData.straat) { showError('Vul je straatnaam in.'); return false; }
+        }
+        if (!formData.straat) {
+          // Try one final lookup synchronously
+          showError('Even wachten — we zoeken je straat op…');
+          lookupAddress().then(() => {
+            if (formData.straat) { hideError(); next(); }
+            else { showError('Kon adres niet vinden. Vul handmatig in.'); $('#manual-address').hidden = false; $('#input-straat').focus(); }
+          });
+          return false;
+        }
+        return true;
+      }
+      case 4: {
+        if (!formData.kanaal) { showError('Kies een kanaal.'); return false; }
+        return true;
+      }
+      case 5: {
+        if (formData.kanaal === 'whatsapp') {
+          const tel = $('#input-tel').value.trim();
+          const cleaned = tel.replace(/[\s\-]/g, '');
+          if (!/^(\+31|0031|0)6\d{8}$/.test(cleaned)) {
+            showError('Vul een geldig 06-nummer in.'); return false;
+          }
+          formData.telefoon = tel;
+        } else {
+          const em = $('#input-email').value.trim();
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+            showError('Vul een geldig e-mailadres in.'); return false;
+          }
+          formData.email = em;
+        }
+        return true;
+      }
+      case 6: {
+        if (!$('#confirm-checkbox').checked) {
+          showError('Vink het hokje aan om te bevestigen.'); return false;
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // --- Address lookup ----------------------------------------------------
+  async function lookupAddress() {
+    const pc = formData.postcode.replace(/\s+/g, '');
+    const nr = (formData.huisnummer || $('#input-huisnr').value || '').replace(/\D/g, '');
+    if (!pc || !nr) return;
+    const key = pc + '-' + nr;
+    if (key === lastLookup) return;
+    lastLookup = key;
+    try {
+      const r = await fetch('/api/postcode?postcode=' + encodeURIComponent(pc) + '&number=' + encodeURIComponent(nr));
+      if (!r.ok) throw new Error('lookup ' + r.status);
+      const data = await r.json();
+      if (data && data.street && data.city) {
+        formData.straat = data.street;
+        formData.plaats = data.city;
+        const ac = $('#address-confirm');
+        ac.innerHTML = '<strong>' + escapeHtml(data.street) + ' ' + escapeHtml(formData.huisnummer) +
+          (formData.toevoeging ? '-' + escapeHtml(formData.toevoeging) : '') +
+          '</strong><small>' + escapeHtml(formData.postcode) + ' ' + escapeHtml(data.city) + '</small>';
+        ac.hidden = false;
+        $('#manual-address').hidden = true;
+      } else {
+        $('#manual-address').hidden = false;
+      }
+    } catch (e) {
+      $('#manual-address').hidden = false;
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // --- Order summary -----------------------------------------------------
+  function renderOrderSummary() {
+    const adres = (formData.straat || '(straat)') + ' ' + formData.huisnummer +
+      (formData.toevoeging ? '-' + formData.toevoeging : '');
+    const stad  = formData.postcode + ' ' + (formData.plaats || 'Haarlem');
+    const kIcon = formData.kanaal === 'whatsapp' ? '📱 WhatsApp' : '✉️ E-mail';
+    const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
+    $('#order-summary-content').innerHTML =
+      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
+      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
+      '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
+      '<div class="order-meta">' +
+        '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
+        '<strong>Updates via</strong> ' + kIcon + '<br>' + escapeHtml(contact) + '<br><br>' +
+        'Binnen 4 weken aan je deur door Ellis & Melle.' +
+      '</div>';
+  }
+
+  // --- Submit ------------------------------------------------------------
+  function encodeForm(data) {
+    return Object.keys(data).map(k =>
+      encodeURIComponent(k) + '=' + encodeURIComponent(data[k] || '')
+    ).join('&');
+  }
+
+  async function submitOrder() {
+    const btn = $('#submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Bezig…';
+    hideError();
+
+    const payload = Object.assign({}, formData);
+
+    // Strategy: try our signup function first (Supabase if configured, else forwards to Netlify Forms).
+    // Fall back to direct Netlify Forms POST if the function is unreachable.
+    let ok = false;
+    try {
+      const r = await fetch('/.netlify/functions/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      ok = r.ok;
+    } catch (e) { ok = false; }
+
+    if (!ok) {
+      try {
+        const body = encodeForm(Object.assign({ 'form-name': 'ellemelle-signup', 'bot-field': '' }, payload));
+        const r2 = await fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body
+        });
+        ok = r2.ok;
+      } catch (e) { ok = false; }
+    }
+
+    if (!ok) {
+      btn.disabled = false;
+      btn.textContent = 'Plaats bestelling →';
+      showError('Er ging iets mis bij opslaan. Probeer het nog eens.');
+      return;
+    }
+
+    // Optimistic counter bump
+    counterCount = Math.min(counterMax, counterCount + 1);
+    updateCounterPill();
+
+    // Move to success
+    currentStep = 7;
+    prepareSuccessStep();
+    showStep(7);
+    setTimeout(burstConfetti, 200);
+  }
+
+  function prepareSuccessStep() {
+    $('#success-name').textContent = formData.voornaam;
+    const kanaalLabel = formData.kanaal === 'whatsapp' ? '📱 WhatsApp' : '✉️ e-mail';
+    const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
+    $('#success-contact').textContent = 'Updates komen via ' + kanaalLabel + ' naar ' + contact;
+
+    const tikkies = (configCache && configCache.tikkieA && configCache.tikkieB)
+      ? [configCache.tikkieA, configCache.tikkieB] : TIKKIE_FALLBACK;
+    const tikkieUrl = tikkies[Math.floor(Math.random() * tikkies.length)];
+    $('#tikkie-btn').href = tikkieUrl;
+
+    const qrEl = $('#qrcode');
+    qrEl.innerHTML = '';
+    if (window.QRCode) {
+      try {
+        new QRCode(qrEl, {
+          text: tikkieUrl, width: 180, height: 180,
+          colorDark: '#8B1A0E', colorLight: '#FFFFFF',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) { qrEl.textContent = '(QR niet geladen — gebruik knop)'; }
+    } else {
+      qrEl.textContent = '(QR laadt…)';
+    }
+  }
+
+  // --- Reset -------------------------------------------------------------
+  function resetForm() {
+    Object.keys(formData).forEach(k => formData[k] = '');
+    $$('input').forEach(i => {
+      if (i.type === 'hidden') return;
+      if (i.type === 'checkbox') i.checked = false;
+      else i.value = (i.id === 'input-plaats') ? 'Haarlem' : '';
+    });
+    $('#address-confirm').hidden = true;
+    $('#address-confirm').innerHTML = '';
+    $('#manual-address').hidden = true;
+    $('#submit-btn').disabled = false;
+    $('#submit-btn').textContent = 'Plaats bestelling →';
+    lastLookup = '';
+    hideError();
+    currentStep = 1;
+    showStep(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // --- Counter -----------------------------------------------------------
+  async function loadCounter() {
+    try {
+      const r = await fetch('/api/count', { cache: 'no-store' });
+      if (!r.ok) throw new Error('count');
+      const data = await r.json();
+      counterCount = parseInt(data.count, 10) || 0;
+      counterMax = parseInt(data.max, 10) || 25;
+    } catch (e) {
+      // keep last known
+    }
+    updateCounterPill();
+  }
+  function updateCounterPill() {
+    if (counterCount >= counterMax) {
+      counterText.textContent = counterMax + ' / ' + counterMax + ' — uitverkocht 🙏';
+      counterEl.classList.add('full');
+    } else {
+      counterText.textContent = counterCount + ' / ' + counterMax + ' plekken geclaimed';
+      counterEl.classList.remove('full');
+    }
+  }
+
+  async function loadConfig() {
+    try {
+      const r = await fetch('/api/config', { cache: 'no-store' });
+      if (r.ok) configCache = await r.json();
+    } catch (e) { /* swallow */ }
+  }
+
+  // --- Confetti ----------------------------------------------------------
+  function burstConfetti() {
+    const colors = ['#D9301E', '#8B1A0E', '#FFD24A', '#F5EFE6'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.top = '20%';
+      c.style.left = '50%';
+      c.style.background = colors[i % colors.length];
+      c.style.transition = 'transform 1.6s cubic-bezier(.18,.7,.4,1), opacity 1.6s ease-out';
+      document.body.appendChild(c);
+      requestAnimationFrame(() => {
+        const x = (Math.random() - 0.5) * window.innerWidth * 0.9;
+        const y = (Math.random() * 0.6 + 0.2) * window.innerHeight;
+        const r = Math.random() * 720 - 360;
+        c.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + r + 'deg)';
+        c.style.opacity = '0';
+      });
+      setTimeout(() => c.remove(), 1700);
+    }
+  }
+
+  // --- Wiring ------------------------------------------------------------
+  document.addEventListener('DOMContentLoaded', () => {
+    loadConfig();
+    loadCounter();
+    showStep(1);
+
+    $$('[data-next]').forEach(b => b.addEventListener('click', next));
+    backBtn.addEventListener('click', back);
+
+    $$('.kanaal-card').forEach(card => {
+      card.addEventListener('click', () => {
+        formData.kanaal = card.dataset.kanaal;
+        $$('.kanaal-card').forEach(c => c.style.borderColor = '');
+        card.style.borderColor = 'var(--red)';
+        // Auto-advance
+        setTimeout(next, 140);
+      });
+    });
+
+    $('#reset-btn').addEventListener('click', resetForm);
+
+    // Postcode autoformat (4 digits + 2 letters)
+    const pc = $('#input-postcode');
+    pc.addEventListener('input', () => {
+      let v = pc.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+      if (v.length > 4) v = v.slice(0,4) + ' ' + v.slice(4,6);
+      pc.value = v;
+    });
+
+    // Address lookup on huisnummer blur (or input after debounce)
+    let lookupTO;
+    const trigger = () => {
+      formData.huisnummer = $('#input-huisnr').value.replace(/\D/g,'');
+      if (formData.huisnummer.length >= 1) lookupAddress();
+    };
+    $('#input-huisnr').addEventListener('blur', trigger);
+    $('#input-huisnr').addEventListener('input', () => {
+      clearTimeout(lookupTO);
+      lookupTO = setTimeout(trigger, 600);
+    });
+
+    // Enter to advance
+    $$('input').forEach(input => {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && input.type !== 'submit') {
+          e.preventDefault();
+          if (currentStep <= TOTAL_STEPS) next();
+        }
+      });
+    });
+
+    // Refresh counter every 30s
+    setInterval(loadCounter, 30000);
+  });
+})();
+</script>
+</body>
+</html>

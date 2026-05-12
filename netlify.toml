@@ -1,0 +1,43 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/postcode"
+  to = "/.netlify/functions/postcode"
+  status = 200
+
+[[redirects]]
+  from = "/api/config"
+  to = "/.netlify/functions/config"
+  status = 200
+
+[[redirects]]
+  from = "/api/count"
+  to = "/.netlify/functions/count"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin-list"
+  to = "/.netlify/functions/admin-list"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin-mark-paid"
+  to = "/.netlify/functions/admin-mark-paid"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

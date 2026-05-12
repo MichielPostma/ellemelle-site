@@ -1,0 +1,6 @@
+/api/postcode    /.netlify/functions/postcode    200
+/api/config      /.netlify/functions/config      200
+/api/count       /.netlify/functions/count       200
+/api/admin-list  /.netlify/functions/admin-list  200
+/api/admin-mark-paid /.netlify/functions/admin-mark-paid 200
+/admin           /admin.html                     200
