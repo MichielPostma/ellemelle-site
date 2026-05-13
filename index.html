@@ -528,7 +528,7 @@
 
 <!-- Top counter banner -->
 <div class="top-banner" id="counter">
-  <span id="counter-text">Help ons lanceren</span>
+  <span id="counter-text">Help ons lanceren — 0/15 bestellingen</span>
 </div>
 
 <main id="app">
@@ -1102,11 +1102,10 @@
   }
   function updateCounterPill() {
     if (counterCount >= counterMax) {
-      counterText.textContent = 'Help ons lanceren — uitverkocht';
+      counterText.textContent = 'Help ons lanceren — ' + counterMax + '/' + counterMax + ' uitverkocht';
       counterEl.classList.add('full');
     } else {
-      const left = counterMax - counterCount;
-      counterText.textContent = 'Help ons lanceren — nog ' + left + (left === 1 ? ' plek' : ' plekken');
+      counterText.textContent = 'Help ons lanceren — ' + counterCount + '/' + counterMax + ' bestellingen';
       counterEl.classList.remove('full');
     }
   }
