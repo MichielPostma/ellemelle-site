@@ -363,6 +363,39 @@
   }
   #qrcode img, #qrcode canvas { display: block; }
 
+  /* Order recap on success page — subtle */
+  .order-recap {
+    max-width: 320px;
+    margin: 24px auto 0;
+    padding: 14px 16px;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: var(--radius-md);
+    background: var(--white);
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(0,0,0,0.7);
+    text-align: left;
+  }
+  .order-recap .or-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+  }
+  .order-recap .or-line.total {
+    border-top: 1px dashed var(--cream-dark);
+    padding-top: 8px;
+    margin-top: 6px;
+    font-weight: 700;
+    color: var(--red-dark);
+  }
+  .order-recap .or-meta {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--cream-dark);
+    color: rgba(0,0,0,0.55);
+    font-size: 12px;
+  }
+
   .pay-btn {
     display: flex; align-items: center; justify-content: center;
     width: 100%;
@@ -430,8 +463,7 @@
   body.on-intro .product-hero:hover { opacity: 0.92; }
   body.on-intro .product-hero:active { opacity: 0.85; }
 
-  /* Subdue product hero on success step for focus */
-  body.on-success .product-hero { opacity: 0.4; }
+  /* Success: keep product hero fully visible (no dimming) */
 
   /* Confetti */
   .confetti {
@@ -562,11 +594,12 @@
       <button class="btn-primary" id="submit-btn" data-next>Plaats bestelling →</button>
     </section>
 
-    <!-- STEP 7: Success — title + QR + pay button only -->
+    <!-- STEP 7: Success — dynamic title + QR + iDeal CTA + order recap -->
     <section class="step success" data-step="7">
-      <h1 class="step-question">Bedankt!</h1>
+      <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉</h1>
       <div id="qrcode"></div>
-      <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Zelf betalen</a>
+      <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Betaal met iDeal</a>
+      <div class="order-recap" id="success-recap"></div>
       <button id="reset-btn" type="button" hidden></button>
     </section>
 
@@ -579,7 +612,7 @@
 
 <!-- Pot photo, edge-to-edge under the form -->
 <section class="product-hero">
-  <img class="product-img" src="Images/product.png" alt="ELLEMELLE chocopasta pot" loading="lazy">
+  <img class="product-img" src="Images/product.png" alt="ELLEMELLE chocopasta pot" loading="eager" fetchpriority="high">
 </section>
 
 <!-- QR code library (vanilla, ~3KB gzip) -->
@@ -932,6 +965,15 @@
     counterCount = Math.min(counterMax, counterCount + 1);
     updateCounterPill();
 
+    // Fire-and-forget notify (sends Resend confirmation if RESEND_API_KEY is set + kanaal=email)
+    try {
+      fetch('/.netlify/functions/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    } catch (e) { /* swallow */ }
+
     // Move to success
     currentStep = 7;
     clearState();
@@ -941,11 +983,34 @@
   }
 
   function prepareSuccessStep() {
+    // Personalise headline
+    const sn = document.getElementById('success-name');
+    if (sn) sn.textContent = formData.voornaam || '';
+
+    // Tikkie URL (button + QR)
     const tikkies = (configCache && configCache.tikkieA && configCache.tikkieB)
       ? [configCache.tikkieA, configCache.tikkieB] : TIKKIE_FALLBACK;
     const tikkieUrl = tikkies[Math.floor(Math.random() * tikkies.length)];
     const tBtn = document.getElementById('tikkie-btn');
     if (tBtn) tBtn.href = tikkieUrl;
+
+    // Order recap mirroring step 6 summary
+    const recap = document.getElementById('success-recap');
+    if (recap) {
+      const adres = (formData.straat || '') + ' ' + formData.huisnummer +
+        (formData.toevoeging ? '-' + formData.toevoeging : '');
+      const stad  = formData.postcode + ' ' + (formData.plaats || 'Haarlem');
+      const kIcon = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
+      const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
+      recap.innerHTML =
+        '<div class="or-line"><span>1× ELLEMELLE pot 250g</span><span>&euro;5,00</span></div>' +
+        '<div class="or-line"><span>Statiegeld glazen pot</span><span>&euro;1,00</span></div>' +
+        '<div class="or-line total"><span>Totaal</span><span>&euro;6,00</span></div>' +
+        '<div class="or-meta">' +
+          '<strong>Bezorgadres</strong><br>' + escapeHtml(adres.trim()) + '<br>' + escapeHtml(stad.trim()) + '<br>' +
+          '<strong>Updates via</strong> ' + kIcon + ' &mdash; ' + escapeHtml(contact || '') +
+        '</div>';
+    }
 
     const qrEl = $('#qrcode');
     qrEl.innerHTML = '';
