@@ -11,7 +11,7 @@
 <title>ELLEMELLE — Chocopasta door Ellis & Melle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --red: #D9301E;
@@ -43,7 +43,7 @@
   body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
 
   .display, .step-question, .wordmark, h1, h2 {
-    font-family: 'Bowlby One', Impact, system-ui, sans-serif;
+    font-family: 'Bagel Fat One', 'Bowlby One', Impact, system-ui, sans-serif;
     font-weight: 400;
     letter-spacing: 0.2px;
   }
@@ -55,19 +55,21 @@
     position: relative;
   }
 
-  /* Counter — subtle left-aligned line of text */
-  .counter-wrap {
-    text-align: left;
-    margin: 4px 0 10px;
+  /* Counter — full-width top banner */
+  .top-banner {
+    width: 100%;
+    background: #f1e7d4;
+    color: var(--red-dark);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 11px 16px;
+    line-height: 1.2;
+    border-bottom: 1px solid rgba(139,26,14,0.07);
   }
-  .counter-line {
-    color: #8a8780;
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.3;
-    letter-spacing: 0.1px;
-  }
-  .counter-line.full { color: var(--red-dark); font-weight: 600; }
+  .top-banner.full { background: var(--red); color: var(--white); }
 
   /* Topbar */
   .topbar {
@@ -134,8 +136,10 @@
   .step-question {
     color: var(--red-dark);
     font-size: 30px;
-    line-height: 1.1;
-    margin-bottom: 10px;
+    line-height: 1.05;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
   }
   .step-subtitle {
     color: var(--black);
@@ -378,44 +382,25 @@
     font-weight: 600;
   }
 
-  /* Bottom: product + USPs */
-  .bottom-section {
-    margin-top: 56px;
-    padding-top: 28px;
-    border-top: 1px dashed rgba(139,26,14,0.25);
+  /* Product hero (pot image, no dashed divider, no USPs) */
+  .product-hero {
+    margin-top: 48px;
+    padding-top: 0;
   }
   .product-img {
     width: 100%;
-    max-width: 340px;
+    max-width: 460px;
     height: auto;
     display: block;
-    margin: 0 auto 28px;
-    filter: drop-shadow(0 8px 20px rgba(139,26,14,0.10));
+    margin: 0 auto;
+    filter: drop-shadow(0 14px 32px rgba(139,26,14,0.14));
   }
-  .usps {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .usp {
-    text-align: center;
-    font-size: 12px;
-    line-height: 1.3;
-    color: var(--red-dark);
-    font-weight: 600;
-  }
-  .usp .ic { display: block; font-size: 28px; margin-bottom: 6px; line-height: 1; }
-  .disclaimer {
-    font-size: 11.5px;
-    color: rgba(0,0,0,0.5);
-    text-align: center;
-    line-height: 1.5;
-    margin-top: 8px;
+  @media (max-width: 540px) {
+    .product-img { max-width: 92%; }
   }
 
-  /* Hide bottom-section on success step for focus */
-  body.on-success .bottom-section { opacity: 0.4; }
+  /* Subdue product hero on success step for focus */
+  body.on-success .product-hero { opacity: 0.4; }
 
   /* Confetti */
   .confetti {
@@ -444,6 +429,11 @@
   <input name="bot-field" type="text">
 </form>
 
+<!-- Top counter banner -->
+<div class="top-banner" id="counter">
+  <span id="counter-text">– / 25 plekken geclaimed</span>
+</div>
+
 <main id="app">
 
   <!-- Brand logo -->
@@ -457,21 +447,12 @@
     <span class="progress-text" id="progress-text">1/6</span>
   </div>
 
-  <!-- Subtle counter line -->
-  <div class="counter-wrap">
-    <span class="counter-line" id="counter">
-      <span id="counter-text">– / 25 plekken geclaimed</span>
-    </span>
-  </div>
-
   <!-- Step container -->
   <div class="steps" id="steps">
 
     <!-- STEP 1: Voornaam -->
     <section class="step active" data-step="1">
-      <div class="step-eyebrow">Stap 1 — Welkom</div>
       <h1 class="step-question">Hoe heet je?</h1>
-      <p class="step-subtitle">Zodat we je pot kunnen labelen 🏷️</p>
       <div class="field">
         <input id="input-voornaam" type="text" autocomplete="given-name" autocapitalize="words" placeholder="Je voornaam" maxlength="40">
       </div>
@@ -603,15 +584,9 @@
 
   </div>
 
-  <!-- Bottom section: product photo + USPs -->
-  <section class="bottom-section">
+  <!-- Bottom section: product photo only (benefits removed) -->
+  <section class="product-hero">
     <img class="product-img" src="Images/product.png" alt="ELLEMELLE chocopasta pot" loading="lazy">
-    <div class="usps">
-      <div class="usp"><span class="ic">🌾</span>3× minder<br>suiker</div>
-      <div class="usp"><span class="ic">🌴</span>Geen<br>palmolie</div>
-      <div class="usp"><span class="ic">👧</span>Door Ellis<br>& Melle</div>
-    </div>
-    <p class="disclaimer">~12g suiker per 100g vs ~50g/100g bij reguliere chocopasta. Gezoet met carobsiroop, 72% hazelnoot, geen kunstmatige toevoegingen. Glazen pot herbruikbaar — €1 statiegeld retour bij volgende pot.</p>
   </section>
 
 </main>
