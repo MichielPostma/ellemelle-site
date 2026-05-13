@@ -51,7 +51,7 @@
   #app {
     max-width: 480px;
     margin: 0 auto;
-    padding: 14px 20px 64px;
+    padding: 14px 20px 0;
     position: relative;
   }
 
@@ -382,21 +382,21 @@
     font-weight: 600;
   }
 
-  /* Product hero (pot image, no dashed divider, no USPs) */
+  /* Product hero — edge-to-edge full-viewport image, flush against form */
   .product-hero {
-    margin-top: 48px;
-    padding-top: 0;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    line-height: 0;          /* kill inline image bottom-gap */
   }
   .product-img {
     width: 100%;
-    max-width: 460px;
+    max-width: none;
     height: auto;
     display: block;
-    margin: 0 auto;
-    filter: drop-shadow(0 14px 32px rgba(139,26,14,0.14));
-  }
-  @media (max-width: 540px) {
-    .product-img { max-width: 92%; }
+    margin: 0;
+    padding: 0;
+    filter: none;
   }
 
   /* Subdue product hero on success step for focus */
@@ -584,12 +584,12 @@
 
   </div>
 
-  <!-- Bottom section: product photo only (benefits removed) -->
-  <section class="product-hero">
-    <img class="product-img" src="Images/product.png" alt="ELLEMELLE chocopasta pot" loading="lazy">
-  </section>
-
 </main>
+
+<!-- Pot photo, edge-to-edge under the form -->
+<section class="product-hero">
+  <img class="product-img" src="Images/product.png" alt="ELLEMELLE chocopasta pot" loading="lazy">
+</section>
 
 <!-- QR code library (vanilla, ~3KB gzip) -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
