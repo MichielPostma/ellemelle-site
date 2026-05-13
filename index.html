@@ -454,14 +454,37 @@
     filter: none;
   }
 
-  /* Intro / step 0 — hide the form chrome, only banner + clickable photo */
+  /* Intro / step 0 — hide the form chrome, only banner + big clickable photo */
+  body.on-intro {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+  body.on-intro .top-banner { flex: 0 0 auto; }
   body.on-intro #app .topbar,
   body.on-intro #app .steps,
   body.on-intro #app #restart-btn { display: none; }
-  body.on-intro #app { padding: 0; min-height: 0; }
-  body.on-intro .product-hero { cursor: pointer; transition: opacity 160ms ease; }
+  body.on-intro #app { flex: 0 0 auto; height: 0; padding: 0; min-height: 0; overflow: hidden; }
+  body.on-intro .product-hero {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 0;
+    cursor: pointer;
+    transition: opacity 160ms ease;
+    overflow: hidden;
+  }
   body.on-intro .product-hero:hover { opacity: 0.92; }
   body.on-intro .product-hero:active { opacity: 0.85; }
+  body.on-intro .product-img {
+    /* 60% groter dan op overige stappen, vertically centered via flex parent */
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    transform: scale(1.6);
+    transform-origin: center center;
+  }
 
   /* Success: keep product hero fully visible (no dimming) */
 
@@ -1048,8 +1071,8 @@
     const cb = document.getElementById('confirm-checkbox'); if (cb) cb.checked = false;
     lastLookup = '';
     hideError();
-    currentStep = 1;
-    showStep(1);
+    currentStep = 0;
+    showStep(0);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
