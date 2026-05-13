@@ -91,28 +91,15 @@
   }
   .back-btn:hover, .back-btn:focus-visible { background: rgba(217,48,30,0.10); outline: none; }
   .back-btn[hidden] { visibility: hidden; display: flex; }
-  /* Brand logo (replaces text wordmark) */
-  .brand-wrap {
-    text-align: center;
-    margin: 8px 0 18px;
-  }
-  .brand-logo {
-    display: block;
-    margin: 0 auto;
-    width: 220px;
-    max-width: 100%;
-    height: auto;
-  }
-  @media (max-width: 540px) {
-    .brand-logo { width: 80%; max-width: 340px; }
-  }
-  /* Hidden legacy wordmark, kept for any script references */
-  .wordmark { display: none; }
+  /* Brand wordmark/logo (legacy; not rendered) */
+  .brand-wrap, .brand-logo, .wordmark { display: none; }
   .progress-text {
     color: var(--red-dark);
     font-size: 13px;
     font-weight: 700;
-    text-align: right;
+    text-align: left;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
     opacity: 0.55;
   }
 
@@ -410,7 +397,7 @@
   .product-hero {
     width: 100vw;
     margin: 0;
-    padding: 0;
+    padding: 0 0 40px;       /* 40px breathing room below the photo */
     line-height: 0;          /* kill inline image bottom-gap */
   }
   .product-img {
@@ -422,6 +409,15 @@
     padding: 0;
     filter: none;
   }
+
+  /* Intro / step 0 — hide the form chrome, only banner + clickable photo */
+  body.on-intro #app .topbar,
+  body.on-intro #app .steps,
+  body.on-intro #app #restart-btn { display: none; }
+  body.on-intro #app { padding: 0; min-height: 0; }
+  body.on-intro .product-hero { cursor: pointer; transition: opacity 160ms ease; }
+  body.on-intro .product-hero:hover { opacity: 0.92; }
+  body.on-intro .product-hero:active { opacity: 0.85; }
 
   /* Subdue product hero on success step for focus */
   body.on-success .product-hero { opacity: 0.4; }
@@ -460,19 +456,17 @@
 
 <main id="app">
 
-  <!-- Brand logo -->
-  <div class="brand-wrap">
-    <img src="/assets/ellemelle-logo.png" alt="ELLEMELLE — choco pasta voor kids" class="brand-logo">
-  </div>
-
   <!-- Topbar (back btn + step progress) -->
   <div class="topbar">
     <button class="back-btn" id="back-btn" aria-label="Terug" hidden>←</button>
-    <span class="progress-text" id="progress-text">1/6</span>
+    <span class="progress-text" id="progress-text">Stap 1 van 6</span>
   </div>
 
   <!-- Step container -->
   <div class="steps" id="steps">
+
+    <!-- STEP 0: Intro (no UI here — body.on-intro hides #app, pot photo is clickable) -->
+    <section class="step" data-step="0" aria-hidden="true"></section>
 
     <!-- STEP 1: Voornaam -->
     <section class="step active" data-step="1">
@@ -632,7 +626,7 @@
     voornaam: '', telefoon: '', email: '', kanaal: '',
     straat: '', huisnummer: '', toevoeging: '', postcode: '', plaats: ''
   };
-  let currentStep = 1;
+  let currentStep = 0;
   let counterCount = 0;
   let counterMax = 10;
   let configCache = null;
@@ -675,16 +669,25 @@
   // --- Step navigation ---------------------------------------------------
   function showStep(n) {
     stepEls.forEach(s => s.classList.toggle('active', parseInt(s.dataset.step, 10) === n));
+    // Intro state — special handling
+    if (n === 0) {
+      document.body.classList.add('on-intro');
+      document.body.classList.remove('on-success');
+      backBtn.hidden = true;
+      progressEl.textContent = '';
+    } else {
+      document.body.classList.remove('on-intro');
+    }
     if (n === 7) {
       progressEl.textContent = '✓';
       backBtn.hidden = true;
       document.body.classList.add('on-success');
-    } else {
-      progressEl.textContent = n + '/' + TOTAL_STEPS;
-      backBtn.hidden = (n === 1);
+    } else if (n >= 1) {
+      progressEl.textContent = 'Stap ' + n + ' van ' + TOTAL_STEPS;
+      backBtn.hidden = (n <= 1);
       document.body.classList.remove('on-success');
     }
-    // Restart button only appears from step 2 onward (and not on success)
+    // Restart button only appears from step 2 onward (and not on success or intro)
     const rb = document.getElementById('restart-btn');
     if (rb) rb.hidden = (n <= 1 || n === 7);
     // focus first input
@@ -702,6 +705,14 @@
   }
 
   function next() {
+    // From intro screen, allow advancing to step 1 without validation
+    if (currentStep === 0) {
+      currentStep = 1;
+      prepareStep(1);
+      showStep(1);
+      saveState();
+      return;
+    }
     if (!validateStep(currentStep)) return;
     if (currentStep === TOTAL_STEPS) {
       submitOrder();
@@ -1074,6 +1085,22 @@
     $$('[data-next]').forEach(b => b.addEventListener('click', next));
     backBtn.addEventListener('click', back);
 
+    // Click pot photo on intro to advance to step 1
+    const heroEl = document.querySelector('.product-hero');
+    if (heroEl) {
+      heroEl.setAttribute('role', 'button');
+      heroEl.setAttribute('tabindex', '0');
+      heroEl.setAttribute('aria-label', 'Start de bestelling');
+      heroEl.addEventListener('click', () => {
+        if (currentStep === 0) next();
+      });
+      heroEl.addEventListener('keydown', e => {
+        if (currentStep === 0 && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault(); next();
+        }
+      });
+    }
+
     $$('.kanaal-card').forEach(card => {
       card.addEventListener('click', () => {
         formData.kanaal = card.dataset.kanaal;
@@ -1150,6 +1177,7 @@
     // Restore saved state if any
     const saved = loadState();
     if (saved && saved.data && saved.step >= 1 && saved.step <= TOTAL_STEPS) {
+      // Returning visitor with progress → jump to saved step (not intro)
       Object.assign(formData, saved.data);
       // Hydrate inputs
       Object.entries(FIELD_MAP).forEach(([id, key]) => {
@@ -1176,6 +1204,10 @@
       if (currentStep === 3 && formData.postcode && formData.huisnummer) {
         setTimeout(() => { lastLookup = ''; lookupAddress(); }, 200);
       }
+    } else {
+      // Fresh visitor → intro screen
+      currentStep = 0;
+      showStep(0);
     }
 
     // Refresh counter every 30s
