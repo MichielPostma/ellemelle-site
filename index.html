@@ -73,9 +73,7 @@
 
   /* Topbar */
   .topbar {
-    display: grid;
-    grid-template-columns: 40px 1fr;
-    align-items: center;
+    display: block;
     margin-bottom: 16px;
   }
   .back-btn {
@@ -192,6 +190,9 @@
     display: block;
     width: 100%;
     min-height: 60px;
+    text-align: center;
+    text-decoration: none;
+    line-height: 60px;
     background: var(--red);
     color: var(--white);
     border: none;
@@ -217,13 +218,13 @@
   .btn-outline {
     display: block;
     width: 100%;
-    min-height: 48px;
+    min-height: 60px;
     background: transparent;
     color: var(--red);
     border: 2px solid var(--red);
     border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 700;
     letter-spacing: 0.2px;
     cursor: pointer;
@@ -349,7 +350,17 @@
   }
   .pay-card .pc-label { font-size: 12.5px; color: var(--red-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
   .pay-card .pc-sub { font-size: 12px; color: rgba(0,0,0,0.6); }
-  #qrcode { display: flex; justify-content: center; padding: 6px; background: white; border-radius: 8px; }
+  #qrcode {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 220px;
+    height: 220px;
+    margin: 32px auto;
+    padding: 12px;
+    background: #fff;
+    border-radius: 8px;
+  }
   #qrcode img, #qrcode canvas { display: block; }
 
   .pay-btn {
@@ -456,9 +467,8 @@
 
 <main id="app">
 
-  <!-- Topbar (back btn + step progress) -->
+  <!-- Topbar (step progress only) -->
   <div class="topbar">
-    <button class="back-btn" id="back-btn" aria-label="Terug" hidden>←</button>
     <span class="progress-text" id="progress-text">Stap 1 van 6</span>
   </div>
 
@@ -480,9 +490,7 @@
 
     <!-- STEP 2: Postcode -->
     <section class="step" data-step="2">
-      <div class="step-eyebrow">Stap 2 — Bezorging</div>
       <h1 class="step-question">Wat is je postcode, <span data-name-slot>…</span>?</h1>
-      <p class="step-subtitle">Ellis & Melle bezorgen alleen in Haarlem 🚲</p>
       <div class="field">
         <input id="input-postcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters" placeholder="2011 AA" maxlength="7" spellcheck="false">
       </div>
@@ -492,9 +500,7 @@
 
     <!-- STEP 3: Huisnummer + adres lookup -->
     <section class="step" data-step="3">
-      <div class="step-eyebrow">Stap 3 — Adres</div>
       <h1 class="step-question">Welk huisnummer?</h1>
-      <p class="step-subtitle">We vullen je straat automatisch in.</p>
       <div class="row-2">
         <div class="field">
           <input id="input-huisnr" type="text" inputmode="numeric" autocomplete="address-line2" placeholder="Huisnummer" maxlength="6">
@@ -518,16 +524,12 @@
 
     <!-- STEP 4: Kanaal -->
     <section class="step" data-step="4">
-      <div class="step-eyebrow">Stap 4 — Updates</div>
       <h1 class="step-question">Hoe willen we je laten weten wanneer we bezorgen?</h1>
-      <p class="step-subtitle">Eén bericht zodra Ellis & Melle aan de deur staan.</p>
       <div class="kanaal-options">
         <button class="kanaal-card" data-kanaal="whatsapp" type="button">
-          <span class="ic">📱</span>
           <span><span class="label">WhatsApp</span><span class="sub">Snelste manier — bericht op je telefoon</span></span>
         </button>
         <button class="kanaal-card" data-kanaal="email" type="button">
-          <span class="ic">✉️</span>
           <span><span class="label">E-mail</span><span class="sub">Liever per mail? Ook prima.</span></span>
         </button>
       </div>
@@ -536,9 +538,7 @@
 
     <!-- STEP 5: Contact -->
     <section class="step" data-step="5">
-      <div class="step-eyebrow">Stap 5 — Contact</div>
       <h1 class="step-question">En je <span id="contact-noun">06-nummer</span>?</h1>
-      <p class="step-subtitle" id="contact-sub">Hier sturen we de bezorgupdate naar — verder niks.</p>
       <div class="field" id="field-tel" hidden>
         <input id="input-tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" maxlength="14">
       </div>
@@ -551,9 +551,7 @@
 
     <!-- STEP 6: Bevestig -->
     <section class="step" data-step="6">
-      <div class="step-eyebrow">Stap 6 — Bevestigen</div>
       <h1 class="step-question">Klopt dit, <span data-name-slot>…</span>?</h1>
-      <p class="step-subtitle">Eén pot ELLEMELLE, betaal je zo via Tikkie.</p>
       <div class="order-card" id="order-summary-content"></div>
       <label class="check-row">
         <input type="checkbox" id="confirm-checkbox">
@@ -563,41 +561,12 @@
       <button class="btn-primary" id="submit-btn" data-next>Plaats bestelling →</button>
     </section>
 
-    <!-- STEP 7: Success -->
+    <!-- STEP 7: Success — title + QR + pay button only -->
     <section class="step success" data-step="7">
-      <div class="success-emoji">🎉</div>
-      <h1 class="step-question">Yes <span id="success-name">…</span>!<br>Je staat op de lijst</h1>
-      <p class="success-meta" id="success-contact"></p>
-
-      <div class="order-card" style="margin-top:18px;">
-        <div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>
-        <div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>
-        <div class="order-line total"><span>Te betalen</span><span>€6,00</span></div>
-      </div>
-
-      <div class="pay-section">
-        <div class="pay-headline">Betaal nu via Tikkie</div>
-        <div class="pay-grid">
-          <div class="pay-card">
-            <div class="pc-label">📱 Eigen telefoon</div>
-            <div id="qrcode"></div>
-            <div class="pc-sub">Scan met je camera</div>
-          </div>
-          <div class="pay-card">
-            <div class="pc-label">↗ Deze telefoon</div>
-            <a href="#" class="pay-btn" id="tikkie-btn" target="_blank" rel="noopener">Open Tikkie →</a>
-            <div class="pc-sub">Of direct hier betalen</div>
-          </div>
-        </div>
-        <div class="pay-tip">
-          💡 <strong>Tip:</strong> vul je <strong>voornaam</strong> in bij Tikkie zodat we weten dat jij betaald hebt.
-        </div>
-        <div class="iban-line">
-          Liever overmaken? <code>NL00 INGB 0000 0000 00</code> t.n.v. Ellis & Melle o.v.v. je naam.
-        </div>
-      </div>
-
-      <button class="btn-primary" id="reset-btn" style="margin-top:28px;">Volgende klant →</button>
+      <h1 class="step-question">Bedankt!</h1>
+      <div id="qrcode"></div>
+      <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Zelf betalen</a>
+      <button id="reset-btn" type="button" hidden></button>
     </section>
 
   </div>
@@ -662,7 +631,7 @@
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   const stepEls = $$('.step');
   const progressEl = $('#progress-text');
-  const backBtn = $('#back-btn');
+  const backBtn = document.getElementById('back-btn') || { hidden: true, addEventListener: () => {} };
   const counterEl = $('#counter');
   const counterText = $('#counter-text');
 
@@ -777,7 +746,7 @@
           showError('Vul een geldige NL postcode in, bv. 2011 AA.'); return false;
         }
         if (!/^(20|21)/.test(raw)) {
-          showError('Sorry, Ellis & Melle bezorgen alleen in Haarlem 🚲'); return false;
+          showError('Sorry, Ellis & Melle bezorgen alleen in Haarlem'); return false;
         }
         formData.postcode = raw.slice(0,4) + ' ' + raw.slice(4);
         return true;
@@ -902,7 +871,7 @@
     const adres = (formData.straat || '(straat)') + ' ' + formData.huisnummer +
       (formData.toevoeging ? '-' + formData.toevoeging : '');
     const stad  = formData.postcode + ' ' + (formData.plaats || 'Haarlem');
-    const kIcon = formData.kanaal === 'whatsapp' ? '📱 WhatsApp' : '✉️ E-mail';
+    const kIcon = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
     const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
     $('#order-summary-content').innerHTML =
       '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
@@ -974,28 +943,24 @@
   }
 
   function prepareSuccessStep() {
-    $('#success-name').textContent = formData.voornaam;
-    const kanaalLabel = formData.kanaal === 'whatsapp' ? '📱 WhatsApp' : '✉️ e-mail';
-    const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
-    $('#success-contact').textContent = 'Updates komen via ' + kanaalLabel + ' naar ' + contact;
-
     const tikkies = (configCache && configCache.tikkieA && configCache.tikkieB)
       ? [configCache.tikkieA, configCache.tikkieB] : TIKKIE_FALLBACK;
     const tikkieUrl = tikkies[Math.floor(Math.random() * tikkies.length)];
-    $('#tikkie-btn').href = tikkieUrl;
+    const tBtn = document.getElementById('tikkie-btn');
+    if (tBtn) tBtn.href = tikkieUrl;
 
     const qrEl = $('#qrcode');
     qrEl.innerHTML = '';
     if (window.QRCode) {
       try {
         new QRCode(qrEl, {
-          text: tikkieUrl, width: 180, height: 180,
-          colorDark: '#8B1A0E', colorLight: '#FFFFFF',
+          text: tikkieUrl, width: 200, height: 200,
+          colorDark: '#000000', colorLight: '#FFFFFF',
           correctLevel: QRCode.CorrectLevel.M
         });
-      } catch (e) { qrEl.textContent = '(QR niet geladen — gebruik knop)'; }
+      } catch (e) { qrEl.textContent = 'QR niet geladen — gebruik knop'; }
     } else {
-      qrEl.textContent = '(QR laadt…)';
+      qrEl.textContent = 'QR laadt…';
     }
   }
 
@@ -1038,7 +1003,7 @@
   }
   function updateCounterPill() {
     if (counterCount >= counterMax) {
-      counterText.textContent = 'Help ons lanceren — uitverkocht 🙏';
+      counterText.textContent = 'Help ons lanceren — uitverkocht';
       counterEl.classList.add('full');
     } else {
       const left = counterMax - counterCount;
