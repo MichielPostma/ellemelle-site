@@ -42,7 +42,7 @@
 
   body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
 
-  .display, .step-question, .wordmark, h1, h2 {
+  .display, .wordmark, h2 {
     font-family: 'Bagel Fat One', 'Bowlby One', Impact, system-ui, sans-serif;
     font-weight: 400;
     letter-spacing: 0.2px;
@@ -51,7 +51,7 @@
   #app {
     max-width: 480px;
     margin: 0 auto;
-    padding: 14px 20px 0;
+    padding: 14px 20px 28px;
     position: relative;
   }
 
@@ -134,12 +134,14 @@
     margin-bottom: 12px;
   }
   .step-question {
-    color: var(--red-dark);
-    font-size: 30px;
-    line-height: 1.05;
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    color: var(--red);
+    font-size: 28px;
+    line-height: 1.15;
     margin-bottom: 14px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
+    text-transform: none;
+    letter-spacing: -0.2px;
+    font-weight: 700;
   }
   .step-subtitle {
     color: var(--black);
@@ -175,7 +177,7 @@
 
   .address-confirm {
     background: var(--white);
-    border-left: 4px solid var(--red);
+    border: 1px solid rgba(0,0,0,0.06);
     border-radius: var(--radius-md);
     padding: 14px 16px;
     font-size: 15px;
@@ -183,6 +185,8 @@
     margin: 14px 0;
     line-height: 1.4;
   }
+  .address-confirm.loading { color: rgba(0,0,0,0.55); font-style: italic; }
+  .address-confirm.notfound { color: var(--red-dark); }
   .address-confirm strong { display: block; font-size: 16px; margin-bottom: 2px; color: var(--black); }
   .address-confirm small { color: rgba(0,0,0,0.55); }
 
@@ -222,6 +226,26 @@
   }
   .btn-primary:not(:disabled):hover { transform: translateY(-1px); }
   .btn-primary:not(:disabled):active { transform: translateY(1px); }
+
+  .btn-outline {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    background: transparent;
+    color: var(--red);
+    border: 2px solid var(--red);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: background 140ms, color 140ms;
+  }
+  .btn-outline:hover { background: rgba(217,48,30,0.06); }
+  .btn-outline:active { background: rgba(217,48,30,0.12); }
+  .btn-outline[hidden] { display: none; }
 
   .btn-link {
     background: transparent;
@@ -431,7 +455,7 @@
 
 <!-- Top counter banner -->
 <div class="top-banner" id="counter">
-  <span id="counter-text">– / 25 plekken geclaimed</span>
+  <span id="counter-text">Help ons lanceren</span>
 </div>
 
 <main id="app">
@@ -584,6 +608,9 @@
 
   </div>
 
+  <!-- Optional: restart the signup -->
+  <button id="restart-btn" class="btn-outline" type="button" hidden>Start opnieuw</button>
+
 </main>
 
 <!-- Pot photo, edge-to-edge under the form -->
@@ -607,9 +634,34 @@
   };
   let currentStep = 1;
   let counterCount = 0;
-  let counterMax = 25;
+  let counterMax = 10;
   let configCache = null;
   let lastLookup = '';
+
+  // --- Persistent state (localStorage, 7-day TTL) -----------------------
+  const STATE_KEY = 'ellemelle_signup_state_v1';
+  const STATE_TTL = 7 * 24 * 60 * 60 * 1000;
+
+  function saveState() {
+    try {
+      const payload = { step: currentStep, data: { ...formData }, savedAt: Date.now() };
+      localStorage.setItem(STATE_KEY, JSON.stringify(payload));
+    } catch (e) {}
+  }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STATE_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || !obj.savedAt || (Date.now() - obj.savedAt) > STATE_TTL) {
+        localStorage.removeItem(STATE_KEY); return null;
+      }
+      return obj;
+    } catch (e) { return null; }
+  }
+  function clearState() {
+    try { localStorage.removeItem(STATE_KEY); } catch (e) {}
+  }
 
   // --- DOM refs ----------------------------------------------------------
   const $ = (sel, root) => (root || document).querySelector(sel);
@@ -632,6 +684,9 @@
       backBtn.hidden = (n === 1);
       document.body.classList.remove('on-success');
     }
+    // Restart button only appears from step 2 onward (and not on success)
+    const rb = document.getElementById('restart-btn');
+    if (rb) rb.hidden = (n <= 1 || n === 7);
     // focus first input
     setTimeout(() => {
       const active = $('.step.active');
@@ -655,6 +710,7 @@
     currentStep++;
     prepareStep(currentStep);
     showStep(currentStep);
+    saveState();
   }
 
   function back() {
@@ -662,6 +718,7 @@
       currentStep--;
       hideError();
       showStep(currentStep);
+      saveState();
     }
   }
 
@@ -768,6 +825,7 @@
   }
 
   // --- Address lookup ----------------------------------------------------
+  let lookupInFlight = 0;
   async function lookupAddress() {
     const pc = formData.postcode.replace(/\s+/g, '');
     const nr = (formData.huisnummer || $('#input-huisnr').value || '').replace(/\D/g, '');
@@ -775,24 +833,52 @@
     const key = pc + '-' + nr;
     if (key === lastLookup) return;
     lastLookup = key;
+
+    const ac = $('#address-confirm');
+    const ma = $('#manual-address');
+    // Loading state — show a friendly waiting message; hide manual
+    ac.hidden = false;
+    ac.classList.remove('notfound');
+    ac.classList.add('loading');
+    ac.textContent = 'Adres ophalen…';
+    ma.hidden = true;
+
+    const myCall = ++lookupInFlight;
     try {
       const r = await fetch('/api/postcode?postcode=' + encodeURIComponent(pc) + '&number=' + encodeURIComponent(nr));
-      if (!r.ok) throw new Error('lookup ' + r.status);
-      const data = await r.json();
+      // If a newer call started, ignore stale response
+      if (myCall !== lookupInFlight) return;
+      if (!r.ok && r.status !== 404) {
+        // Network/server error — keep address-confirm hidden, don't accuse the user
+        ac.hidden = true;
+        ac.classList.remove('loading');
+        ma.hidden = true;
+        lastLookup = ''; // allow retry
+        return;
+      }
+      const data = r.ok ? await r.json() : null;
+      ac.classList.remove('loading');
       if (data && data.street && data.city) {
         formData.straat = data.street;
         formData.plaats = data.city;
-        const ac = $('#address-confirm');
         ac.innerHTML = '<strong>' + escapeHtml(data.street) + ' ' + escapeHtml(formData.huisnummer) +
           (formData.toevoeging ? '-' + escapeHtml(formData.toevoeging) : '') +
           '</strong><small>' + escapeHtml(formData.postcode) + ' ' + escapeHtml(data.city) + '</small>';
         ac.hidden = false;
-        $('#manual-address').hidden = true;
+        ma.hidden = true;
+        saveState();
       } else {
-        $('#manual-address').hidden = false;
+        ac.classList.add('notfound');
+        ac.textContent = 'Adres niet gevonden — vul handmatig in.';
+        ma.hidden = false;
       }
     } catch (e) {
-      $('#manual-address').hidden = false;
+      if (myCall !== lookupInFlight) return;
+      // Network error — keep silent, allow retry
+      ac.hidden = true;
+      ac.classList.remove('loading');
+      ma.hidden = true;
+      lastLookup = '';
     }
   }
 
@@ -870,6 +956,7 @@
 
     // Move to success
     currentStep = 7;
+    clearState();
     prepareSuccessStep();
     showStep(7);
     setTimeout(burstConfetti, 200);
@@ -903,6 +990,7 @@
 
   // --- Reset -------------------------------------------------------------
   function resetForm() {
+    clearState();
     Object.keys(formData).forEach(k => formData[k] = '');
     $$('input').forEach(i => {
       if (i.type === 'hidden') return;
@@ -911,9 +999,12 @@
     });
     $('#address-confirm').hidden = true;
     $('#address-confirm').innerHTML = '';
+    $('#address-confirm').classList.remove('loading','notfound');
     $('#manual-address').hidden = true;
     $('#submit-btn').disabled = false;
     $('#submit-btn').textContent = 'Plaats bestelling →';
+    $$('.kanaal-card').forEach(c => c.style.borderColor = '');
+    const cb = document.getElementById('confirm-checkbox'); if (cb) cb.checked = false;
     lastLookup = '';
     hideError();
     currentStep = 1;
@@ -928,7 +1019,7 @@
       if (!r.ok) throw new Error('count');
       const data = await r.json();
       counterCount = parseInt(data.count, 10) || 0;
-      counterMax = parseInt(data.max, 10) || 25;
+      counterMax = parseInt(data.max, 10) || 10;
     } catch (e) {
       // keep last known
     }
@@ -936,11 +1027,11 @@
   }
   function updateCounterPill() {
     if (counterCount >= counterMax) {
-      counterText.textContent = 'Uitverkocht — alle ' + counterMax + ' plekken vol 🙏';
+      counterText.textContent = 'Help ons lanceren — uitverkocht 🙏';
       counterEl.classList.add('full');
     } else {
-      var left = counterMax - counterCount;
-      counterText.textContent = counterCount + ' van ' + counterMax + ' geclaimed — nog ' + left + ' plekken';
+      const left = counterMax - counterCount;
+      counterText.textContent = 'Help ons lanceren — nog ' + left + (left === 1 ? ' plek' : ' plekken');
       counterEl.classList.remove('full');
     }
   }
@@ -988,6 +1079,7 @@
         formData.kanaal = card.dataset.kanaal;
         $$('.kanaal-card').forEach(c => c.style.borderColor = '');
         card.style.borderColor = 'var(--red)';
+        saveState();
         // Auto-advance
         setTimeout(next, 140);
       });
@@ -1012,7 +1104,7 @@
     $('#input-huisnr').addEventListener('blur', trigger);
     $('#input-huisnr').addEventListener('input', () => {
       clearTimeout(lookupTO);
-      lookupTO = setTimeout(trigger, 600);
+      lookupTO = setTimeout(trigger, 800);
     });
 
     // Enter to advance
@@ -1024,6 +1116,67 @@
         }
       });
     });
+
+    // Save state on every input blur
+    const FIELD_MAP = {
+      'input-voornaam':'voornaam', 'input-postcode':'postcode',
+      'input-huisnr':'huisnummer', 'input-toev':'toevoeging',
+      'input-straat':'straat', 'input-plaats':'plaats',
+      'input-tel':'telefoon', 'input-email':'email'
+    };
+    Object.entries(FIELD_MAP).forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('blur', () => {
+        let v = (el.value || '').trim();
+        if (key === 'postcode') v = v.replace(/\s+/g,'').toUpperCase();
+        if (key === 'huisnummer' || key === 'toevoeging') v = v.slice(0, 8);
+        formData[key] = v;
+        saveState();
+      });
+    });
+    // Kanaal buttons already set formData.kanaal in their click handler — save then
+
+    // Restart button → clear localStorage + reset
+    const restartBtn = document.getElementById('restart-btn');
+    if (restartBtn) {
+      restartBtn.addEventListener('click', () => {
+        if (!confirm('Weet je zeker dat je opnieuw wil beginnen? Je ingevulde gegevens worden gewist.')) return;
+        clearState();
+        resetForm();
+      });
+    }
+
+    // Restore saved state if any
+    const saved = loadState();
+    if (saved && saved.data && saved.step >= 1 && saved.step <= TOTAL_STEPS) {
+      Object.assign(formData, saved.data);
+      // Hydrate inputs
+      Object.entries(FIELD_MAP).forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el && formData[key]) el.value = formData[key];
+      });
+      // Hydrate postcode formatted
+      const pcEl = document.getElementById('input-postcode');
+      if (pcEl && formData.postcode) {
+        const v = formData.postcode.replace(/\s+/g,'').toUpperCase();
+        pcEl.value = v.length > 4 ? v.slice(0,4) + ' ' + v.slice(4) : v;
+      }
+      // Hydrate kanaal selection (highlight matching kanaal-card)
+      if (formData.kanaal) {
+        $$('.kanaal-card').forEach(c => {
+          c.style.borderColor = (c.dataset.kanaal === formData.kanaal) ? 'var(--red)' : '';
+        });
+      }
+      // Jump to saved step (prepare + show)
+      currentStep = saved.step;
+      prepareStep(currentStep);
+      showStep(currentStep);
+      // If on the address step, trigger a lookup so the preview re-populates
+      if (currentStep === 3 && formData.postcode && formData.huisnummer) {
+        setTimeout(() => { lastLookup = ''; lookupAddress(); }, 200);
+      }
+    }
 
     // Refresh counter every 30s
     setInterval(loadCounter, 30000);
