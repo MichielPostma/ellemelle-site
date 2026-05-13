@@ -631,7 +631,7 @@
   };
   let currentStep = 0;
   let counterCount = 0;
-  let counterMax = 10;
+  let counterMax = 15;
   let configCache = null;
   let lastLookup = '';
 
@@ -1060,7 +1060,7 @@
       if (!r.ok) throw new Error('count');
       const data = await r.json();
       counterCount = parseInt(data.count, 10) || 0;
-      counterMax = parseInt(data.max, 10) || 10;
+      counterMax = parseInt(data.max, 10) || 15;
     } catch (e) {
       // keep last known
     }
