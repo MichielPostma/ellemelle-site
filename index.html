@@ -534,6 +534,7 @@
         </button>
       </div>
       <div class="error" data-step-error></div>
+      <button class="btn-primary" id="kanaal-next" data-next disabled>Volgende →</button>
     </section>
 
     <!-- STEP 5: Contact -->
@@ -712,9 +713,6 @@
       $('#field-tel').hidden = !isWA;
       $('#field-email').hidden = isWA;
       $('#contact-noun').textContent = isWA ? '06-nummer' : 'e-mailadres';
-      $('#contact-sub').textContent = isWA
-        ? 'Hier sturen we de bezorgupdate via WhatsApp naar.'
-        : 'Hier sturen we de bezorgupdate per e-mail naar.';
     }
     if (n === 6) renderOrderSummary();
   }
@@ -980,6 +978,8 @@
     $('#submit-btn').disabled = false;
     $('#submit-btn').textContent = 'Plaats bestelling →';
     $$('.kanaal-card').forEach(c => c.style.borderColor = '');
+    const kbReset = document.getElementById('kanaal-next');
+    if (kbReset) kbReset.disabled = true;
     const cb = document.getElementById('confirm-checkbox'); if (cb) cb.checked = false;
     lastLookup = '';
     hideError();
@@ -1071,9 +1071,10 @@
         formData.kanaal = card.dataset.kanaal;
         $$('.kanaal-card').forEach(c => c.style.borderColor = '');
         card.style.borderColor = 'var(--red)';
+        const kb = document.getElementById('kanaal-next');
+        if (kb) kb.disabled = false;
+        hideError();
         saveState();
-        // Auto-advance
-        setTimeout(next, 140);
       });
     });
 
@@ -1155,11 +1156,13 @@
         const v = formData.postcode.replace(/\s+/g,'').toUpperCase();
         pcEl.value = v.length > 4 ? v.slice(0,4) + ' ' + v.slice(4) : v;
       }
-      // Hydrate kanaal selection (highlight matching kanaal-card)
+      // Hydrate kanaal selection (highlight matching kanaal-card + enable button)
       if (formData.kanaal) {
         $$('.kanaal-card').forEach(c => {
           c.style.borderColor = (c.dataset.kanaal === formData.kanaal) ? 'var(--red)' : '';
         });
+        const kb = document.getElementById('kanaal-next');
+        if (kb) kb.disabled = false;
       }
       // Jump to saved step (prepare + show)
       currentStep = saved.step;
