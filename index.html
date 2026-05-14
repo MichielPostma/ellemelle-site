@@ -661,7 +661,7 @@
       <div class="order-card" id="order-summary-content"></div>
       <label class="check-row">
         <input type="checkbox" id="confirm-checkbox">
-        <span>Ja, ik wil 1 pot ELLEMELLE chocopasta voor €6 (€5 + €1 statiegeld), bezorgd binnen 4 weken in Haarlem.</span>
+        <span>Ja, ik wil 1 pot Ellemelle chocopasta, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
       </label>
       <div class="error" data-step-error></div>
       <button class="btn-primary" id="submit-btn" data-next>Doe betaling →</button>
@@ -700,7 +700,7 @@
   // Geocoded via PDOK BAG: POINT(4.65146505 52.37901689)
   const BASE_LAT = 52.37901689;
   const BASE_LNG = 4.65146505;
-  const MAX_KM = 1.2;  // ~15 min lopen aan ±80 m/min
+  const MAX_KM = 0.8;  // ~10 min lopen aan ±80 m/min
 
   function haversineKm(lat1, lng1, lat2, lng2) {
     const R = 6371;
