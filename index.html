@@ -183,6 +183,30 @@
   }
   .address-confirm.loading { color: rgba(0,0,0,0.55); font-style: italic; }
   .address-confirm.notfound { color: var(--red-dark); }
+
+  /* Postcode error card — mirrors .address-confirm styling */
+  .postcode-card {
+    background: var(--white);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    margin: 14px 0;
+    line-height: 1.45;
+    box-shadow: var(--shadow-card);
+  }
+  .postcode-card strong {
+    display: block;
+    color: var(--black);
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  .postcode-card span {
+    display: block;
+    color: #666;
+    font-size: 14px;
+  }
+  .postcode-card[hidden] { display: none; }
   .address-confirm strong { display: block; font-size: 16px; margin-bottom: 2px; color: var(--black); }
   .address-confirm small { color: rgba(0,0,0,0.55); }
 
@@ -597,7 +621,11 @@
     <section class="step" data-step="2">
       <h1 class="step-question">Wat is je postcode, <span data-name-slot>…</span>?</h1>
       <div class="field">
-        <input id="input-postcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters" placeholder="2011 AA" maxlength="7" spellcheck="false">
+        <input id="input-postcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters" placeholder="2032 VJ" maxlength="7" spellcheck="false">
+      </div>
+      <div class="postcode-card" id="postcode-card" hidden>
+        <strong>Ah, jammer zeg!</strong>
+        <span>We kunnen helaas nog niet bij jou bezorgen, op dit moment richten we ons op de Potgieterbuurt in Haarlem.</span>
       </div>
       <div class="error" data-step-error></div>
       <button class="btn-primary" data-next>Volgende →</button>
@@ -699,7 +727,7 @@
   // --- Delivery area: postcode whitelist (4-digit prefixes) -------------
   // Pas deze lijst aan om bezorggebied uit te breiden of in te krimpen.
   // Huidig: Haarlem-Noord rond Busken Huëtstraat.
-  const ALLOWED_POSTCODES = ['2032', '2024', '2033', '2026'];
+  const ALLOWED_POSTCODES = ['2032'];
 
   // --- Config & state ----------------------------------------------------
   const TIKKIE_FALLBACK = ['https://tikkie.example.com/A', 'https://tikkie.example.com/B'];
@@ -857,7 +885,10 @@
         }
         const prefix = raw.slice(0,4);
         if (!ALLOWED_POSTCODES.includes(prefix)) {
-          showError('We kunnen helaas (nog) niet bij jou bezorgen. Bekijk onze launch-gebied in Haarlem-Noord.');
+          const card = document.getElementById('postcode-card');
+          if (card) card.hidden = false;
+          const btn = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
+          if (btn) btn.disabled = true;
           return false;
         }
         formData.postcode = raw.slice(0,4) + ' ' + raw.slice(4);
@@ -1128,6 +1159,8 @@
     if (nb3) nb3.disabled = false;
     const nb2 = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
     if (nb2) nb2.disabled = false;
+    const pCard = document.getElementById('postcode-card');
+    if (pCard) pCard.hidden = true;
     $$('.kanaal-card').forEach(c => c.style.borderColor = '');
     const kbReset = document.getElementById('kanaal-next');
     if (kbReset) kbReset.disabled = true;
@@ -1233,18 +1266,21 @@
     // Postcode autoformat (4 digits + 2 letters) + live whitelist validation
     const pc = $('#input-postcode');
     const pcNextBtn = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
+    const pcCard = document.getElementById('postcode-card');
     function validatePostcodeLive() {
       const raw = pc.value.replace(/\s+/g, '').toUpperCase();
       // Only flag once user has typed at least the 4-digit prefix
       if (raw.length >= 4) {
         const prefix = raw.slice(0,4);
         if (!ALLOWED_POSTCODES.includes(prefix)) {
-          showError('We kunnen helaas (nog) niet bij jou bezorgen. Bekijk onze launch-gebied in Haarlem-Noord.');
+          if (pcCard) pcCard.hidden = false;
           if (pcNextBtn) pcNextBtn.disabled = true;
+          hideError();
           return;
         }
       }
-      // Cleared error + re-enable button on any valid prefix or short input
+      // Hide card + re-enable button on any valid prefix or short input
+      if (pcCard) pcCard.hidden = true;
       hideError();
       if (pcNextBtn) pcNextBtn.disabled = false;
     }
