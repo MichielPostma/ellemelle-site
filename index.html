@@ -560,12 +560,26 @@
   body.on-intro .product-hero:hover { opacity: 0.92; }
   body.on-intro .product-hero:active { opacity: 0.85; }
   body.on-intro .product-img {
-    /* 60% groter dan op overige stappen, vertically centered via flex parent */
+    /* 60% groter dan op overige stappen, vertically centered via flex parent + same burst wiggle */
     width: 100%;
     max-width: 100%;
     height: auto;
     transform: scale(1.6);
     transform-origin: center center;
+    animation: intro-pot-wiggle 4s ease-in-out infinite;
+  }
+  @keyframes intro-pot-wiggle {
+    /* Two quick shakes (0–20%, ~0.8s), then long pause back at rest (20–100%, ~3.2s) — keeps scale(1.6) */
+    0%   { transform: scale(1.6) rotate(0deg); }
+    4%   { transform: scale(1.6) rotate(-4deg); }
+    8%   { transform: scale(1.6) rotate(4deg); }
+    12%  { transform: scale(1.6) rotate(-3deg); }
+    16%  { transform: scale(1.6) rotate(3deg); }
+    20%  { transform: scale(1.6) rotate(0deg); }
+    100% { transform: scale(1.6) rotate(0deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body.on-intro .product-img { animation: none; }
   }
 
   /* Success: keep product hero fully visible (no dimming) */
@@ -599,7 +613,7 @@
 
 <!-- Top counter banner -->
 <div class="top-banner" id="counter">
-  <span id="counter-text">Help ons lanceren — 0/10 bestellingen</span>
+  <span id="counter-text">Crowdfunding gezonde chocopasta — 0/10 bestellingen</span>
 </div>
 
 <main id="app">
@@ -1195,10 +1209,10 @@
   }
   function updateCounterPill() {
     if (counterCount >= counterMax) {
-      counterText.textContent = 'Help ons lanceren — ' + counterMax + '/' + counterMax + ' uitverkocht';
+      counterText.textContent = 'Crowdfunding gezonde chocopasta — ' + counterMax + '/' + counterMax + ' uitverkocht';
       counterEl.classList.add('full');
     } else {
-      counterText.textContent = 'Help ons lanceren — ' + counterCount + '/' + counterMax + ' bestellingen';
+      counterText.textContent = 'Crowdfunding gezonde chocopasta — ' + counterCount + '/' + counterMax + ' bestellingen';
       counterEl.classList.remove('full');
     }
   }
