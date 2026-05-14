@@ -269,7 +269,7 @@
     cursor: pointer;
     font-size: 17px;
     font-weight: 700;
-    color: var(--red-dark);
+    color: var(--black);
     font-family: inherit;
     text-align: left;
     box-shadow: var(--shadow-card);
@@ -279,7 +279,7 @@
   .kanaal-card:hover { border-color: var(--red); transform: translateY(-1px); }
   .kanaal-card .ic { font-size: 30px; line-height: 1; }
   .kanaal-card .label { font-size: 18px; }
-  .kanaal-card .sub { font-size: 12px; opacity: 0.6; font-weight: 500; margin-top: 2px; display: block; }
+  .kanaal-card .sub { font-size: 12px; color: #666; opacity: 1; font-weight: 500; margin-top: 2px; display: block; }
 
   /* Order summary */
   .order-card {
@@ -399,15 +399,16 @@
     padding-top: 8px;
     margin-top: 6px;
     font-weight: 700;
-    color: var(--red-dark);
+    color: var(--black);
   }
   .order-recap .or-meta {
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px dashed var(--cream-dark);
-    color: rgba(0,0,0,0.55);
+    color: var(--black);
     font-size: 12px;
   }
+  .order-recap .or-meta strong { color: var(--black); }
 
   .pay-btn {
     display: flex; align-items: center; justify-content: center;
@@ -602,7 +603,7 @@
 
     <!-- STEP 4: Kanaal -->
     <section class="step" data-step="4">
-      <h1 class="step-question">Hoe willen we je laten weten wanneer we bezorgen?</h1>
+      <h1 class="step-question">Hoe kunnen we je laten weten wanneer je bestelling komt?</h1>
       <div class="kanaal-options">
         <button class="kanaal-card" data-kanaal="whatsapp" type="button">
           <span><span class="label">WhatsApp</span><span class="sub">Snelste manier — bericht op je telefoon</span></span>
@@ -637,7 +638,7 @@
         <span>Ja, ik wil 1 pot ELLEMELLE chocopasta voor €6 (€5 + €1 statiegeld), bezorgd binnen 4 weken in Haarlem.</span>
       </label>
       <div class="error" data-step-error></div>
-      <button class="btn-primary" id="submit-btn" data-next>Plaats bestelling →</button>
+      <button class="btn-primary" id="submit-btn" data-next>Doe betaling</button>
     </section>
 
     <!-- STEP 7: Success — dynamic title + QR + iDeal CTA + order recap -->
@@ -1002,7 +1003,7 @@
 
     if (!ok) {
       btn.disabled = false;
-      btn.textContent = 'Plaats bestelling →';
+      btn.textContent = 'Doe betaling';
       showError('Er ging iets mis bij opslaan. Probeer het nog eens.');
       return;
     }
@@ -1087,7 +1088,7 @@
     $('#address-confirm').classList.remove('loading','notfound');
     $('#manual-address').hidden = true;
     $('#submit-btn').disabled = false;
-    $('#submit-btn').textContent = 'Plaats bestelling →';
+    $('#submit-btn').textContent = 'Doe betaling';
     $$('.kanaal-card').forEach(c => c.style.borderColor = '');
     const kbReset = document.getElementById('kanaal-next');
     if (kbReset) kbReset.disabled = true;
