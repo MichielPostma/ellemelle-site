@@ -5,7 +5,7 @@
 exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=86400',
+    'Cache-Control': 'public, max-age=300',
     'Access-Control-Allow-Origin': '*',
   };
 

@@ -952,7 +952,7 @@
 
     const myCall = ++lookupInFlight;
     try {
-      const r = await fetch('/api/postcode?postcode=' + encodeURIComponent(pc) + '&number=' + encodeURIComponent(nr));
+      const r = await fetch('/api/postcode?postcode=' + encodeURIComponent(pc) + '&number=' + encodeURIComponent(nr) + '&v=2', { cache: 'no-store' });
       // If a newer call started, ignore stale response
       if (myCall !== lookupInFlight) return;
       if (!r.ok && r.status !== 404) {
