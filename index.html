@@ -374,10 +374,11 @@
   }
   #qrcode img, #qrcode canvas { display: block; }
 
-  /* Order recap on success page — subtle */
+  /* Order recap on success page — subtle, full content-column width (matches button) */
   .order-recap {
-    max-width: 320px;
-    margin: 24px auto 0;
+    width: 100%;
+    max-width: none;
+    margin: 24px 0 0;
     padding: 14px 16px;
     border: 1px solid rgba(0,0,0,0.06);
     border-radius: var(--radius-md);
@@ -386,6 +387,7 @@
     line-height: 1.5;
     color: rgba(0,0,0,0.7);
     text-align: left;
+    box-sizing: border-box;
   }
   .order-recap .or-line {
     display: flex;
@@ -471,6 +473,16 @@
     flex-direction: column;
     min-height: 100dvh;
   }
+  /* Success: pot photo on top, then form content (using flex order) */
+  body.on-success {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+  body.on-success .top-banner { order: 1; }
+  body.on-success .product-hero { order: 2; padding-bottom: 0; }
+  body.on-success #app { order: 3; padding-top: 28px; }
+
   body.on-intro .top-banner { flex: 0 0 auto; }
   body.on-intro #app .topbar,
   body.on-intro #app .steps,
@@ -632,7 +644,7 @@
     <section class="step success" data-step="7">
       <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉</h1>
       <div id="qrcode"></div>
-      <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Betaal met iDeal</a>
+      <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Betaal met Tikkie</a>
       <div class="order-recap" id="success-recap"></div>
       <button id="reset-btn" type="button" hidden></button>
     </section>
@@ -724,9 +736,9 @@
       backBtn.hidden = (n <= 1);
       document.body.classList.remove('on-success');
     }
-    // Restart button only appears from step 2 onward (and not on success or intro)
+    // Restart button appears from step 2 onward, also on the success step
     const rb = document.getElementById('restart-btn');
-    if (rb) rb.hidden = (n <= 1 || n === 7);
+    if (rb) rb.hidden = (n <= 1);
     // focus first input
     setTimeout(() => {
       const active = $('.step.active');
