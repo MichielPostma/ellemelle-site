@@ -9,7 +9,7 @@ exports.handler = async () => {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-store',
   };
-  const max = parseInt(process.env.MAX_SIGNUPS || '10', 10);
+  const max = parseInt(process.env.MAX_SIGNUPS || '15', 10);
 
   // --- 1. Supabase ---
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
