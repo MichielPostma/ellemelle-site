@@ -548,13 +548,13 @@
   body.on-intro #app #restart-btn { display: none; }
   body.on-intro #app { flex: 0 0 auto; height: 0; padding: 0; min-height: 0; overflow: hidden; }
   body.on-intro .product-hero {
+    position: relative;
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 28px;
-    padding: 12px 20px;
+    padding: 12px 20px 104px;   /* bottom reserved for absolutely positioned CTA */
     cursor: pointer;
     transition: opacity 160ms ease;
     overflow: hidden;
@@ -562,39 +562,46 @@
   body.on-intro .product-hero:hover { opacity: 0.92; }
   body.on-intro .product-hero:active { opacity: 0.85; }
 
-  /* Intro CTA button (only visible on step 0) */
+  /* Intro CTA button (only visible on step 0) — absolute, so scaled pot can't push it off */
   .intro-cta { display: none; }
   body.on-intro .intro-cta {
     display: block;
-    width: 100%;
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    width: calc(100% - 40px);
     max-width: 440px;
-    margin: 0;
     cursor: pointer;
+    z-index: 2;
   }
-  /* Cancel hover-dim on the hero when hovering specifically the CTA */
   body.on-intro .product-hero:has(.intro-cta:hover) { opacity: 1; }
   body.on-intro .product-img {
-    /* Constrained by viewport so the CTA below stays visible; flex parent centers vertically */
+    /* 45% groter via transform; max-height begrenst layout-box zodat zelfs op kleinere viewports
+       de scaled visual nooit door de absolute CTA-positie heen prikt */
     width: auto;
     max-width: 100%;
     height: auto;
-    max-height: calc(100dvh - 38px - 60px - 80px); /* banner + button + breathing */
+    max-height: 56vh;
     object-fit: contain;
+    transform: scale(1.45);
     transform-origin: center center;
     animation: intro-pot-wiggle 4s ease-in-out infinite;
   }
   @keyframes intro-pot-wiggle {
-    /* Two quick shakes (0–20%, ~0.8s), then long pause back at rest */
-    0%   { transform: rotate(0deg); }
-    4%   { transform: rotate(-4deg); }
-    8%   { transform: rotate(4deg); }
-    12%  { transform: rotate(-3deg); }
-    16%  { transform: rotate(3deg); }
-    20%  { transform: rotate(0deg); }
-    100% { transform: rotate(0deg); }
+    /* Two quick shakes (0–20%, ~0.8s), then long pause back at rest — keep scale(1.45) */
+    0%   { transform: scale(1.45) rotate(0deg); }
+    4%   { transform: scale(1.45) rotate(-4deg); }
+    8%   { transform: scale(1.45) rotate(4deg); }
+    12%  { transform: scale(1.45) rotate(-3deg); }
+    16%  { transform: scale(1.45) rotate(3deg); }
+    20%  { transform: scale(1.45) rotate(0deg); }
+    100% { transform: scale(1.45) rotate(0deg); }
   }
   @media (prefers-reduced-motion: reduce) {
-    body.on-intro .product-img { animation: none; }
+    body.on-intro .product-img { animation: none; transform: scale(1.45); }
   }
 
   /* Success: keep product hero fully visible (no dimming) */
