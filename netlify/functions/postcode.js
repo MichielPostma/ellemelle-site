@@ -22,11 +22,11 @@ exports.handler = async (event) => {
       };
     }
 
-    // PDOK Locatieserver Free search
+    // PDOK Locatieserver Free search (incl. centroide_ll for lat/lng)
     const q = encodeURIComponent(`postcode:${postcode} AND huisnummer:${number}`);
     const url =
       `https://api.pdok.nl/bzk/locatieserver/search/v3_1/free` +
-      `?q=${q}&fl=woonplaatsnaam,straatnaam,huisnummer,postcode&rows=1&fq=type:adres`;
+      `?q=${q}&fl=woonplaatsnaam,straatnaam,huisnummer,postcode,centroide_ll&rows=1&fq=type:adres`;
 
     const res = await fetch(url, {
       headers: { 'User-Agent': 'ELLEMELLE-site/1.0 (ellis-melle@example.nl)' },
@@ -37,6 +37,11 @@ exports.handler = async (event) => {
     if (!doc) {
       return { statusCode: 404, headers, body: JSON.stringify({ error: 'not found' }) };
     }
+    // Parse centroide_ll "POINT(lng lat)"
+    let lat = null, lng = null;
+    const m = /POINT\(([-\d.]+)\s+([-\d.]+)\)/.exec(String(doc.centroide_ll || ''));
+    if (m) { lng = parseFloat(m[1]); lat = parseFloat(m[2]); }
+
     return {
       statusCode: 200,
       headers,
@@ -45,6 +50,7 @@ exports.handler = async (event) => {
         city: doc.woonplaatsnaam || '',
         postcode: doc.postcode || postcode,
         number: doc.huisnummer || number,
+        lat, lng,
       }),
     };
   } catch (e) {

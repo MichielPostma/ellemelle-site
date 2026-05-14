@@ -696,6 +696,22 @@
 (function(){
   'use strict';
 
+  // --- Delivery area (15-min walk from Busken Huëtstraat 11, Haarlem) ---
+  // Geocoded via PDOK BAG: POINT(4.65146505 52.37901689)
+  const BASE_LAT = 52.37901689;
+  const BASE_LNG = 4.65146505;
+  const MAX_KM = 1.2;  // ~15 min lopen aan ±80 m/min
+
+  function haversineKm(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
   // --- Config & state ----------------------------------------------------
   const TIKKIE_FALLBACK = ['https://tikkie.example.com/A', 'https://tikkie.example.com/B'];
   const TOTAL_STEPS = 6;
@@ -871,9 +887,14 @@
           // Try one final lookup synchronously
           showError('Even wachten — we zoeken je straat op…');
           lookupAddress().then(() => {
-            if (formData.straat) { hideError(); next(); }
+            if (formData.straat && deliveryOk) { hideError(); next(); }
+            else if (!deliveryOk) { showError('Je woont net buiten ons launch-bezorggebied.'); }
             else { showError('Kon adres niet vinden. Vul handmatig in.'); $('#manual-address').hidden = false; $('#input-straat').focus(); }
           });
+          return false;
+        }
+        if (!deliveryOk) {
+          showError('Je woont net buiten ons launch-bezorggebied.');
           return false;
         }
         return true;
@@ -911,6 +932,7 @@
 
   // --- Address lookup ----------------------------------------------------
   let lookupInFlight = 0;
+  let deliveryOk = true;  // becomes false when address is outside MAX_KM
   async function lookupAddress() {
     const pc = formData.postcode.replace(/\s+/g, '');
     const nr = (formData.huisnummer || $('#input-huisnr').value || '').replace(/\D/g, '');
@@ -946,16 +968,41 @@
       if (data && data.street && data.city) {
         formData.straat = data.street;
         formData.plaats = data.city;
-        ac.innerHTML = '<strong>' + escapeHtml(data.street) + ' ' + escapeHtml(formData.huisnummer) +
-          (formData.toevoeging ? '-' + escapeHtml(formData.toevoeging) : '') +
-          '</strong><small>' + escapeHtml(formData.postcode) + ' ' + escapeHtml(data.city) + '</small>';
-        ac.hidden = false;
-        ma.hidden = true;
+
+        // Delivery-area check (1.2 km haversine from Busken Huëtstraat 11)
+        deliveryOk = true;
+        let outsideArea = false;
+        if (typeof data.lat === 'number' && typeof data.lng === 'number') {
+          const km = haversineKm(BASE_LAT, BASE_LNG, data.lat, data.lng);
+          if (km > MAX_KM) outsideArea = true;
+        }
+
+        if (outsideArea) {
+          deliveryOk = false;
+          ac.classList.add('notfound');
+          ac.innerHTML = 'We kunnen helaas (nog) niet bij jou bezorgen — je woont net buiten ons launch-gebied. We laten je weten als we verder bezorgen!';
+          ac.hidden = false;
+          ma.hidden = true;
+          // Disable Volgende-button on this step
+          const nb = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
+          if (nb) nb.disabled = true;
+        } else {
+          ac.innerHTML = '<strong>' + escapeHtml(data.street) + ' ' + escapeHtml(formData.huisnummer) +
+            (formData.toevoeging ? '-' + escapeHtml(formData.toevoeging) : '') +
+            '</strong><small>' + escapeHtml(formData.postcode) + ' ' + escapeHtml(data.city) + '</small>';
+          ac.hidden = false;
+          ma.hidden = true;
+          const nb = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
+          if (nb) nb.disabled = false;
+        }
         saveState();
       } else {
         ac.classList.add('notfound');
         ac.textContent = 'Adres niet gevonden — vul handmatig in.';
         ma.hidden = false;
+        deliveryOk = true; // manual path — let user proceed; if they're outside it's caught by validateStep below
+        const nb = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
+        if (nb) nb.disabled = false;
       }
     } catch (e) {
       if (myCall !== lookupInFlight) return;
@@ -1116,6 +1163,9 @@
     $('#manual-address').hidden = true;
     $('#submit-btn').disabled = false;
     $('#submit-btn').textContent = 'Doe betaling →';
+    deliveryOk = true;
+    const nb3 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
+    if (nb3) nb3.disabled = false;
     $$('.kanaal-card').forEach(c => c.style.borderColor = '');
     const kbReset = document.getElementById('kanaal-next');
     if (kbReset) kbReset.disabled = true;
@@ -1235,6 +1285,10 @@
     $('#input-huisnr').addEventListener('blur', trigger);
     $('#input-huisnr').addEventListener('input', () => {
       clearTimeout(lookupTO);
+      // Reset blocking state — let lookup re-evaluate
+      deliveryOk = true;
+      const nbX = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
+      if (nbX) nbX.disabled = false;
       lookupTO = setTimeout(trigger, 800);
     });
 
