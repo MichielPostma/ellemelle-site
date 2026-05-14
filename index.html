@@ -574,23 +574,24 @@
   /* Cancel hover-dim on the hero when hovering specifically the CTA */
   body.on-intro .product-hero:has(.intro-cta:hover) { opacity: 1; }
   body.on-intro .product-img {
-    /* 60% groter dan op overige stappen, vertically centered via flex parent + same burst wiggle */
-    width: 100%;
+    /* Constrained by viewport so the CTA below stays visible; flex parent centers vertically */
+    width: auto;
     max-width: 100%;
     height: auto;
-    transform: scale(1.6);
+    max-height: calc(100dvh - 38px - 60px - 80px); /* banner + button + breathing */
+    object-fit: contain;
     transform-origin: center center;
     animation: intro-pot-wiggle 4s ease-in-out infinite;
   }
   @keyframes intro-pot-wiggle {
-    /* Two quick shakes (0–20%, ~0.8s), then long pause back at rest (20–100%, ~3.2s) — keeps scale(1.6) */
-    0%   { transform: scale(1.6) rotate(0deg); }
-    4%   { transform: scale(1.6) rotate(-4deg); }
-    8%   { transform: scale(1.6) rotate(4deg); }
-    12%  { transform: scale(1.6) rotate(-3deg); }
-    16%  { transform: scale(1.6) rotate(3deg); }
-    20%  { transform: scale(1.6) rotate(0deg); }
-    100% { transform: scale(1.6) rotate(0deg); }
+    /* Two quick shakes (0–20%, ~0.8s), then long pause back at rest */
+    0%   { transform: rotate(0deg); }
+    4%   { transform: rotate(-4deg); }
+    8%   { transform: rotate(4deg); }
+    12%  { transform: rotate(-3deg); }
+    16%  { transform: rotate(3deg); }
+    20%  { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
   }
   @media (prefers-reduced-motion: reduce) {
     body.on-intro .product-img { animation: none; }
