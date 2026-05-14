@@ -382,14 +382,19 @@
     background: #fff;
     border-radius: 14px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-    animation: qr-wiggle 4.4s ease-in-out infinite;
+    animation: qr-wiggle 4s ease-in-out infinite;
     transform-origin: center center;
   }
   #qrcode img, #qrcode canvas { display: block; }
   @keyframes qr-wiggle {
-    0%   { transform: rotate(-1.2deg); }
-    50%  { transform: rotate(1.2deg); }
-    100% { transform: rotate(-1.2deg); }
+    /* Two quick shakes (0–20%, ~0.8s), then long pause back at rest (20–100%, ~3.2s) */
+    0%   { transform: rotate(0deg); }
+    4%   { transform: rotate(-4deg); }
+    8%   { transform: rotate(4deg); }
+    12%  { transform: rotate(-3deg); }
+    16%  { transform: rotate(3deg); }
+    20%  { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
   }
   @media (prefers-reduced-motion: reduce) {
     #qrcode { animation: none; }
