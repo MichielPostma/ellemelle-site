@@ -361,18 +361,39 @@
   }
   .pay-card .pc-label { font-size: 12.5px; color: var(--red-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
   .pay-card .pc-sub { font-size: 12px; color: rgba(0,0,0,0.6); }
+  .success-subtitle {
+    color: #666;
+    font-size: 15px;
+    line-height: 1.45;
+    text-align: center;
+    margin: 6px auto 0;
+    max-width: 360px;
+  }
+
+  /* QR code — extra white padding, soft shadow, gentle wiggle */
   #qrcode {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 220px;
-    height: 220px;
-    margin: 32px auto;
-    padding: 12px;
+    width: 240px;
+    height: 240px;
+    margin: 28px auto 24px;
+    padding: 20px;
     background: #fff;
-    border-radius: 8px;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    animation: qr-wiggle 4.4s ease-in-out infinite;
+    transform-origin: center center;
   }
   #qrcode img, #qrcode canvas { display: block; }
+  @keyframes qr-wiggle {
+    0%   { transform: rotate(-1.2deg); }
+    50%  { transform: rotate(1.2deg); }
+    100% { transform: rotate(-1.2deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #qrcode { animation: none; }
+  }
 
   /* Order recap on success page — subtle, full content-column width (matches button) */
   .order-recap {
@@ -481,7 +502,7 @@
     min-height: 100dvh;
   }
   body.on-success .top-banner { order: 1; }
-  body.on-success .product-hero { order: 2; padding-bottom: 0; }
+  body.on-success .product-hero { order: 2; padding-top: 28px; padding-bottom: 0; }
   body.on-success #app { order: 3; padding-top: 28px; }
 
   body.on-intro .top-banner { flex: 0 0 auto; }
@@ -638,14 +659,15 @@
         <span>Ja, ik wil 1 pot ELLEMELLE chocopasta voor €6 (€5 + €1 statiegeld), bezorgd binnen 4 weken in Haarlem.</span>
       </label>
       <div class="error" data-step-error></div>
-      <button class="btn-primary" id="submit-btn" data-next>Doe betaling</button>
+      <button class="btn-primary" id="submit-btn" data-next>Doe betaling →</button>
     </section>
 
     <!-- STEP 7: Success — dynamic title + QR + iDeal CTA + order recap -->
     <section class="step success" data-step="7">
       <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉</h1>
+      <p class="success-subtitle">Doe je betaling via QR code of gebruik de button.</p>
       <div id="qrcode"></div>
-      <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Betaal met Tikkie</a>
+      <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Of betaal met iDeal →</a>
       <div class="order-recap" id="success-recap"></div>
       <button id="reset-btn" type="button" hidden></button>
     </section>
@@ -1003,7 +1025,7 @@
 
     if (!ok) {
       btn.disabled = false;
-      btn.textContent = 'Doe betaling';
+      btn.textContent = 'Doe betaling →';
       showError('Er ging iets mis bij opslaan. Probeer het nog eens.');
       return;
     }
@@ -1088,7 +1110,7 @@
     $('#address-confirm').classList.remove('loading','notfound');
     $('#manual-address').hidden = true;
     $('#submit-btn').disabled = false;
-    $('#submit-btn').textContent = 'Doe betaling';
+    $('#submit-btn').textContent = 'Doe betaling →';
     $$('.kanaal-card').forEach(c => c.style.borderColor = '');
     const kbReset = document.getElementById('kanaal-next');
     if (kbReset) kbReset.disabled = true;
