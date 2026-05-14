@@ -550,15 +550,29 @@
   body.on-intro .product-hero {
     flex: 1 1 auto;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 0;
+    gap: 28px;
+    padding: 12px 20px;
     cursor: pointer;
     transition: opacity 160ms ease;
     overflow: hidden;
   }
   body.on-intro .product-hero:hover { opacity: 0.92; }
   body.on-intro .product-hero:active { opacity: 0.85; }
+
+  /* Intro CTA button (only visible on step 0) */
+  .intro-cta { display: none; }
+  body.on-intro .intro-cta {
+    display: block;
+    width: 100%;
+    max-width: 440px;
+    margin: 0;
+    cursor: pointer;
+  }
+  /* Cancel hover-dim on the hero when hovering specifically the CTA */
+  body.on-intro .product-hero:has(.intro-cta:hover) { opacity: 1; }
   body.on-intro .product-img {
     /* 60% groter dan op overige stappen, vertically centered via flex parent + same burst wiggle */
     width: 100%;
@@ -737,6 +751,7 @@
 <!-- Pot photo, edge-to-edge under the form -->
 <section class="product-hero">
   <img class="product-img" src="Images/product.png" alt="ELLEMELLE chocopasta pot" loading="eager" fetchpriority="high">
+  <a href="#" class="btn-primary intro-cta" id="intro-cta" data-next role="button">Ja, ik wil 'em! →</a>
 </section>
 
 <!-- QR code library (vanilla, ~3KB gzip) -->
@@ -819,9 +834,9 @@
       backBtn.hidden = (n <= 1);
       document.body.classList.remove('on-success');
     }
-    // Restart button appears from step 2 onward, also on the success step
+    // Restart button appears from step 1 onward (also on success); hidden only on intro
     const rb = document.getElementById('restart-btn');
-    if (rb) rb.hidden = (n <= 1);
+    if (rb) rb.hidden = (n === 0);
     // focus first input
     setTimeout(() => {
       const active = $('.step.active');
@@ -1261,7 +1276,9 @@
       heroEl.setAttribute('role', 'button');
       heroEl.setAttribute('tabindex', '0');
       heroEl.setAttribute('aria-label', 'Start de bestelling');
-      heroEl.addEventListener('click', () => {
+      heroEl.addEventListener('click', (e) => {
+        // Avoid double-firing when the inner intro CTA button is clicked
+        if (e.target.closest && e.target.closest('.intro-cta')) return;
         if (currentStep === 0) next();
       });
       heroEl.addEventListener('keydown', e => {
