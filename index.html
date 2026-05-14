@@ -173,13 +173,14 @@
 
   .address-confirm {
     background: var(--white);
-    border: 1px solid rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.08);
     border-radius: var(--radius-md);
     padding: 14px 16px;
     font-size: 15px;
     color: var(--red-dark);
     margin: 14px 0;
     line-height: 1.4;
+    box-shadow: none;
   }
   .address-confirm.loading { color: rgba(0,0,0,0.55); font-style: italic; }
   .address-confirm.notfound { color: var(--red-dark); }
@@ -187,12 +188,12 @@
   /* Postcode error card — mirrors .address-confirm styling */
   .postcode-card {
     background: var(--white);
-    border: 1px solid rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.08);
     border-radius: var(--radius-md);
     padding: 16px 18px;
     margin: 14px 0;
     line-height: 1.45;
-    box-shadow: var(--shadow-card);
+    box-shadow: none;
   }
   .postcode-card strong {
     display: block;
@@ -288,7 +289,7 @@
     min-height: 88px;
     padding: 18px 20px;
     background: var(--white);
-    border: 2px solid transparent;
+    border: 2px solid rgba(0,0,0,0.08);
     border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 17px;
@@ -300,7 +301,11 @@
     transition: border-color 120ms, transform 90ms;
     width: 100%;
   }
-  .kanaal-card:hover { border-color: var(--red); transform: translateY(-1px); }
+  .kanaal-card.selected { border-color: var(--red); }
+  /* Hover red only on hover-capable pointers (avoid touch-sticky red on email) */
+  @media (hover: hover) and (pointer: fine) {
+    .kanaal-card:hover:not(.selected) { border-color: rgba(217,48,30,0.4); transform: translateY(-1px); }
+  }
   .kanaal-card .ic { font-size: 30px; line-height: 1; }
   .kanaal-card .label { font-size: 18px; }
   .kanaal-card .sub { font-size: 12px; color: #666; opacity: 1; font-weight: 500; margin-top: 2px; display: block; }
@@ -1161,7 +1166,7 @@
     if (nb2) nb2.disabled = false;
     const pCard = document.getElementById('postcode-card');
     if (pCard) pCard.hidden = true;
-    $$('.kanaal-card').forEach(c => c.style.borderColor = '');
+    $$('.kanaal-card').forEach(c => { c.style.borderColor = ''; c.classList.remove('selected'); });
     const kbReset = document.getElementById('kanaal-next');
     if (kbReset) kbReset.disabled = true;
     const cb = document.getElementById('confirm-checkbox'); if (cb) cb.checked = false;
@@ -1252,8 +1257,10 @@
     $$('.kanaal-card').forEach(card => {
       card.addEventListener('click', () => {
         formData.kanaal = card.dataset.kanaal;
-        $$('.kanaal-card').forEach(c => c.style.borderColor = '');
-        card.style.borderColor = 'var(--red)';
+        $$('.kanaal-card').forEach(c => {
+          c.classList.toggle('selected', c === card);
+          c.style.borderColor = '';
+        });
         const kb = document.getElementById('kanaal-next');
         if (kb) kb.disabled = false;
         hideError();
@@ -1362,7 +1369,7 @@
       // Hydrate kanaal selection (highlight matching kanaal-card + enable button)
       if (formData.kanaal) {
         $$('.kanaal-card').forEach(c => {
-          c.style.borderColor = (c.dataset.kanaal === formData.kanaal) ? 'var(--red)' : '';
+          c.classList.toggle('selected', c.dataset.kanaal === formData.kanaal); c.style.borderColor = '';
         });
         const kb = document.getElementById('kanaal-next');
         if (kb) kb.disabled = false;
@@ -1386,7 +1393,7 @@
       formData.kanaal = 'whatsapp';
     }
     $$('.kanaal-card').forEach(c => {
-      c.style.borderColor = (c.dataset.kanaal === formData.kanaal) ? 'var(--red)' : '';
+      c.classList.toggle('selected', c.dataset.kanaal === formData.kanaal); c.style.borderColor = '';
     });
     const kbDef = document.getElementById('kanaal-next');
     if (kbDef) kbDef.disabled = !formData.kanaal;
