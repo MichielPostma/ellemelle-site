@@ -528,7 +528,7 @@
 
 <!-- Top counter banner -->
 <div class="top-banner" id="counter">
-  <span id="counter-text">Help ons lanceren — 0/15 bestellingen</span>
+  <span id="counter-text">Help ons lanceren — 0/25 bestellingen</span>
 </div>
 
 <main id="app">
@@ -665,7 +665,7 @@
   };
   let currentStep = 0;
   let counterCount = 0;
-  let counterMax = 15;
+  let counterMax = 25;
   let configCache = null;
   let lastLookup = '';
 
@@ -1094,7 +1094,7 @@
       if (!r.ok) throw new Error('count');
       const data = await r.json();
       counterCount = parseInt(data.count, 10) || 0;
-      counterMax = parseInt(data.max, 10) || 15;
+      counterMax = parseInt(data.max, 10) || 25;
     } catch (e) {
       // keep last known
     }

@@ -6,7 +6,7 @@
 exports.handler = async () => {
   const A = process.env.TIKKIE_LINK_A || 'https://tikkie.example.com/A';
   const B = process.env.TIKKIE_LINK_B || 'https://tikkie.example.com/B';
-  const max = parseInt(process.env.MAX_SIGNUPS || '15', 10);
+  const max = parseInt(process.env.MAX_SIGNUPS || '25', 10);
 
   return {
     statusCode: 200,
