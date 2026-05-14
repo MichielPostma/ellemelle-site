@@ -293,7 +293,7 @@
   .order-line.total {
     border-top: 2px dashed var(--cream-dark);
     padding-top: 12px; margin-top: 8px;
-    font-weight: 700; font-size: 19px; color: var(--red-dark);
+    font-weight: 700; font-size: 19px; color: var(--black);
   }
   .order-meta {
     font-size: 13.5px;
@@ -303,7 +303,7 @@
     padding-top: 14px;
     border-top: 1px solid var(--cream-dark);
   }
-  .order-meta strong { color: var(--red-dark); }
+  .order-meta strong { color: var(--black); }
 
   .check-row {
     display: flex; align-items: flex-start; gap: 10px;
@@ -673,7 +673,7 @@
       <p class="success-subtitle">Doe je betaling via QR code of gebruik de button.</p>
       <div id="qrcode"></div>
       <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Of betaal met iDeal →</a>
-      <div class="order-recap" id="success-recap"></div>
+      <div class="order-card" id="success-recap"></div>
       <button id="reset-btn" type="button" hidden></button>
     </section>
 
@@ -1115,7 +1115,7 @@
     const tBtn = document.getElementById('tikkie-btn');
     if (tBtn) tBtn.href = tikkieUrl;
 
-    // Order recap mirroring step 6 summary
+    // Order recap on success — same .order-card structure as step 6
     const recap = document.getElementById('success-recap');
     if (recap) {
       const adres = (formData.straat || '') + ' ' + formData.huisnummer +
@@ -1124,12 +1124,13 @@
       const kIcon = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
       const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
       recap.innerHTML =
-        '<div class="or-line"><span>1× ELLEMELLE pot 250g</span><span>&euro;5,00</span></div>' +
-        '<div class="or-line"><span>Statiegeld glazen pot</span><span>&euro;1,00</span></div>' +
-        '<div class="or-line total"><span>Totaal</span><span>&euro;6,00</span></div>' +
-        '<div class="or-meta">' +
-          '<strong>Bezorgadres</strong><br>' + escapeHtml(adres.trim()) + '<br>' + escapeHtml(stad.trim()) + '<br>' +
-          '<strong>Updates via</strong> ' + kIcon + ' &mdash; ' + escapeHtml(contact || '') +
+        '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
+        '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
+        '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
+        '<div class="order-meta">' +
+          '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
+          '<strong>Updates via</strong> ' + kIcon + '<br>' + escapeHtml(contact) + '<br><br>' +
+          'Binnen 4 weken aan je deur door Ellis & Melle.' +
         '</div>';
     }
 
@@ -1369,6 +1370,16 @@
       currentStep = 0;
       showStep(0);
     }
+
+    // Default kanaal to WhatsApp if nothing chosen yet
+    if (!formData.kanaal) {
+      formData.kanaal = 'whatsapp';
+    }
+    $$('.kanaal-card').forEach(c => {
+      c.style.borderColor = (c.dataset.kanaal === formData.kanaal) ? 'var(--red)' : '';
+    });
+    const kbDef = document.getElementById('kanaal-next');
+    if (kbDef) kbDef.disabled = !formData.kanaal;
 
     // Refresh counter every 30s
     setInterval(loadCounter, 30000);
