@@ -696,21 +696,10 @@
 (function(){
   'use strict';
 
-  // --- Delivery area (15-min walk from Busken Huëtstraat 11, Haarlem) ---
-  // Geocoded via PDOK BAG: POINT(4.65146505 52.37901689)
-  const BASE_LAT = 52.37901689;
-  const BASE_LNG = 4.65146505;
-  const MAX_KM = 0.8;  // ~10 min lopen aan ±80 m/min
-
-  function haversineKm(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) ** 2 +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLng/2) ** 2;
-    return 2 * R * Math.asin(Math.sqrt(a));
-  }
+  // --- Delivery area: postcode whitelist (4-digit prefixes) -------------
+  // Pas deze lijst aan om bezorggebied uit te breiden of in te krimpen.
+  // Huidig: Haarlem-Noord rond Busken Huëtstraat.
+  const ALLOWED_POSTCODES = ['2032', '2024', '2033', '2026'];
 
   // --- Config & state ----------------------------------------------------
   const TIKKIE_FALLBACK = ['https://tikkie.example.com/A', 'https://tikkie.example.com/B'];
@@ -864,10 +853,12 @@
         const raw = $('#input-postcode').value.replace(/\s+/g, '').toUpperCase();
         if (!raw) { showError('Vul je postcode in.'); return false; }
         if (!/^\d{4}[A-Z]{2}$/.test(raw)) {
-          showError('Vul een geldige NL postcode in, bv. 2011 AA.'); return false;
+          showError('Vul een geldige NL postcode in, bv. 2032 VJ.'); return false;
         }
-        if (!/^(20|21)/.test(raw)) {
-          showError('Sorry, Ellis & Melle bezorgen alleen in Haarlem'); return false;
+        const prefix = raw.slice(0,4);
+        if (!ALLOWED_POSTCODES.includes(prefix)) {
+          showError('We kunnen helaas (nog) niet bij jou bezorgen. Bekijk onze launch-gebied in Haarlem-Noord.');
+          return false;
         }
         formData.postcode = raw.slice(0,4) + ' ' + raw.slice(4);
         return true;
@@ -887,14 +878,9 @@
           // Try one final lookup synchronously
           showError('Even wachten — we zoeken je straat op…');
           lookupAddress().then(() => {
-            if (formData.straat && deliveryOk) { hideError(); next(); }
-            else if (!deliveryOk) { showError('Je woont net buiten ons launch-bezorggebied.'); }
+            if (formData.straat) { hideError(); next(); }
             else { showError('Kon adres niet vinden. Vul handmatig in.'); $('#manual-address').hidden = false; $('#input-straat').focus(); }
           });
-          return false;
-        }
-        if (!deliveryOk) {
-          showError('Je woont net buiten ons launch-bezorggebied.');
           return false;
         }
         return true;
@@ -932,7 +918,6 @@
 
   // --- Address lookup ----------------------------------------------------
   let lookupInFlight = 0;
-  let deliveryOk = true;  // becomes false when address is outside MAX_KM
   async function lookupAddress() {
     const pc = formData.postcode.replace(/\s+/g, '');
     const nr = (formData.huisnummer || $('#input-huisnr').value || '').replace(/\D/g, '');
@@ -968,41 +953,16 @@
       if (data && data.street && data.city) {
         formData.straat = data.street;
         formData.plaats = data.city;
-
-        // Delivery-area check (1.2 km haversine from Busken Huëtstraat 11)
-        deliveryOk = true;
-        let outsideArea = false;
-        if (typeof data.lat === 'number' && typeof data.lng === 'number') {
-          const km = haversineKm(BASE_LAT, BASE_LNG, data.lat, data.lng);
-          if (km > MAX_KM) outsideArea = true;
-        }
-
-        if (outsideArea) {
-          deliveryOk = false;
-          ac.classList.add('notfound');
-          ac.innerHTML = 'We kunnen helaas (nog) niet bij jou bezorgen — je woont net buiten ons launch-gebied. We laten je weten als we verder bezorgen!';
-          ac.hidden = false;
-          ma.hidden = true;
-          // Disable Volgende-button on this step
-          const nb = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
-          if (nb) nb.disabled = true;
-        } else {
-          ac.innerHTML = '<strong>' + escapeHtml(data.street) + ' ' + escapeHtml(formData.huisnummer) +
-            (formData.toevoeging ? '-' + escapeHtml(formData.toevoeging) : '') +
-            '</strong><small>' + escapeHtml(formData.postcode) + ' ' + escapeHtml(data.city) + '</small>';
-          ac.hidden = false;
-          ma.hidden = true;
-          const nb = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
-          if (nb) nb.disabled = false;
-        }
+        ac.innerHTML = '<strong>' + escapeHtml(data.street) + ' ' + escapeHtml(formData.huisnummer) +
+          (formData.toevoeging ? '-' + escapeHtml(formData.toevoeging) : '') +
+          '</strong><small>' + escapeHtml(formData.postcode) + ' ' + escapeHtml(data.city) + '</small>';
+        ac.hidden = false;
+        ma.hidden = true;
         saveState();
       } else {
         ac.classList.add('notfound');
         ac.textContent = 'Adres niet gevonden — vul handmatig in.';
         ma.hidden = false;
-        deliveryOk = true; // manual path — let user proceed; if they're outside it's caught by validateStep below
-        const nb = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
-        if (nb) nb.disabled = false;
       }
     } catch (e) {
       if (myCall !== lookupInFlight) return;
@@ -1164,9 +1124,10 @@
     $('#manual-address').hidden = true;
     $('#submit-btn').disabled = false;
     $('#submit-btn').textContent = 'Doe betaling →';
-    deliveryOk = true;
     const nb3 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
     if (nb3) nb3.disabled = false;
+    const nb2 = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
+    if (nb2) nb2.disabled = false;
     $$('.kanaal-card').forEach(c => c.style.borderColor = '');
     const kbReset = document.getElementById('kanaal-next');
     if (kbReset) kbReset.disabled = true;
@@ -1269,12 +1230,29 @@
 
     $('#reset-btn').addEventListener('click', resetForm);
 
-    // Postcode autoformat (4 digits + 2 letters)
+    // Postcode autoformat (4 digits + 2 letters) + live whitelist validation
     const pc = $('#input-postcode');
+    const pcNextBtn = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
+    function validatePostcodeLive() {
+      const raw = pc.value.replace(/\s+/g, '').toUpperCase();
+      // Only flag once user has typed at least the 4-digit prefix
+      if (raw.length >= 4) {
+        const prefix = raw.slice(0,4);
+        if (!ALLOWED_POSTCODES.includes(prefix)) {
+          showError('We kunnen helaas (nog) niet bij jou bezorgen. Bekijk onze launch-gebied in Haarlem-Noord.');
+          if (pcNextBtn) pcNextBtn.disabled = true;
+          return;
+        }
+      }
+      // Cleared error + re-enable button on any valid prefix or short input
+      hideError();
+      if (pcNextBtn) pcNextBtn.disabled = false;
+    }
     pc.addEventListener('input', () => {
       let v = pc.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
       if (v.length > 4) v = v.slice(0,4) + ' ' + v.slice(4,6);
       pc.value = v;
+      validatePostcodeLive();
     });
 
     // Address lookup on huisnummer blur (or input after debounce)
@@ -1286,10 +1264,6 @@
     $('#input-huisnr').addEventListener('blur', trigger);
     $('#input-huisnr').addEventListener('input', () => {
       clearTimeout(lookupTO);
-      // Reset blocking state — let lookup re-evaluate
-      deliveryOk = true;
-      const nbX = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
-      if (nbX) nbX.disabled = false;
       lookupTO = setTimeout(trigger, 800);
     });
 
