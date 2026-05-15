@@ -635,7 +635,7 @@
 
 <!-- Top counter banner -->
 <div class="top-banner" id="counter">
-  <span id="counter-text">Bij 15 bestellingen in productie — 0/15 bestellingen</span>
+  <span id="counter-text">Bij 15 bestellingen in productie — 0/15 verkocht</span>
 </div>
 
 <main id="app">
@@ -1235,7 +1235,7 @@
       counterText.textContent = 'Bij 15 bestellingen in productie — ' + counterMax + '/' + counterMax + ' uitverkocht';
       counterEl.classList.add('full');
     } else {
-      counterText.textContent = 'Bij 15 bestellingen in productie — ' + counterCount + '/' + counterMax + ' bestellingen';
+      counterText.textContent = 'Bij 15 bestellingen in productie — ' + counterCount + '/' + counterMax + ' verkocht';
       counterEl.classList.remove('full');
     }
   }
