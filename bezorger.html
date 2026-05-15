@@ -51,8 +51,9 @@
     appearance: none; -webkit-appearance: none;
   }
   select {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'><path fill='%238B1A0E' d='M0 0l7 8 7-8z'/></svg>");
-    background-repeat: no-repeat; background-position: right 20px center;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%238B1A0E' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 18px center;
+    background-size: 16px 16px;
     padding-right: 48px;
   }
   input:focus, select:focus {
@@ -185,6 +186,14 @@
     margin-bottom: 6px;
   }
 
+
+  /* Standalone route CTA — primary style, lives above the order list */
+  #route-btn {
+    margin-top: 4px;
+    margin-bottom: 14px;
+    line-height: 60px;
+  }
+  #route-btn[hidden] { display: none; }
   /* Toast */
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
@@ -219,6 +228,7 @@
     <div class="field">
       <select id="week-select"></select>
     </div>
+    <a id="route-btn" class="btn-primary" target="_blank" rel="noopener" hidden>Bekijk bezorgroute →</a>
     <div class="stats" id="stats"></div>
     <div id="orders-list"></div>
   </section>
@@ -403,11 +413,12 @@
   }
 
   function googleMapsRouteUrl(orders) {
+    // Loop route: origin = base, all stops as waypoints, destination = base.
     const origin = encodeURIComponent(BASE_LABEL);
     const addrs = orders.map(o => [o.straat, o.huisnummer, o.postcode, o.plaats].filter(Boolean).join(' '));
     if (addrs.length === 0) return null;
-    const destination = encodeURIComponent(addrs[addrs.length - 1]);
-    const waypoints = addrs.slice(0, -1).map(a => encodeURIComponent(a)).join('|');
+    const destination = origin; // come back home
+    const waypoints = addrs.map(a => encodeURIComponent(a)).join('|');
     let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=walking`;
     if (waypoints) url += '&waypoints=' + waypoints;
     return url;
@@ -424,6 +435,16 @@
     const w = STATE.currentWeek;
     $('#stats').textContent = `${w.delivered}/${w.total} bezorgd`;
     const routeUrl = googleMapsRouteUrl(w.orders);
+    const routeBtn = document.getElementById('route-btn');
+    if (routeBtn) {
+      if (routeUrl && w.orders.length > 0) {
+        routeBtn.href = routeUrl;
+        routeBtn.hidden = false;
+      } else {
+        routeBtn.removeAttribute('href');
+        routeBtn.hidden = true;
+      }
+    }
 
     w.orders.forEach((o, idx) => {
       const card = document.createElement('div');
@@ -431,9 +452,6 @@
       const delivered = !!o.delivered_pot;
       const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
       const stepHtml = `<span class="step-num">Stop ${idx + 1}</span>`;
-      const routeBtnHtml = (idx === 0 && routeUrl)
-        ? `<a class="btn-outline" href="${routeUrl}" target="_blank" rel="noopener">Bekijk bezorgroute →</a>`
-        : '';
       card.innerHTML = `
         <div class="head">
           ${stepHtml}
@@ -441,8 +459,7 @@
         </div>
         <div class="name">${o.voornaam || '(geen naam)'}</div>
         <div class="addr">${addr} — ${o.postcode || ''} ${o.plaats || ''}</div>
-        <button class="btn-outline open-detail" type="button">Niet thuis</button>
-        ${routeBtnHtml}
+        <button class="btn-outline open-detail" type="button">Adres</button>
       `;
       // Whole-card click → open detail (default flow)
       card.addEventListener('click', (e) => {
