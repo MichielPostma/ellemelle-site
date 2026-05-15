@@ -17,7 +17,12 @@ exports.handler = async (event) => {
   const created = [];
   const skipped = [];
   const { getStore } = require('@netlify/blobs');
-  const store = getStore({ name: 'ellemelle-pots', consistency: 'strong' });
+  const opts = { name: 'ellemelle-pots', consistency: 'strong' };
+  if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_API_TOKEN) {
+    opts.siteID = process.env.NETLIFY_SITE_ID;
+    opts.token = process.env.NETLIFY_API_TOKEN;
+  }
+  const store = getStore(opts);
 
   for (const id of POT_IDS) {
     const existing = await store.get(id, { type: 'json' });

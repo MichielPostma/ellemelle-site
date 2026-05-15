@@ -7,8 +7,17 @@ const { getStore } = require('@netlify/blobs');
 
 const POT_IDS = Array.from({ length: 25 }, (_, i) => `POT-${String(i + 1).padStart(3, '0')}`);
 
-function potsStore() { return getStore({ name: 'ellemelle-pots', consistency: 'strong' }); }
-function ordersStore() { return getStore({ name: 'ellemelle-orders', consistency: 'strong' }); }
+function storeOpts(name) {
+  const opts = { name, consistency: 'strong' };
+  // Manual config: required when functions are deployed via API (the runtime env
+  // var injection isn't always available outside the Git-based build pipeline).
+  const siteID = process.env.NETLIFY_SITE_ID;
+  const token  = process.env.NETLIFY_API_TOKEN;
+  if (siteID && token) { opts.siteID = siteID; opts.token = token; }
+  return opts;
+}
+function potsStore()   { return getStore(storeOpts('ellemelle-pots')); }
+function ordersStore() { return getStore(storeOpts('ellemelle-orders')); }
 
 async function getPot(id) {
   const raw = await potsStore().get(id, { type: 'json' });
