@@ -6,3 +6,7 @@
 /admin           /admin.html                     200
 /api/admin/seed-pots /.netlify/functions/admin-seed-pots 200
 /api/admin/list-pots /.netlify/functions/admin-list-pots 200
+/api/bezorger/orders /.netlify/functions/bezorger-orders 200
+/api/bezorger/deliver /.netlify/functions/bezorger-deliver 200
+/api/bezorger/undo /.netlify/functions/bezorger-undo 200
+/bezorger /bezorger.html 200

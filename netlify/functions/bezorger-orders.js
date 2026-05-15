@@ -1,0 +1,130 @@
+// Lists Netlify Forms signups grouped by ISO delivery-week (next Saturday after order).
+// Merges delivery state from blob store `ellemelle-orders/{submission_id}`.
+
+const { getStore } = require('@netlify/blobs');
+const { deliveryWeekForDate, isoWeek } = require('./_lib/blobs');
+
+function blobOpts(name) {
+  const opts = { name, consistency: 'strong' };
+  if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_API_TOKEN) {
+    opts.siteID = process.env.NETLIFY_SITE_ID;
+    opts.token = process.env.NETLIFY_API_TOKEN;
+  }
+  return opts;
+}
+
+function isoWeekToDateRange(iso) {
+  // "2026-W20" → { start: Date(Mon), end: Date(Sun), saturday: Date }
+  const m = /^(\d{4})-W(\d{2})$/.exec(iso);
+  if (!m) return null;
+  const year = parseInt(m[1], 10);
+  const week = parseInt(m[2], 10);
+  // ISO 8601: week 1 is the week with the first Thursday.
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const dayOfWeek = jan4.getUTCDay() || 7;
+  const mondayWeek1 = new Date(jan4);
+  mondayWeek1.setUTCDate(jan4.getUTCDate() - (dayOfWeek - 1));
+  const monday = new Date(mondayWeek1);
+  monday.setUTCDate(mondayWeek1.getUTCDate() + (week - 1) * 7);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  const saturday = new Date(monday);
+  saturday.setUTCDate(monday.getUTCDate() + 5);
+  return { start: monday, end: sunday, saturday };
+}
+
+function formatRange(iso) {
+  const r = isoWeekToDateRange(iso);
+  if (!r) return iso;
+  const months = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  const m1 = months[r.start.getUTCMonth()];
+  const m2 = months[r.end.getUTCMonth()];
+  if (m1 === m2) {
+    return `Week ${parseInt(iso.split('-W')[1],10)} — ${r.start.getUTCDate()} t/m ${r.end.getUTCDate()} ${m2}`;
+  }
+  return `Week ${parseInt(iso.split('-W')[1],10)} — ${r.start.getUTCDate()} ${m1} t/m ${r.end.getUTCDate()} ${m2}`;
+}
+
+exports.handler = async (event) => {
+  const headers = { 'Content-Type': 'application/json' };
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'POST only' }) };
+  }
+  let body = {};
+  try { body = JSON.parse(event.body || '{}'); } catch {}
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected || body.password !== expected) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: 'unauthorized' }) };
+  }
+
+  // Fetch Netlify Forms submissions
+  const token = process.env.NETLIFY_API_TOKEN;
+  const siteId = process.env.NETLIFY_SITE_ID;
+  if (!token || !siteId) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'missing NETLIFY_API_TOKEN or NETLIFY_SITE_ID' }) };
+  }
+  // Find the ellemelle-signup form
+  const formsRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/forms`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!formsRes.ok) {
+    return { statusCode: 502, headers, body: JSON.stringify({ error: 'forms list failed' }) };
+  }
+  const forms = await formsRes.json();
+  const form = forms.find(f => f.name === 'ellemelle-signup');
+  if (!form) {
+    return { statusCode: 200, headers, body: JSON.stringify({ weeks: [], total: 0 }) };
+  }
+  const subsRes = await fetch(`https://api.netlify.com/api/v1/forms/${form.id}/submissions?per_page=200`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!subsRes.ok) {
+    return { statusCode: 502, headers, body: JSON.stringify({ error: 'submissions fetch failed' }) };
+  }
+  const subs = await subsRes.json();
+
+  // Merge with blob delivery state
+  const ordersStore = getStore(blobOpts('ellemelle-orders'));
+  const enriched = [];
+  for (const s of subs) {
+    const d = s.data || {};
+    const orderId = s.id;
+    const week = deliveryWeekForDate(s.created_at);
+    let state = await ordersStore.get(orderId, { type: 'json' });
+    state = state || {};
+    enriched.push({
+      id: orderId,
+      created_at: s.created_at,
+      voornaam: d.voornaam || '',
+      kanaal: d.kanaal || '',
+      email: d.email || '',
+      telefoon: d.telefoon || '',
+      straat: d.straat || '',
+      huisnummer: d.huisnummer || '',
+      toevoeging: d.toevoeging || '',
+      postcode: d.postcode || '',
+      plaats: d.plaats || '',
+      delivery_week: week,
+      delivered_pot: state.delivered_pot || null,
+      delivered_at: state.delivered_at || null,
+    });
+  }
+
+  // Group by week
+  const map = new Map();
+  for (const o of enriched) {
+    const k = o.delivery_week;
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(o);
+  }
+  const weeks = Array.from(map.keys()).sort();
+  const result = weeks.map(w => ({
+    iso: w,
+    label: formatRange(w),
+    orders: map.get(w),
+    total: map.get(w).length,
+    delivered: map.get(w).filter(o => o.delivered_pot).length,
+  }));
+
+  return { statusCode: 200, headers, body: JSON.stringify({ weeks: result, total: enriched.length }) };
+};
