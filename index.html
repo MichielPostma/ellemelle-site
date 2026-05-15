@@ -635,7 +635,7 @@
 
 <!-- Top counter banner -->
 <div class="top-banner" id="counter">
-  <span id="counter-text">Bij 15 bestellingen gaat het door — 0/15 bestellingen</span>
+  <span id="counter-text">Bij 15 bestellingen in productie — 0/15 bestellingen</span>
 </div>
 
 <main id="app">
@@ -669,7 +669,7 @@
       </div>
       <div class="postcode-card" id="postcode-card" hidden>
         <strong>Ah, jammer zeg!</strong>
-        <span>We kunnen helaas nog niet bij jou bezorgen, op dit moment richten we ons op de Potgieterbuurt in Haarlem.</span>
+        <span>We kunnen helaas nog niet bij jou bezorgen, op dit moment richten we ons op een deel van de Potgieterbuurt in Haarlem.</span>
       </div>
       <div class="error" data-step-error></div>
       <button class="btn-primary" data-next>Volgende →</button>
@@ -1232,10 +1232,10 @@
   }
   function updateCounterPill() {
     if (counterCount >= counterMax) {
-      counterText.textContent = 'Bij 15 bestellingen gaat het door — ' + counterMax + '/' + counterMax + ' uitverkocht';
+      counterText.textContent = 'Bij 15 bestellingen in productie — ' + counterMax + '/' + counterMax + ' uitverkocht';
       counterEl.classList.add('full');
     } else {
-      counterText.textContent = 'Bij 15 bestellingen gaat het door — ' + counterCount + '/' + counterMax + ' bestellingen';
+      counterText.textContent = 'Bij 15 bestellingen in productie — ' + counterCount + '/' + counterMax + ' bestellingen';
       counterEl.classList.remove('full');
     }
   }
