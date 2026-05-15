@@ -83,15 +83,38 @@ exports.handler = async (event) => {
   }
   const subs = await subsRes.json();
 
-  // Merge with blob delivery state
+  // Helper: lookup lat/lng via PDOK Locatieserver (no key required)
+  async function geocode(postcode, number) {
+    if (!postcode || !number) return null;
+    const pc = postcode.replace(/\s+/g,'').toUpperCase();
+    const nr = String(number).replace(/\D/g,'');
+    const q  = encodeURIComponent(`postcode:${pc} AND huisnummer:${nr}`);
+    try {
+      const r = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${q}&fl=centroide_ll&rows=1&fq=type:adres`, {
+        headers: { 'User-Agent': 'ELLEMELLE-bezorger/1.0' },
+      });
+      if (!r.ok) return null;
+      const j = await r.json();
+      const doc = j && j.response && j.response.docs && j.response.docs[0];
+      if (!doc) return null;
+      const m = /POINT\(([-\d.]+)\s+([-\d.]+)\)/.exec(String(doc.centroide_ll || ''));
+      if (!m) return null;
+      return { lat: parseFloat(m[2]), lng: parseFloat(m[1]) };
+    } catch { return null; }
+  }
+
+  // Merge with blob delivery state + geocode each address (parallel)
   const ordersStore = getStore(blobOpts('ellemelle-orders'));
+  const geocodes = await Promise.all(subs.map(s => geocode((s.data||{}).postcode, (s.data||{}).huisnummer)));
   const enriched = [];
-  for (const s of subs) {
+  for (let i = 0; i < subs.length; i++) {
+    const s = subs[i];
     const d = s.data || {};
     const orderId = s.id;
     const week = deliveryWeekForDate(s.created_at);
     let state = await ordersStore.get(orderId, { type: 'json' });
     state = state || {};
+    const geo = geocodes[i] || {};
     enriched.push({
       id: orderId,
       created_at: s.created_at,
@@ -104,6 +127,8 @@ exports.handler = async (event) => {
       toevoeging: d.toevoeging || '',
       postcode: d.postcode || '',
       plaats: d.plaats || '',
+      lat: geo.lat || null,
+      lng: geo.lng || null,
       delivery_week: week,
       delivered_pot: state.delivered_pot || null,
       delivered_at: state.delivered_at || null,
