@@ -72,6 +72,8 @@
     cursor: pointer; margin-top: 22px;
     box-shadow: var(--shadow-cta);
     transition: transform 90ms ease, opacity 140ms;
+    appearance: none; -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
   }
   .btn-primary:disabled { background: #d4cfc4; color: rgba(0,0,0,0.4); cursor: not-allowed; box-shadow: none; }
   .btn-primary:not(:disabled):hover { transform: translateY(-1px); }
@@ -85,7 +87,12 @@
     cursor: pointer; margin-top: 10px;
     transition: background 140ms;
     text-align: center; text-decoration: none; line-height: 52px;
+    appearance: none; -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: none;
   }
+  .btn-outline:focus { outline: none; }
+  .btn-outline:focus-visible { outline: 3px solid rgba(217,48,30,0.3); outline-offset: 2px; }
   .btn-outline:hover { background: rgba(217,48,30,0.06); }
   .btn-outline:active { background: rgba(217,48,30,0.12); }
   .btn-outline[hidden] { display: none; }
