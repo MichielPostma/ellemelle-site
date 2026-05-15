@@ -4,3 +4,5 @@
 /api/admin-list  /.netlify/functions/admin-list  200
 /api/admin-mark-paid /.netlify/functions/admin-mark-paid 200
 /admin           /admin.html                     200
+/api/admin/seed-pots /.netlify/functions/admin-seed-pots 200
+/api/admin/list-pots /.netlify/functions/admin-list-pots 200

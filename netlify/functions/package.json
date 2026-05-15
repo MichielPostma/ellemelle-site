@@ -1,0 +1,7 @@
+{
+  "name": "ellemelle-functions",
+  "private": true,
+  "dependencies": {
+    "@netlify/blobs": "^10.0.7"
+  }
+}

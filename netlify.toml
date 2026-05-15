@@ -41,3 +41,12 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+[[redirects]]
+  from = "/api/admin/seed-pots"
+  to = "/.netlify/functions/admin-seed-pots"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/list-pots"
+  to = "/.netlify/functions/admin-list-pots"
+  status = 200

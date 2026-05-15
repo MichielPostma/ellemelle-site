@@ -41,7 +41,7 @@ Ga naar **Site configuration → Environment variables** en zet:
 
 | Variable                    | Verplicht? | Waarde                                                              |
 |-----------------------------|------------|---------------------------------------------------------------------|
-| `ADMIN_PASSWORD`            | ✅ Ja       | `MELLE-pot-9482-haarlem` (zie eindrapport — wijzig wanneer je wil) |
+| `ADMIN_PASSWORD`            | ✅ Ja       | `100knuffels` (zie eindrapport — wijzig wanneer je wil) |
 | `TIKKIE_LINK_A`             | ✅ Ja       | Je 1e Tikkie betaalverzoek-URL                                      |
 | `TIKKIE_LINK_B`             | ✅ Ja       | Je 2e Tikkie betaalverzoek-URL                                      |
 | `MAX_SIGNUPS`               | Optioneel  | `25` (default). Hoger zetten = batch openen voor meer klanten.      |
