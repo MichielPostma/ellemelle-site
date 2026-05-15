@@ -147,14 +147,7 @@
 
   /* Stats */
 
-  .week-done-pill {
-    display: inline-block; padding: 4px 10px; border-radius: 999px;
-    background: #1f9d55; color: #fff;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
-    text-transform: uppercase; margin-left: 8px;
-    vertical-align: middle;
-  }
-  .stats { color: #666; font-size: 13px; text-align: right; margin: 0 0 14px; font-weight: 500; }
+  .stats { color: #666; font-size: 13px; text-align: left; margin: 0 0 14px; font-weight: 500; }
   .empty { color: #666; text-align: center; padding: 32px 0; font-size: 15px; }
   .error { color: var(--red); font-size: 14px; margin-top: 8px; min-height: 18px; font-weight: 500; }
 
@@ -235,9 +228,8 @@
   <!-- LIST -->
   <section id="list-view" hidden>
     <h1 class="step-question">Bezorglijst</h1>
-    <div class="field" style="position: relative; display: flex; align-items: center; gap: 8px;">
-      <select id="week-select" style="flex: 1;"></select>
-      <span id="week-done-pill" class="week-done-pill" hidden>Klaar</span>
+    <div class="field">
+      <select id="week-select"></select>
     </div>
     <a id="route-btn" class="btn-primary" target="_blank" rel="noopener" hidden>Bekijk bezorgroute →</a>
     <div class="stats" id="stats"></div>
@@ -272,6 +264,28 @@
       <button class="btn-outline" id="undo-btn" type="button">Bezorging ongedaan maken</button>
     </div>
 
+    <!-- Pot beheer -->
+    <hr class="actions-divider">
+    <div class="actions-label">Pot beheer</div>
+    <button class="btn-outline" id="return-pot-btn" type="button">Lege pot innemen</button>
+    <button class="btn-outline" id="extra-pot-btn" type="button">Extra pot toevoegen</button>
+
+    <div id="return-scan-view" hidden style="margin-top: 10px;">
+      <div id="return-scanner-wrap" style="position: relative; background: #000; border-radius: var(--radius-md); overflow: hidden; margin: 0 0 8px;">
+        <video id="return-scanner-video" playsinline muted style="width: 100%; display: block; aspect-ratio: 1 / 1; object-fit: cover;"></video>
+        <div class="scanner-overlay"></div>
+      </div>
+      <button class="btn-outline" id="return-scan-cancel-btn" type="button">Annuleer</button>
+    </div>
+
+    <!-- Pot-historie -->
+    <hr class="actions-divider">
+    <div class="actions-label">Pot-historie</div>
+    <div class="info-card" id="history-card">
+      <div class="detail-row"><span class="k">Statiegeld</span><span class="v" id="d-credit">…</span></div>
+      <div id="history-list" style="margin-top: 4px;"></div>
+    </div>
+
     <!-- Niet thuis actions -->
     <hr class="actions-divider">
     <div class="actions-label">Niet thuis?</div>
@@ -302,6 +316,7 @@
     currentWeek: null,
     currentOrder: null,
     qrScanner: null,
+    returnScanner: null,
   };
 
   // --- Session helpers (90-day) ---
@@ -413,7 +428,7 @@
       const opt = document.createElement('option');
       opt.value = w.iso;
       const weekNum = (w.iso.match(/W(\d+)/) || [,'?'])[1].replace(/^0+/, '') || '0';
-      const suffix = w.all_done ? ' · Klaar' : '';
+      const suffix = w.all_done ? ' (klaar)' : '';
       opt.textContent = 'Week ' + weekNum + suffix;
       sel.appendChild(opt);
     });
@@ -444,8 +459,6 @@
     }
     const w = STATE.currentWeek;
     $('#stats').textContent = `${w.delivered}/${w.total} bezorgd`;
-    const donePill = document.getElementById('week-done-pill');
-    if (donePill) donePill.hidden = !w.all_done;
     const routeUrl = googleMapsRouteUrl(w.orders);
     const routeBtn = document.getElementById('route-btn');
     if (routeBtn) {
@@ -510,7 +523,111 @@
       $('#scan-view').hidden = false;
       $('#undo-view').hidden = true;
     }
+    // Hide return-scan-view in case it was open for previous order
+    $('#return-scan-view').hidden = true;
+    stopReturnScanner();
+    // Load customer history (async, non-blocking)
+    loadCustomerHistory(order.id);
     showView('detail-view');
+  }
+
+  // --- Customer history ---
+  function fmtEuro(n) {
+    return '€' + (Math.round(Number(n || 0) * 100) / 100).toFixed(2).replace('.', ',');
+  }
+  function fmtDate(iso) {
+    try {
+      const d = new Date(iso);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      return `${dd}-${mm}`;
+    } catch { return ''; }
+  }
+  function historyLabel(entry) {
+    switch (entry.action) {
+      case 'pot-delivered':     return `Pot ${entry.pot_id || ''} bezorgd`;
+      case 'pot-returned':      return `Pot ${entry.pot_id || ''} ingenomen (+€1,00)`;
+      case 'extra-pot-ordered': return `Extra pot besteld${entry.credit_used ? ' (−' + fmtEuro(entry.credit_used) + ')' : ''}`;
+      default: return entry.action || '-';
+    }
+  }
+  async function loadCustomerHistory(orderId) {
+    const creditEl = $('#d-credit');
+    const listEl   = $('#history-list');
+    creditEl.textContent = '…';
+    listEl.innerHTML = '';
+    const res = await api('bezorger-customer-history', { order_id: orderId });
+    if (!res.ok) { creditEl.textContent = '–'; return; }
+    const credit  = Number(res.data.statiegeld_credit || 0);
+    const history = res.data.history || [];
+    creditEl.textContent = credit > 0 ? fmtEuro(credit) + ' tegoed' : 'Geen tegoed';
+    if (history.length === 0) {
+      listEl.innerHTML = '<div class="sub" style="color:#666; font-size:13px; padding-top:6px;">Nog geen historie</div>';
+      return;
+    }
+    // Newest first
+    const sorted = [...history].sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+    sorted.slice(0, 8).forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'detail-row';
+      row.innerHTML = `<span class="k">${fmtDate(entry.ts)}</span><span class="v" style="font-weight:500;">${historyLabel(entry)}</span>`;
+      listEl.appendChild(row);
+    });
+  }
+
+  // --- Lege pot innemen (return) ---
+  async function returnPot(potId) {
+    if (!STATE.currentOrder) return;
+    const res = await api('bezorger-pot-return', { order_id: STATE.currentOrder.id, pot_id: potId });
+    if (res.ok) {
+      showToast(`Pot ${res.data.pot_id} ingenomen — €1 tegoed`, 'success');
+      stopReturnScanner();
+      $('#return-scan-view').hidden = true;
+      await loadCustomerHistory(STATE.currentOrder.id);
+    } else {
+      showToast(res.data.error || 'Innemen mislukt', 'error');
+    }
+  }
+  async function startReturnScanner() {
+    const video = $('#return-scanner-video');
+    $('#return-scan-view').hidden = false;
+    if (STATE.returnScanner) return;
+    STATE.returnScanner = new QrScanner(video, async result => {
+      const text = result.data || result;
+      const m = /POT-\d{3}/i.exec(text);
+      if (m) await returnPot(m[0].toUpperCase());
+    }, { highlightScanRegion: true, returnDetailedScanResult: true });
+    try { await STATE.returnScanner.start(); }
+    catch (e) {
+      stopReturnScanner();
+      $('#return-scan-view').hidden = true;
+      showToast('Camera niet beschikbaar', 'error');
+    }
+  }
+  function stopReturnScanner() {
+    if (STATE.returnScanner) { STATE.returnScanner.stop(); STATE.returnScanner.destroy(); STATE.returnScanner = null; }
+  }
+
+  // --- Extra pot toevoegen ---
+  async function extraPot() {
+    const o = STATE.currentOrder;
+    if (!o) return;
+    if (!confirm(`Extra pot voor ${o.voornaam}? We checken het tegoed en maken een nieuwe bestelling aan + sturen een Tikkie.`)) return;
+    const res = await api('bezorger-extra-pot', { order_id: o.id });
+    if (!res.ok) { showToast(res.data.error || 'Extra pot mislukt', 'error'); return; }
+    const amount = Number(res.data.amount_due || 0);
+    const credit = Number(res.data.credit_used || 0);
+    const tikkie = res.data.tikkie_url || '';
+    const creditLine = credit > 0 ? ` (${fmtEuro(credit)} verrekend met tegoed)` : '';
+    const tekst = `Hi ${o.voornaam}, hierbij een extra pot Ellemelle voor je! Hij wordt zaterdag bezorgd. Bedrag: ${fmtEuro(amount)}${creditLine}.
+
+${amount > 0 ? 'Tikkie: ' + tikkie : 'Niets te betalen — voor jou op de pof! ;)'}
+
+Tot snel!
+Ellis en Melle`;
+    openContactWith(tekst);
+    showToast('Extra pot aangemaakt', 'success');
+    await loadCustomerHistory(o.id);
   }
 
   // --- Delivery / undo ---
@@ -623,16 +740,20 @@ Ellis en Melle`;
   $('#week-select').addEventListener('change', () => {
     const iso = $('#week-select').value;
     STATE.currentWeek = STATE.weeks.find(w => w.iso === iso) || null;
-    const donePill = document.getElementById('week-done-pill');
-    if (donePill) donePill.hidden = !(STATE.currentWeek && STATE.currentWeek.all_done);
     renderOrders();
   });
 
-  $('#back-to-list').addEventListener('click', () => { stopScanner(); showView('list-view'); });
+  $('#back-to-list').addEventListener('click', () => { stopScanner(); stopReturnScanner(); $('#return-scan-view').hidden = true; showView('list-view'); });
   $('#start-scan-btn').addEventListener('click', () => { if (STATE.qrScanner) stopScanner(); else startScanner(); });
   $('#undo-btn').addEventListener('click', undoDelivery);
   $('#left-with-neighbours-btn').addEventListener('click', leftWithNeighbours);
   $('#request-pickup-self-btn').addEventListener('click', requestPickupSelf);
+  $('#return-pot-btn').addEventListener('click', () => {
+    if ($('#return-scan-view').hidden) startReturnScanner();
+    else { stopReturnScanner(); $('#return-scan-view').hidden = true; }
+  });
+  $('#return-scan-cancel-btn').addEventListener('click', () => { stopReturnScanner(); $('#return-scan-view').hidden = true; });
+  $('#extra-pot-btn').addEventListener('click', extraPot);
 
   // Boot: auto-login if session valid
   STATE.password = loadSession();

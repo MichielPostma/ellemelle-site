@@ -15,3 +15,6 @@
 /api/customer/reorder /.netlify/functions/customer-reorder 200
 /pot/* /pot.html 200
 /api/bezorger/set-status /.netlify/functions/bezorger-set-status 200
+/api/bezorger/pot-return /.netlify/functions/bezorger-pot-return 200
+/api/bezorger/extra-pot /.netlify/functions/bezorger-extra-pot 200
+/api/bezorger/customer-history /.netlify/functions/bezorger-customer-history 200

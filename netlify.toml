@@ -92,3 +92,17 @@
   from = "/api/bezorger/set-status"
   to = "/.netlify/functions/bezorger-set-status"
   status = 200
+[[redirects]]
+  from = "/api/bezorger/pot-return"
+  to = "/.netlify/functions/bezorger-pot-return"
+  status = 200
+
+[[redirects]]
+  from = "/api/bezorger/extra-pot"
+  to = "/.netlify/functions/bezorger-extra-pot"
+  status = 200
+
+[[redirects]]
+  from = "/api/bezorger/customer-history"
+  to = "/.netlify/functions/bezorger-customer-history"
+  status = 200
