@@ -242,7 +242,7 @@
     <h1 class="step-question" id="detail-name"></h1>
 
     <iframe class="map-embed" id="map-embed" referrerpolicy="no-referrer-when-downgrade" loading="lazy"></iframe>
-    <a class="btn-outline" id="open-maps-btn" target="_blank" rel="noopener">Open Google Maps →</a>
+    <a class="btn-primary" id="open-maps-btn" target="_blank" rel="noopener">Open Google Maps →</a>
 
     <div class="info-card" style="margin-top: 18px;">
       <div class="detail-row"><span class="k">Adres</span><span class="v" id="d-addr"></span></div>
@@ -250,7 +250,7 @@
     </div>
 
     <div id="scan-view" hidden>
-      <button class="btn-primary" id="start-scan-btn">Registreer pot →</button>
+      <button class="btn-primary" id="start-scan-btn">Geef pot af →</button>
       <div id="scanner-wrap" hidden>
         <video id="scanner-video" playsinline muted></video>
         <div class="scanner-overlay"></div>
@@ -288,7 +288,6 @@
 
     <!-- Niet thuis actions -->
     <hr class="actions-divider">
-    <div class="actions-label">Niet thuis?</div>
     <button class="btn-outline" id="left-with-neighbours-btn" type="button">Bezorgd bij buren</button>
     <button class="btn-outline" id="request-pickup-self-btn" type="button">Verzoek thuis ophalen</button>
   </section>
@@ -667,7 +666,7 @@ Ellis en Melle`;
   }
   function stopScanner() {
     $('#scanner-wrap').hidden = true;
-    $('#start-scan-btn').textContent = 'Registreer pot →';
+    $('#start-scan-btn').textContent = 'Geef pot af →';
     if (STATE.qrScanner) { STATE.qrScanner.stop(); STATE.qrScanner.destroy(); STATE.qrScanner = null; }
   }
 
