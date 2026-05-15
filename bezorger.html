@@ -241,14 +241,7 @@
     <button class="back-link" id="back-to-list">← Terug</button>
     <h1 class="step-question" id="detail-name"></h1>
 
-    <iframe class="map-embed" id="map-embed" referrerpolicy="no-referrer-when-downgrade" loading="lazy"></iframe>
-    <a class="btn-primary" id="open-maps-btn" target="_blank" rel="noopener">Open Google Maps →</a>
-
-    <div class="info-card" style="margin-top: 18px;">
-      <div class="detail-row"><span class="k">Adres</span><span class="v" id="d-addr"></span></div>
-      <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact"></span></div>
-    </div>
-
+    <!-- Primary actions: scan + buren + ophalen -->
     <div id="scan-view" hidden>
       <button class="btn-primary" id="start-scan-btn">Geef pot af →</button>
       <div id="scanner-wrap" hidden>
@@ -259,17 +252,26 @@
         Geef toegang tot je camera om de pot te scannen.
       </div>
     </div>
-
     <div id="undo-view" hidden>
       <button class="btn-outline" id="undo-btn" type="button">Bezorging ongedaan maken</button>
     </div>
+    <button class="btn-outline" id="left-with-neighbours-btn" type="button">Bezorgd bij buren</button>
+    <button class="btn-outline" id="request-pickup-self-btn" type="button">Verzoek thuis ophalen</button>
 
-    <!-- Pot beheer -->
+    <!-- Map -->
+    <iframe class="map-embed" id="map-embed" referrerpolicy="no-referrer-when-downgrade" loading="lazy" style="margin-top: 18px;"></iframe>
+    <a class="btn-outline" id="open-maps-btn" target="_blank" rel="noopener">Open Google Maps →</a>
+
+    <!-- Contact info -->
+    <div class="info-card" style="margin-top: 18px;">
+      <div class="detail-row"><span class="k">Adres</span><span class="v" id="d-addr"></span></div>
+      <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact"></span></div>
+    </div>
+
+    <!-- Pot historie -->
     <hr class="actions-divider">
-    <div class="actions-label">Pot beheer</div>
-    <button class="btn-outline" id="return-pot-btn" type="button">Lege pot innemen</button>
-    <button class="btn-outline" id="extra-pot-btn" type="button">Extra pot toevoegen</button>
-
+    <div class="actions-label">Pot historie</div>
+    <button class="btn-outline" id="return-pot-btn" type="button">Geef lege pot af</button>
     <div id="return-scan-view" hidden style="margin-top: 10px;">
       <div id="return-scanner-wrap" style="position: relative; background: #000; border-radius: var(--radius-md); overflow: hidden; margin: 0 0 8px;">
         <video id="return-scanner-video" playsinline muted style="width: 100%; display: block; aspect-ratio: 1 / 1; object-fit: cover;"></video>
@@ -277,19 +279,10 @@
       </div>
       <button class="btn-outline" id="return-scan-cancel-btn" type="button">Annuleer</button>
     </div>
-
-    <!-- Pot-historie -->
-    <hr class="actions-divider">
-    <div class="actions-label">Pot-historie</div>
-    <div class="info-card" id="history-card">
+    <div class="info-card" id="history-card" style="margin-top: 14px;">
       <div class="detail-row"><span class="k">Statiegeld</span><span class="v" id="d-credit">…</span></div>
       <div id="history-list" style="margin-top: 4px;"></div>
     </div>
-
-    <!-- Niet thuis actions -->
-    <hr class="actions-divider">
-    <button class="btn-outline" id="left-with-neighbours-btn" type="button">Bezorgd bij buren</button>
-    <button class="btn-outline" id="request-pickup-self-btn" type="button">Verzoek thuis ophalen</button>
   </section>
 </main>
 
@@ -752,7 +745,6 @@ Ellis en Melle`;
     else { stopReturnScanner(); $('#return-scan-view').hidden = true; }
   });
   $('#return-scan-cancel-btn').addEventListener('click', () => { stopReturnScanner(); $('#return-scan-view').hidden = true; });
-  $('#extra-pot-btn').addEventListener('click', extraPot);
 
   // Boot: auto-login if session valid
   STATE.password = loadSession();
