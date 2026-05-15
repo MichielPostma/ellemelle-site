@@ -243,10 +243,7 @@
 
     <div class="info-card" style="margin-top: 18px;">
       <div class="detail-row"><span class="k">Adres</span><span class="v" id="d-addr"></span></div>
-      <div class="detail-row"><span class="k">Postcode</span><span class="v" id="d-pc"></span></div>
-      <div class="detail-row"><span class="k">Kanaal</span><span class="v" id="d-kanaal"></span></div>
       <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact"></span></div>
-      <div class="detail-row" id="d-delivered-row" hidden><span class="k">Bezorgd met</span><span class="v" id="d-delivered"></span></div>
     </div>
 
     <div id="scan-view" hidden>
@@ -458,7 +455,7 @@
           <span class="badge ${delivered ? 'delivered' : 'pending'}">${delivered ? '✓ ' + o.delivered_pot : 'Open'}</span>
         </div>
         <div class="name">${o.voornaam || '(geen naam)'}</div>
-        <div class="addr">${addr} — ${o.postcode || ''} ${o.plaats || ''}</div>
+        <div class="addr">${addr} — ${o.plaats || ''}</div>
         <button class="btn-outline open-detail" type="button">Adres</button>
       `;
       // Whole-card click → open detail (default flow)
@@ -477,8 +474,6 @@
     const addrFull = `${order.straat} ${order.huisnummer}${order.toevoeging ? '-' + order.toevoeging : ''}`;
     const cityFull = `${order.postcode || ''} ${order.plaats || ''}`.trim();
     $('#d-addr').textContent = addrFull;
-    $('#d-pc').textContent   = cityFull;
-    $('#d-kanaal').textContent = order.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
     const contactEl = $('#d-contact');
     if (order.kanaal === 'whatsapp' && order.telefoon) {
       contactEl.innerHTML = `<a href="${fmtWaLink(order.telefoon)}" target="_blank">${order.telefoon}</a>`;
@@ -492,12 +487,9 @@
     $('#open-maps-btn').href = `https://www.google.com/maps?q=${q}`;
 
     if (order.delivered_pot) {
-      $('#d-delivered-row').hidden = false;
-      $('#d-delivered').textContent = order.delivered_pot;
       $('#scan-view').hidden = true;
       $('#undo-view').hidden = false;
     } else {
-      $('#d-delivered-row').hidden = true;
       $('#scan-view').hidden = false;
       $('#undo-view').hidden = true;
     }
