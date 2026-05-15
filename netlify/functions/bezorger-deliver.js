@@ -49,7 +49,7 @@ exports.handler = async (event) => {
     ...pot, status: 'delivered', order_id: orderId, delivered_at: now,
   });
   await ordersStore.setJSON(orderId, {
-    ...existingOrder, delivered_pot: potId, delivered_at: now,
+    ...existingOrder, delivered_pot: potId, delivered_at: now, order_status: 'delivered',
   });
 
   return {

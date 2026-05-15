@@ -14,3 +14,4 @@
 /api/customer/request-pickup /.netlify/functions/customer-request-pickup 200
 /api/customer/reorder /.netlify/functions/customer-reorder 200
 /pot/* /pot.html 200
+/api/bezorger/set-status /.netlify/functions/bezorger-set-status 200

@@ -132,6 +132,7 @@ exports.handler = async (event) => {
       delivery_week: week,
       delivered_pot: state.delivered_pot || null,
       delivered_at: state.delivered_at || null,
+      order_status: state.order_status || (state.delivered_pot ? 'delivered' : 'todo'),
     });
   }
 
@@ -143,13 +144,18 @@ exports.handler = async (event) => {
     map.get(k).push(o);
   }
   const weeks = Array.from(map.keys()).sort();
-  const result = weeks.map(w => ({
-    iso: w,
-    label: formatRange(w),
-    orders: map.get(w),
-    total: map.get(w).length,
-    delivered: map.get(w).filter(o => o.delivered_pot).length,
-  }));
+  const result = weeks.map(w => {
+    const orders = map.get(w);
+    const doneStatuses = new Set(['delivered','neighbors']);
+    return {
+      iso: w,
+      label: formatRange(w),
+      orders,
+      total: orders.length,
+      delivered: orders.filter(o => doneStatuses.has(o.order_status)).length,
+      all_done: orders.length > 0 && orders.every(o => doneStatuses.has(o.order_status)),
+    };
+  });
 
   return { statusCode: 200, headers, body: JSON.stringify({ weeks: result, total: enriched.length }) };
 };

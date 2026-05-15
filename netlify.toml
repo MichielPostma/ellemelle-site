@@ -88,3 +88,7 @@
   from = "/pot/*"
   to = "/pot.html"
   status = 200
+[[redirects]]
+  from = "/api/bezorger/set-status"
+  to = "/.netlify/functions/bezorger-set-status"
+  status = 200

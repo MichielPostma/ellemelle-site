@@ -43,7 +43,7 @@ exports.handler = async (event) => {
     });
   }
   await ordersStore.setJSON(orderId, {
-    ...order, delivered_pot: null, delivered_at: null,
+    ...order, delivered_pot: null, delivered_at: null, order_status: 'todo',
   });
   return {
     statusCode: 200, headers,

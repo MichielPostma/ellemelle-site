@@ -118,8 +118,10 @@
     font-size: 11px; padding: 4px 10px; border-radius: 999px; font-weight: 700;
     letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap;
   }
-  .order-card .badge.pending { background: rgba(255,210,74,0.20); color: var(--red-dark); }
+  .order-card .badge.todo      { background: rgba(0,0,0,0.06); color: #555; }
   .order-card .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
+  .order-card .badge.neighbors { background: rgba(255,210,74,0.25); color: #b85c00; }
+  .order-card .badge.retry     { background: rgba(139,26,14,0.08); color: var(--red-dark); }
   .order-card .addr { color: #666; font-size: 14px; margin-top: 4px; }
   .order-card .btn-outline { margin-top: 12px; }
 
@@ -144,6 +146,14 @@
   .detail-row .v a { color: var(--red); text-decoration: none; }
 
   /* Stats */
+
+  .week-done-pill {
+    display: inline-block; padding: 4px 10px; border-radius: 999px;
+    background: #1f9d55; color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+    text-transform: uppercase; margin-left: 8px;
+    vertical-align: middle;
+  }
   .stats { color: #666; font-size: 13px; text-align: right; margin: 0 0 14px; font-weight: 500; }
   .empty { color: #666; text-align: center; padding: 32px 0; font-size: 15px; }
   .error { color: var(--red); font-size: 14px; margin-top: 8px; min-height: 18px; font-weight: 500; }
@@ -225,8 +235,9 @@
   <!-- LIST -->
   <section id="list-view" hidden>
     <h1 class="step-question">Bezorglijst</h1>
-    <div class="field">
-      <select id="week-select"></select>
+    <div class="field" style="position: relative; display: flex; align-items: center; gap: 8px;">
+      <select id="week-select" style="flex: 1;"></select>
+      <span id="week-done-pill" class="week-done-pill" hidden>Klaar</span>
     </div>
     <a id="route-btn" class="btn-primary" target="_blank" rel="noopener" hidden>Bekijk bezorgroute →</a>
     <div class="stats" id="stats"></div>
@@ -401,7 +412,9 @@
     STATE.weeks.forEach(w => {
       const opt = document.createElement('option');
       opt.value = w.iso;
-      opt.textContent = `${w.label} (${w.total})`;
+      const weekNum = (w.iso.match(/W(\d+)/) || [,'?'])[1].replace(/^0+/, '') || '0';
+      const suffix = w.all_done ? ' · Klaar' : '';
+      opt.textContent = 'Week ' + weekNum + suffix;
       sel.appendChild(opt);
     });
     sel.selectedIndex = STATE.weeks.length - 1;
@@ -431,6 +444,8 @@
     }
     const w = STATE.currentWeek;
     $('#stats').textContent = `${w.delivered}/${w.total} bezorgd`;
+    const donePill = document.getElementById('week-done-pill');
+    if (donePill) donePill.hidden = !w.all_done;
     const routeUrl = googleMapsRouteUrl(w.orders);
     const routeBtn = document.getElementById('route-btn');
     if (routeBtn) {
@@ -446,13 +461,15 @@
     w.orders.forEach((o, idx) => {
       const card = document.createElement('div');
       card.className = 'order-card';
-      const delivered = !!o.delivered_pot;
+      const status = o.order_status || 'todo';
+      const STATUS_LABELS = { todo: 'Todo', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
+      const badgeText = STATUS_LABELS[status] || 'Todo';
       const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
       const stepHtml = `<span class="step-num">Stop ${idx + 1}</span>`;
       card.innerHTML = `
         <div class="head">
           ${stepHtml}
-          <span class="badge ${delivered ? 'delivered' : 'pending'}">${delivered ? '✓ ' + o.delivered_pot : 'Open'}</span>
+          <span class="badge ${status}">${badgeText}</span>
         </div>
         <div class="name">${o.voornaam || '(geen naam)'}</div>
         <div class="addr">${addr} — ${o.plaats || ''}</div>
@@ -551,7 +568,7 @@
   }
 
   // --- Niet thuis flows ---
-  function leftWithNeighbours() {
+  async function leftWithNeighbours() {
     const o = STATE.currentOrder;
     if (!o) return;
     const huisnr = prompt('Welk huisnummer hebben we de pot afgegeven?');
@@ -561,8 +578,10 @@
 Tot snel!
 Ellis en Melle`;
     openContactWith(tekst);
+    await api('bezorger-set-status', { order_id: o.id, status: 'neighbors' });
+    await loadOrders();
   }
-  function requestPickupSelf() {
+  async function requestPickupSelf() {
     const o = STATE.currentOrder;
     if (!o) return;
     const tekst = `Hi ${o.voornaam}, je was helaas niet thuis vandaag! We hebben geprobeerd je pot Ellemelle langs te brengen. We hebben je pot weer meegenomen en proberen het de komende dagen opnieuw. Wil je jouw pot sneller, dan kan ophalen op de Busken Huëtstraat 11 ook!
@@ -570,6 +589,8 @@ Ellis en Melle`;
 Tot snel!
 Ellis en Melle`;
     openContactWith(tekst);
+    await api('bezorger-set-status', { order_id: o.id, status: 'retry' });
+    await loadOrders();
   }
   function openContactWith(tekst) {
     const o = STATE.currentOrder;
@@ -602,6 +623,8 @@ Ellis en Melle`;
   $('#week-select').addEventListener('change', () => {
     const iso = $('#week-select').value;
     STATE.currentWeek = STATE.weeks.find(w => w.iso === iso) || null;
+    const donePill = document.getElementById('week-done-pill');
+    if (donePill) donePill.hidden = !(STATE.currentWeek && STATE.currentWeek.all_done);
     renderOrders();
   });
 
