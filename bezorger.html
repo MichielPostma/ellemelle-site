@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <style>
+  /* === SHARED TOKENS — mirror of index.html === */
   :root {
     --red: #D9301E;
     --red-dark: #8B1A0E;
@@ -18,9 +19,10 @@
     --cream-dark: #ECE3D2;
     --black: #1A1A1A;
     --white: #FFFFFF;
-    --grey: #666;
-    --radius-md: 14px;
     --shadow-card: 0 2px 10px rgba(139,26,14,0.08);
+    --shadow-cta: 0 6px 18px rgba(217,48,30,0.28);
+    --radius-md: 14px;
+    --radius-sm: 10px;
   }
   *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -29,96 +31,270 @@
     font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
-    min-height: 100dvh;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
-  .wrap { max-width: 560px; margin: 0 auto; padding: 20px 18px 80px; }
-  h1 {
-    font-size: 22px; color: var(--red); font-weight: 700; margin-bottom: 4px;
+  body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 14px 20px 28px;
+    position: relative;
   }
-  .subtitle { color: var(--grey); font-size: 14px; margin-bottom: 22px; }
-  .card {
+
+  /* Top banner — same as main app */
+  .top-banner {
+    width: 100%;
+    background: #f1e7d4;
+    color: var(--red-dark);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 11px 16px;
+    line-height: 1.2;
+    border-bottom: 1px solid rgba(139,26,14,0.07);
+  }
+
+  /* Topbar / progress */
+  .topbar {
+    display: block;
+    margin-bottom: 16px;
+  }
+  .progress-text {
+    color: var(--red-dark);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+
+  /* Headings — same as .step-question */
+  .step-question {
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    color: var(--red);
+    font-size: 28px;
+    line-height: 1.15;
+    margin-bottom: 14px;
+    text-transform: none;
+    letter-spacing: -0.2px;
+    font-weight: 700;
+  }
+  .subtitle {
+    color: #666;
+    font-size: 15px;
+    line-height: 1.45;
+    margin: 0 0 22px;
+  }
+
+  /* Inputs — same shape as main app */
+  .field { margin-bottom: 10px; }
+  input[type="text"], input[type="password"], select {
+    width: 100%;
+    min-height: 60px;
+    padding: 16px 18px;
+    font-size: 18px;
+    font-family: inherit;
     background: var(--white);
-    border: 1px solid rgba(0,0,0,0.06);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    color: var(--black);
+    transition: border-color 140ms, box-shadow 140ms;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'><path fill='%238B1A0E' d='M0 0l7 8 7-8z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 20px center;
+    padding-right: 48px;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card);
+  }
+  input::placeholder { color: rgba(0,0,0,0.32); }
+
+  /* Buttons — same as main app */
+  .btn-primary {
+    display: block;
+    width: 100%;
+    min-height: 60px;
+    text-align: center;
+    text-decoration: none;
+    line-height: 60px;
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    margin-top: 22px;
+    box-shadow: var(--shadow-cta);
+    transition: transform 90ms ease, opacity 140ms;
+  }
+  .btn-primary:disabled {
+    background: #d4cfc4;
+    color: rgba(0,0,0,0.4);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btn-primary:not(:disabled):hover { transform: translateY(-1px); }
+  .btn-primary:not(:disabled):active { transform: translateY(1px); }
+
+  .btn-outline {
+    display: block;
+    width: 100%;
+    min-height: 60px;
+    background: transparent;
+    color: var(--red);
+    border: 2px solid var(--red);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: background 140ms;
+  }
+  .btn-outline:hover { background: rgba(217,48,30,0.06); }
+  .btn-outline:active { background: rgba(217,48,30,0.12); }
+  .btn-outline[hidden] { display: none; }
+
+  .btn-link {
+    background: transparent; border: none; color: var(--red-dark);
+    font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 6px 0;
+  }
+
+  /* White info card — same as .postcode-card */
+  .info-card {
+    background: var(--white);
+    border: 1px solid rgba(0,0,0,0.08);
     border-radius: var(--radius-md);
     padding: 16px 18px;
-    margin-bottom: 12px;
+    margin: 14px 0;
+    line-height: 1.45;
+    box-shadow: none;
   }
+  .info-card strong {
+    display: block;
+    color: var(--black);
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  .info-card .sub {
+    display: block;
+    color: #666;
+    font-size: 14px;
+  }
+
+  /* Order list cards — based on .postcode-card */
   .order-card {
+    background: var(--white);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    line-height: 1.45;
     cursor: pointer;
-    transition: border-color 120ms, transform 90ms;
+    transition: border-color 120ms;
   }
   .order-card:hover { border-color: rgba(217,48,30,0.3); }
-  .order-card .row1 { display: flex; justify-content: space-between; align-items: baseline; }
-  .order-card .name { font-weight: 700; font-size: 17px; color: var(--black); }
+  .order-card .head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  }
+  .order-card .name {
+    font-weight: 700; font-size: 17px; color: var(--black);
+  }
   .order-card .badge {
-    font-size: 11px; padding: 3px 8px; border-radius: 999px; font-weight: 700;
+    font-size: 11px; padding: 4px 10px; border-radius: 999px; font-weight: 700;
+    letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap;
   }
-  .order-card .badge.pending { background: #fff3e0; color: #b85c00; }
-  .order-card .badge.delivered { background: #e0f5e6; color: #1c7d3f; }
-  .order-card .addr { color: var(--grey); font-size: 14px; margin-top: 4px; }
-  .order-card .contact { color: var(--grey); font-size: 13px; margin-top: 6px; }
-  .order-card .contact a { color: var(--red); text-decoration: none; }
+  .order-card .badge.pending { background: rgba(255,210,74,0.20); color: var(--red-dark); }
+  .order-card .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
+  .order-card .addr { color: #666; font-size: 14px; margin-top: 4px; }
+  .order-card .contact { font-size: 13px; margin-top: 6px; }
+  .order-card .contact a { color: var(--red); text-decoration: none; font-weight: 600; }
 
-  .field { margin-bottom: 12px; }
-  label { display: block; font-size: 13px; color: var(--grey); margin-bottom: 4px; font-weight: 500; }
-  input[type="password"], select, input[type="text"] {
-    width: 100%; padding: 14px 16px; font-size: 16px; font-family: inherit;
-    background: var(--white); border: 1.5px solid rgba(0,0,0,0.1); border-radius: 12px;
-    color: var(--black); outline: none;
+  /* Detail card rows */
+  .detail-row {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--cream-dark);
+    font-size: 14px;
   }
-  input:focus, select:focus { border-color: var(--red); }
-
-  .btn-primary {
-    display: block; width: 100%; min-height: 56px; background: var(--red); color: var(--white);
-    border: none; border-radius: var(--radius-md); font-family: inherit; font-size: 17px; font-weight: 700;
-    cursor: pointer; margin-top: 8px;
-  }
-  .btn-primary:disabled { background: #d4cfc4; color: rgba(0,0,0,0.4); cursor: not-allowed; }
-  .btn-secondary {
-    display: block; width: 100%; min-height: 48px; background: transparent; color: var(--red);
-    border: 2px solid var(--red); border-radius: var(--radius-md); font-family: inherit; font-size: 15px; font-weight: 700;
-    cursor: pointer; margin-top: 10px;
-  }
-  .btn-link {
-    background: transparent; border: none; color: var(--red-dark); font: inherit;
-    font-weight: 600; text-decoration: underline; cursor: pointer; padding: 6px 0;
-  }
-  .week-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
-  .week-bar select { flex: 1; }
-  .stats { color: var(--grey); font-size: 13px; text-align: right; margin-bottom: 10px; }
-  .error { color: var(--red); font-size: 14px; margin-top: 8px; min-height: 18px; }
-  .empty { color: var(--grey); text-align: center; padding: 32px 0; font-size: 15px; }
-
-  /* Detail view */
-  .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 14px; }
   .detail-row:last-child { border-bottom: none; }
-  .detail-row .k { color: var(--grey); font-weight: 500; }
+  .detail-row .k { color: #666; font-weight: 500; }
   .detail-row .v { color: var(--black); font-weight: 600; text-align: right; }
   .detail-row .v a { color: var(--red); text-decoration: none; }
 
+  /* Stats row */
+  .stats {
+    color: #666; font-size: 13px; text-align: right; margin: -6px 0 14px;
+    font-weight: 500;
+  }
+
+  /* Empty state */
+  .empty {
+    color: #666; text-align: center; padding: 32px 0; font-size: 15px;
+  }
+
+  /* Error */
+  .error {
+    color: var(--red); font-size: 14px; margin-top: 8px; min-height: 18px; font-weight: 500;
+  }
+
   /* Scanner */
-  #scanner-wrap { position: relative; background: #000; border-radius: 16px; overflow: hidden; margin: 14px 0; }
+  #scanner-wrap {
+    position: relative; background: #000;
+    border-radius: var(--radius-md); overflow: hidden;
+    margin: 14px 0;
+  }
   #scanner-video { width: 100%; display: block; aspect-ratio: 1 / 1; object-fit: cover; }
   .scanner-overlay {
     position: absolute; inset: 0; pointer-events: none;
     display: flex; align-items: center; justify-content: center;
   }
   .scanner-overlay::after {
-    content: ''; width: 60%; height: 60%; border: 3px solid rgba(255,255,255,0.6); border-radius: 14px;
+    content: ''; width: 60%; height: 60%;
+    border: 3px solid rgba(255,255,255,0.6); border-radius: 14px;
   }
-  .manual-pot {
-    margin-top: 12px; padding: 14px; background: #fafafa; border-radius: 12px;
-    font-size: 13px; color: var(--grey);
+
+  /* Manual entry — collapsible white card */
+  .manual-toggle {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 14px 16px; margin-top: 12px;
   }
+  .manual-toggle summary {
+    cursor: pointer; font-size: 14px; color: #666; font-weight: 500;
+    list-style: none; outline: none;
+  }
+  .manual-toggle summary::-webkit-details-marker { display: none; }
+  .manual-toggle summary::after { content: ' ▾'; color: var(--red-dark); }
+  .manual-toggle[open] summary::after { content: ' ▴'; }
+
+  /* Action group */
+  .actions { margin-top: 22px; }
+  .actions .btn-outline { margin-top: 12px; }
 
   /* Toast */
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-    background: var(--black); color: white; padding: 12px 18px; border-radius: 999px;
+    background: var(--black); color: white; padding: 12px 20px; border-radius: 999px;
     font-size: 14px; font-weight: 600; z-index: 100;
     opacity: 0; transition: opacity 200ms;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
-    max-width: 90%; text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    max-width: 90%; text-align: center; pointer-events: none;
   }
   .toast.success { background: #1c7d3f; }
   .toast.error { background: var(--red); }
@@ -127,75 +303,80 @@
 </head>
 <body>
 
-<main class="wrap">
+<!-- Top banner — bezorger context -->
+<div class="top-banner" id="banner-text">Bezorg-app</div>
+
+<main id="app">
+
+  <!-- Topbar / context label -->
+  <div class="topbar">
+    <span class="progress-text" id="progress-text">Bezorger</span>
+  </div>
+
   <!-- LOGIN -->
   <section id="login-view">
-    <h1>Bezorger</h1>
-    <p class="subtitle">Log in om bestellingen te zien.</p>
-    <div class="card">
-      <div class="field">
-        <label for="pw">Wachtwoord</label>
-        <input id="pw" type="password" autocomplete="current-password" placeholder="••••••">
-      </div>
-      <div class="error" id="login-err"></div>
-      <button class="btn-primary" id="login-btn">Inloggen</button>
+    <h1 class="step-question">Voer je wachtwoord in</h1>
+    <p class="subtitle">Toegang tot de bezorgapp.</p>
+    <div class="field">
+      <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord">
     </div>
+    <div class="error" id="login-err"></div>
+    <button class="btn-primary" id="login-btn">Inloggen →</button>
   </section>
 
   <!-- LIST -->
   <section id="list-view" hidden>
-    <h1>Bezorglijst</h1>
-    <p class="subtitle" id="list-subtitle">Kies een week en tap een order om te bezorgen.</p>
-    <div class="week-bar">
+    <h1 class="step-question">Bezorglijst</h1>
+    <p class="subtitle">Kies een week en tap een order om te bezorgen.</p>
+    <div class="field">
       <select id="week-select"></select>
-      <button class="btn-link" id="logout-btn">Uitloggen</button>
     </div>
     <div class="stats" id="stats"></div>
     <div id="orders-list"></div>
+    <button class="btn-outline" id="logout-btn" type="button">Uitloggen</button>
   </section>
 
   <!-- DETAIL -->
   <section id="detail-view" hidden>
     <button class="btn-link" id="back-to-list">← Terug naar lijst</button>
-    <h1 id="detail-name" style="margin-top: 8px;"></h1>
+    <h1 class="step-question" id="detail-name" style="margin-top: 6px;"></h1>
     <p class="subtitle" id="detail-status"></p>
-    <div class="card">
+
+    <div class="info-card">
       <div class="detail-row"><span class="k">Adres</span><span class="v" id="d-addr"></span></div>
       <div class="detail-row"><span class="k">Postcode</span><span class="v" id="d-pc"></span></div>
       <div class="detail-row"><span class="k">Kanaal</span><span class="v" id="d-kanaal"></span></div>
       <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact"></span></div>
-      <div class="detail-row" id="d-delivered-row" hidden><span class="k">Bezorgd</span><span class="v" id="d-delivered"></span></div>
+      <div class="detail-row" id="d-delivered-row" hidden><span class="k">Bezorgd met</span><span class="v" id="d-delivered"></span></div>
     </div>
 
-    <div id="scan-view" hidden>
-      <button class="btn-primary" id="start-scan-btn">Scan pot QR-code</button>
+    <div id="scan-view" hidden class="actions">
+      <button class="btn-primary" id="start-scan-btn">Scan pot QR-code →</button>
       <div id="scanner-wrap" hidden>
         <video id="scanner-video" playsinline muted></video>
         <div class="scanner-overlay"></div>
       </div>
-      <details class="manual-pot">
-        <summary style="cursor:pointer;">Of vul pot-ID handmatig in</summary>
+      <details class="manual-toggle">
+        <summary>Of vul pot-ID handmatig in</summary>
         <div class="field" style="margin-top: 10px;">
           <input id="manual-pot-input" type="text" placeholder="POT-007" autocapitalize="characters" maxlength="7">
         </div>
-        <button class="btn-secondary" id="manual-deliver-btn">Bezorg met dit pot-ID</button>
+        <button class="btn-outline" id="manual-deliver-btn" type="button">Bezorg met dit pot-ID</button>
       </details>
     </div>
 
-    <div id="undo-view" hidden>
-      <button class="btn-secondary" id="undo-btn">Bezorging ongedaan maken</button>
+    <div id="undo-view" hidden class="actions">
+      <button class="btn-outline" id="undo-btn" type="button">Bezorging ongedaan maken</button>
     </div>
   </section>
 </main>
 
 <div class="toast" id="toast"></div>
 
-<!-- QR scanner library (vector-friendly, uses BarcodeDetector or wasm fallback) -->
 <script type="module">
-  // qr-scanner via esm.sh CDN
   import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
 
-  const $ = sel => document.querySelector(sel);
+  const $  = sel => document.querySelector(sel);
   const $$ = sel => Array.from(document.querySelectorAll(sel));
 
   const STATE = {
@@ -211,11 +392,14 @@
     t.textContent = msg;
     t.className = 'toast ' + (type || '') + ' show';
     clearTimeout(window.__toastT);
-    window.__toastT = setTimeout(() => { t.classList.remove('show'); }, 3000);
+    window.__toastT = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
   function showView(id) {
     ['login-view', 'list-view', 'detail-view'].forEach(v => $('#' + v).hidden = (v !== id));
+    if (id === 'login-view') $('#progress-text').textContent = 'Bezorger';
+    if (id === 'list-view')  $('#progress-text').textContent = STATE.currentWeek ? STATE.currentWeek.label.toUpperCase() : 'Bezorger';
+    if (id === 'detail-view') $('#progress-text').textContent = 'Order detail';
   }
 
   async function api(endpoint, payload) {
@@ -243,24 +427,30 @@
     sel.innerHTML = '';
     if (STATE.weeks.length === 0) {
       sel.disabled = true;
+      const opt = document.createElement('option');
+      opt.textContent = 'Geen weken';
+      sel.appendChild(opt);
       $('#orders-list').innerHTML = '<div class="empty">Nog geen bestellingen.</div>';
+      $('#stats').textContent = '';
       return;
     }
     sel.disabled = false;
-    // Default to most recent week
-    const todayISO = new Date().toISOString().slice(0,4) + '-W' +
-      String(Math.ceil((((new Date() - new Date(new Date().getFullYear(), 0, 1)) / 86400000) + 1) / 7)).padStart(2,'0');
-    let defaultIdx = STATE.weeks.findIndex(w => w.iso === todayISO);
-    if (defaultIdx < 0) defaultIdx = STATE.weeks.length - 1;
-    STATE.weeks.forEach((w, i) => {
+    STATE.weeks.forEach(w => {
       const opt = document.createElement('option');
       opt.value = w.iso;
       opt.textContent = `${w.label} (${w.total})`;
       sel.appendChild(opt);
     });
-    sel.selectedIndex = defaultIdx;
-    STATE.currentWeek = STATE.weeks[defaultIdx];
+    sel.selectedIndex = STATE.weeks.length - 1;
+    STATE.currentWeek = STATE.weeks[STATE.weeks.length - 1];
+    $('#progress-text').textContent = STATE.currentWeek.label.toUpperCase();
     renderOrders();
+  }
+
+  function fmtWaLink(tel) {
+    if (!tel) return '';
+    const cleaned = tel.replace(/[^\d+]/g, '').replace(/^00/, '+').replace(/^0/, '+31');
+    return `https://wa.me/${cleaned.replace('+','')}`;
   }
 
   function renderOrders() {
@@ -275,16 +465,15 @@
     $('#stats').textContent = `${w.delivered}/${w.total} bezorgd`;
     for (const o of w.orders) {
       const card = document.createElement('div');
-      card.className = 'card order-card';
+      card.className = 'order-card';
       const delivered = !!o.delivered_pot;
-      const fullName = (o.voornaam || '(geen naam)');
       const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
       const contact = o.kanaal === 'whatsapp'
-        ? (o.telefoon ? `<a href="https://wa.me/${o.telefoon.replace(/[^\d+]/g,'').replace(/^00/,'+').replace(/^0/, '+31')}" target="_blank">WhatsApp ${o.telefoon}</a>` : '')
+        ? (o.telefoon ? `<a href="${fmtWaLink(o.telefoon)}" target="_blank">WhatsApp ${o.telefoon}</a>` : '')
         : (o.email ? `<a href="mailto:${o.email}">${o.email}</a>` : '');
       card.innerHTML = `
-        <div class="row1">
-          <span class="name">${fullName}</span>
+        <div class="head">
+          <span class="name">${o.voornaam || '(geen naam)'}</span>
           <span class="badge ${delivered ? 'delivered' : 'pending'}">${delivered ? '✓ ' + o.delivered_pot : 'Open'}</span>
         </div>
         <div class="addr">${addr} — ${o.postcode || ''} ${o.plaats || ''}</div>
@@ -299,15 +488,14 @@
     STATE.currentOrder = order;
     $('#detail-name').textContent = order.voornaam || '(geen naam)';
     $('#detail-status').textContent = order.delivered_pot
-      ? `Bezorgd met ${order.delivered_pot} op ${new Date(order.delivered_at).toLocaleString('nl-NL')}`
-      : 'Nog te bezorgen';
+      ? `Bezorgd op ${new Date(order.delivered_at).toLocaleString('nl-NL')}`
+      : 'Nog te bezorgen.';
     $('#d-addr').textContent = `${order.straat} ${order.huisnummer}${order.toevoeging ? '-' + order.toevoeging : ''}`;
-    $('#d-pc').textContent = `${order.postcode || ''} ${order.plaats || ''}`;
+    $('#d-pc').textContent   = `${order.postcode || ''} ${order.plaats || ''}`.trim();
     $('#d-kanaal').textContent = order.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
     const contactEl = $('#d-contact');
     if (order.kanaal === 'whatsapp' && order.telefoon) {
-      const tel = order.telefoon.replace(/[^\d+]/g,'').replace(/^00/,'+').replace(/^0/, '+31');
-      contactEl.innerHTML = `<a href="https://wa.me/${tel}" target="_blank">${order.telefoon}</a>`;
+      contactEl.innerHTML = `<a href="${fmtWaLink(order.telefoon)}" target="_blank">${order.telefoon}</a>`;
     } else {
       contactEl.textContent = order.email || order.telefoon || '';
     }
@@ -326,18 +514,13 @@
 
   async function deliverPot(potId) {
     if (!STATE.currentOrder) return;
-    const res = await api('bezorger-deliver', {
-      order_id: STATE.currentOrder.id,
-      pot_id: potId,
-    });
+    const res = await api('bezorger-deliver', { order_id: STATE.currentOrder.id, pot_id: potId });
     if (res.ok) {
-      showToast(`Pot ${res.data.pot_id} bezorgd bij ${STATE.currentOrder.voornaam}!`, 'success');
+      showToast(`Pot ${res.data.pot_id} bezorgd bij ${STATE.currentOrder.voornaam}`, 'success');
       stopScanner();
       await loadOrders();
-      // Refresh detail view with updated order
       const updated = STATE.weeks.flatMap(w => w.orders).find(o => o.id === STATE.currentOrder.id);
-      if (updated) openDetail(updated);
-      else showView('list-view');
+      if (updated) openDetail(updated); else showView('list-view');
     } else {
       showToast(res.data.error || 'Bezorging mislukt', 'error');
     }
@@ -352,22 +535,15 @@
     STATE.qrScanner = new QrScanner(video, async result => {
       const text = result.data || result;
       const m = /POT-\d{3}/i.exec(text);
-      if (m) {
-        const potId = m[0].toUpperCase();
-        await deliverPot(potId);
-      }
+      if (m) await deliverPot(m[0].toUpperCase());
     }, { highlightScanRegion: true, returnDetailedScanResult: true });
-    try {
-      await STATE.qrScanner.start();
-    } catch (e) {
-      showToast('Camera niet beschikbaar — gebruik handmatige invoer', 'error');
-      stopScanner();
-    }
+    try { await STATE.qrScanner.start(); }
+    catch (e) { showToast('Camera niet beschikbaar — gebruik handmatig', 'error'); stopScanner(); }
   }
 
   function stopScanner() {
     $('#scanner-wrap').hidden = true;
-    $('#start-scan-btn').textContent = 'Scan pot QR-code';
+    $('#start-scan-btn').textContent = 'Scan pot QR-code →';
     if (STATE.qrScanner) {
       STATE.qrScanner.stop();
       STATE.qrScanner.destroy();
@@ -388,9 +564,9 @@
     }
   }
 
-  // Event bindings
+  // Events
   $('#login-btn').addEventListener('click', async () => {
-    const pw = $('#pw').value;
+    const pw = $('#pw').value.trim();
     if (!pw) return;
     STATE.password = pw;
     const res = await api('bezorger-orders');
@@ -407,36 +583,26 @@
 
   $('#logout-btn').addEventListener('click', () => {
     localStorage.removeItem('ellemelle_bezorger_pw');
-    STATE.password = '';
-    $('#pw').value = '';
+    STATE.password = ''; $('#pw').value = '';
     showView('login-view');
   });
 
   $('#week-select').addEventListener('change', () => {
     const iso = $('#week-select').value;
     STATE.currentWeek = STATE.weeks.find(w => w.iso === iso) || null;
+    if (STATE.currentWeek) $('#progress-text').textContent = STATE.currentWeek.label.toUpperCase();
     renderOrders();
   });
 
-  $('#back-to-list').addEventListener('click', () => {
-    stopScanner();
-    showView('list-view');
-  });
-
-  $('#start-scan-btn').addEventListener('click', () => {
-    if (STATE.qrScanner) stopScanner();
-    else startScanner();
-  });
-
+  $('#back-to-list').addEventListener('click', () => { stopScanner(); showView('list-view'); });
+  $('#start-scan-btn').addEventListener('click', () => { if (STATE.qrScanner) stopScanner(); else startScanner(); });
   $('#manual-deliver-btn').addEventListener('click', () => {
     const v = $('#manual-pot-input').value.trim().toUpperCase();
     if (/^POT-\d{3}$/.test(v)) deliverPot(v);
     else showToast('Ongeldig pot-ID. Voorbeeld: POT-007', 'error');
   });
-
   $('#undo-btn').addEventListener('click', undoDelivery);
 
-  // Auto-login if password is in localStorage
   if (STATE.password) {
     api('bezorger-orders').then(res => {
       if (res.ok) {
