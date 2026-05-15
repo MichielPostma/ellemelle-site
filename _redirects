@@ -10,3 +10,7 @@
 /api/bezorger/deliver /.netlify/functions/bezorger-deliver 200
 /api/bezorger/undo /.netlify/functions/bezorger-undo 200
 /bezorger /bezorger.html 200
+/api/pot/* /.netlify/functions/pot-get 200
+/api/customer/request-pickup /.netlify/functions/customer-request-pickup 200
+/api/customer/reorder /.netlify/functions/customer-reorder 200
+/pot/* /pot.html 200

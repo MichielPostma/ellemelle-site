@@ -69,3 +69,22 @@
   from = "/bezorger"
   to = "/bezorger.html"
   status = 200
+[[redirects]]
+  from = "/api/pot/*"
+  to = "/.netlify/functions/pot-get"
+  status = 200
+
+[[redirects]]
+  from = "/api/customer/request-pickup"
+  to = "/.netlify/functions/customer-request-pickup"
+  status = 200
+
+[[redirects]]
+  from = "/api/customer/reorder"
+  to = "/.netlify/functions/customer-reorder"
+  status = 200
+
+[[redirects]]
+  from = "/pot/*"
+  to = "/pot.html"
+  status = 200

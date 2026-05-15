@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#D9301E">
+<title>ELLEMELLE — jouw pot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+  /* Shared tokens — mirror of index.html */
+  :root {
+    --red: #D9301E;
+    --red-dark: #8B1A0E;
+    --cream: #feece2;
+    --cream-dark: #ECE3D2;
+    --black: #1A1A1A;
+    --white: #FFFFFF;
+    --shadow-card: 0 2px 10px rgba(139,26,14,0.08);
+    --shadow-cta: 0 6px 18px rgba(217,48,30,0.28);
+    --radius-md: 14px;
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream); color: var(--black);
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 16px; -webkit-font-smoothing: antialiased; min-height: 100dvh;
+  }
+  #app { max-width: 480px; margin: 0 auto; padding: 14px 20px 28px; }
+
+  .top-banner {
+    width: 100%;
+    background: #f1e7d4; color: var(--red-dark);
+    font-size: 12.5px; font-weight: 600; letter-spacing: 0.6px;
+    text-transform: uppercase; text-align: center;
+    padding: 11px 16px; line-height: 1.2;
+    border-bottom: 1px solid rgba(139,26,14,0.07);
+  }
+  .progress-text {
+    color: var(--red-dark); font-size: 13px; font-weight: 700;
+    text-align: left; letter-spacing: 0.4px; text-transform: uppercase;
+    opacity: 0.55; margin-bottom: 16px; display: block;
+  }
+  .step-question {
+    color: var(--red); font-size: 28px; line-height: 1.15; margin-bottom: 14px;
+    text-transform: none; letter-spacing: -0.2px; font-weight: 700;
+  }
+  .subtitle { color: #666; font-size: 15px; line-height: 1.45; margin: 0 0 22px; }
+  .meta { color: #888; font-size: 13px; margin-top: 18px; }
+
+  .btn-primary {
+    display: block; width: 100%; min-height: 60px;
+    text-align: center; text-decoration: none; line-height: 60px;
+    background: var(--red); color: var(--white);
+    border: none; border-radius: var(--radius-md);
+    font-family: inherit; font-size: 18px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 14px;
+    box-shadow: var(--shadow-cta);
+    transition: transform 90ms ease;
+  }
+  .btn-primary:disabled { background: #d4cfc4; color: rgba(0,0,0,0.4); cursor: not-allowed; box-shadow: none; }
+  .btn-primary:not(:disabled):hover { transform: translateY(-1px); }
+
+  .btn-outline {
+    display: block; width: 100%; min-height: 60px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 18px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 12px;
+    transition: background 140ms;
+  }
+  .btn-outline:hover { background: rgba(217,48,30,0.06); }
+
+  .info-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 16px 18px;
+    margin: 14px 0; line-height: 1.45; box-shadow: none;
+  }
+  .info-card strong { display: block; color: var(--black); font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+  .info-card .sub { display: block; color: #666; font-size: 14px; }
+
+  .loading { color: #666; font-size: 15px; padding: 32px 0; text-align: center; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--black); color: white; padding: 12px 20px; border-radius: 999px;
+    font-size: 14px; font-weight: 600; z-index: 100;
+    opacity: 0; transition: opacity 200ms; pointer-events: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18); max-width: 90%; text-align: center;
+  }
+  .toast.show { opacity: 1; }
+  .toast.success { background: #1c7d3f; }
+  .toast.error { background: var(--red); }
+
+  /* Reorder review step */
+  .order-card {
+    background: var(--white); border-radius: var(--radius-md); padding: 18px 18px;
+    box-shadow: var(--shadow-card); margin-bottom: 14px; text-align: left;
+  }
+  .order-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 15px; }
+  .order-line.total { border-top: 2px dashed var(--cream-dark); padding-top: 12px; margin-top: 8px; font-weight: 700; font-size: 19px; color: var(--black); }
+  .order-meta { font-size: 13.5px; line-height: 1.55; color: rgba(0,0,0,0.72); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--cream-dark); }
+  .order-meta strong { color: var(--black); }
+
+  .check-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 12px 0; font-size: 14px; line-height: 1.45;
+    cursor: pointer;
+  }
+  .check-row input { margin-top: 2px; }
+
+  /* Success state */
+  .step.success { text-align: center; }
+  #qrcode {
+    display: flex; justify-content: center; align-items: center;
+    width: 240px; height: 240px; margin: 28px auto 24px;
+    padding: 20px; background: #fff; border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    animation: qr-wiggle 4s ease-in-out infinite;
+    transform-origin: center center;
+  }
+  #qrcode img, #qrcode canvas { display: block; }
+  @keyframes qr-wiggle {
+    0%   { transform: rotate(0deg); }
+    4%   { transform: rotate(-4deg); }
+    8%   { transform: rotate(4deg); }
+    12%  { transform: rotate(-3deg); }
+    16%  { transform: rotate(3deg); }
+    20%  { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { #qrcode { animation: none; } }
+  .success-subtitle { color: #666; font-size: 15px; line-height: 1.45; text-align: center; margin: 6px auto 0; max-width: 360px; }
+</style>
+</head>
+<body>
+
+<div class="top-banner" id="banner-text">Jouw ELLEMELLE pot</div>
+
+<main id="app">
+  <span class="progress-text" id="pot-label">Pot</span>
+
+  <!-- Loading -->
+  <section id="loading-view"><div class="loading">Even kijken…</div></section>
+
+  <!-- State: not found -->
+  <section id="notfound-view" hidden>
+    <h1 class="step-question">Hmm, deze pot kennen we niet.</h1>
+    <div class="info-card">
+      <strong>Pot bestaat niet</strong>
+      <span class="sub">Check of je de juiste QR-code hebt gescand. Pot-ID's lopen van POT-001 t/m POT-025.</span>
+    </div>
+  </section>
+
+  <!-- State: available -->
+  <section id="available-view" hidden>
+    <h1 class="step-question">Deze pot wacht nog op een bezorging.</h1>
+    <div class="info-card">
+      <strong>Nog niet uit het magazijn</strong>
+      <span class="sub">Dit is een pot ELLEMELLE chocopasta. Zodra Ellis & Melle 'm bezorgen, kun je hier acties doen.</span>
+    </div>
+  </section>
+
+  <!-- State: delivered (choices) -->
+  <section id="delivered-view" hidden>
+    <h1 class="step-question" id="delivered-h1">Hi!</h1>
+    <p class="subtitle">Je pot ELLEMELLE chocopasta is bij je bezorgd. Wat wil je nu doen?</p>
+    <button class="btn-primary" id="btn-reorder">Ja, ik wil nieuwe pot →</button>
+    <button class="btn-outline" id="btn-pickup">Alleen ophalen</button>
+    <p class="meta" id="delivered-meta"></p>
+  </section>
+
+  <!-- State: pickup-requested -->
+  <section id="pickup-view" hidden>
+    <h1 class="step-question">Top!</h1>
+    <div class="info-card">
+      <strong>We halen je pot zo snel mogelijk op.</strong>
+      <span class="sub">Bedankt dat je de glazen pot teruggeeft — €1 statiegeld krijg je terug bij je volgende bestelling.</span>
+    </div>
+  </section>
+
+  <!-- State: pickup-with-reorder -->
+  <section id="reordered-view" hidden>
+    <h1 class="step-question">Top!</h1>
+    <div class="info-card">
+      <strong>Nieuwe pot komt eraan.</strong>
+      <span class="sub">De lege pot halen we mee bij de volgende bezorgmoment.</span>
+    </div>
+  </section>
+
+  <!-- Reorder flow: review -->
+  <section id="reorder-review-view" hidden>
+    <h1 class="step-question">Klopt dit, <span id="reorder-name">jij</span>?</h1>
+    <p class="subtitle">We bezorgen op hetzelfde adres als vorige keer.</p>
+    <div class="order-card" id="reorder-order-card"></div>
+    <label class="check-row">
+      <input type="checkbox" id="reorder-confirm">
+      <span>Ja, ik wil 1 pot Ellemelle chocopasta, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
+    </label>
+    <button class="btn-primary" id="reorder-submit-btn" disabled>Doe betaling →</button>
+    <button class="btn-outline" id="reorder-back-btn">Terug</button>
+  </section>
+
+  <!-- Reorder flow: success -->
+  <section id="reorder-success-view" hidden class="step success">
+    <h1 class="step-question" id="success-h1">Leuk!</h1>
+    <p class="success-subtitle">Doe je betaling via QR code of gebruik de button.</p>
+    <div id="qrcode"></div>
+    <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Of betaal met iDeal →</a>
+    <div class="order-card" id="success-recap" style="margin-top: 24px;"></div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
+<script>
+(function(){
+  'use strict';
+
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  const STATE = {
+    potId: null,
+    pot: null,            // server response
+    configCache: null,    // tikkie URLs
+    reorderResp: null,    // server response of the reorder submit
+  };
+
+  function showToast(msg, type) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type || '') + ' show';
+    clearTimeout(window.__toastT);
+    window.__toastT = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function showView(id) {
+    ['loading-view','notfound-view','available-view','delivered-view','pickup-view',
+     'reordered-view','reorder-review-view','reorder-success-view'].forEach(v => {
+      $('#' + v).hidden = (v !== id);
+    });
+  }
+
+  function getPotIdFromURL() {
+    const m = location.pathname.match(/POT-\d{3}/i);
+    return m ? m[0].toUpperCase() : null;
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function fetchPot(potId) {
+    const r = await fetch('/.netlify/functions/pot-get?pot_id=' + encodeURIComponent(potId), { cache: 'no-store' });
+    return r.ok ? r.json() : null;
+  }
+
+  async function loadConfig() {
+    try {
+      const r = await fetch('/api/config', { cache: 'no-store' });
+      if (r.ok) STATE.configCache = await r.json();
+    } catch {}
+  }
+
+  function renderForCurrentState() {
+    const p = STATE.pot;
+    if (!p) { showView('notfound-view'); return; }
+    $('#pot-label').textContent = 'Pot ' + p.id;
+    if (p.status === 'available') {
+      showView('available-view');
+    } else if (p.status === 'delivered') {
+      const name = p.voornaam ? `Hi ${p.voornaam}!` : 'Hi!';
+      $('#delivered-h1').textContent = name;
+      if (p.delivered_at) {
+        $('#delivered-meta').textContent = 'Bezorgd op ' + new Date(p.delivered_at).toLocaleDateString('nl-NL', { day:'numeric', month:'long' });
+      } else {
+        $('#delivered-meta').textContent = '';
+      }
+      showView('delivered-view');
+    } else if (p.status === 'pickup-requested') {
+      showView('pickup-view');
+    } else if (p.status === 'pickup-with-reorder') {
+      showView('reordered-view');
+    } else {
+      showView('notfound-view');
+    }
+  }
+
+  // --- Pickup only ---
+  async function requestPickup() {
+    const btn = $('#btn-pickup'), prim = $('#btn-reorder');
+    btn.disabled = true; prim.disabled = true;
+    btn.textContent = 'Bezig…';
+    const r = await fetch('/.netlify/functions/customer-request-pickup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pot_id: STATE.potId }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) {
+      showToast('Top! Ophaalverzoek doorgegeven.', 'success');
+      STATE.pot.status = 'pickup-requested';
+      renderForCurrentState();
+    } else {
+      btn.disabled = false; prim.disabled = false;
+      btn.textContent = 'Alleen ophalen';
+      showToast(j.error || 'Iets ging mis', 'error');
+    }
+  }
+
+  // --- Reorder review ---
+  function openReorderReview() {
+    const p = STATE.pot;
+    $('#reorder-name').textContent = p.voornaam || 'jij';
+    const addrLine = (p.adres ? escapeHtml(p.adres) : '(adres onbekend)');
+    const cityLine = (p.stad ? escapeHtml(p.stad) : '');
+    $('#reorder-order-card').innerHTML =
+      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
+      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
+      '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
+      '<div class="order-meta">' +
+        '<strong>Bezorgadres</strong><br>' + addrLine + '<br>' + cityLine + '<br><br>' +
+        'Binnen 4 weken aan je deur door Ellis & Melle. Lege pot ' + escapeHtml(STATE.potId) + ' nemen we mee.' +
+      '</div>';
+    $('#reorder-confirm').checked = false;
+    $('#reorder-submit-btn').disabled = true;
+    showView('reorder-review-view');
+  }
+
+  async function submitReorder() {
+    const btn = $('#reorder-submit-btn');
+    btn.disabled = true; btn.textContent = 'Bezig…';
+    const r = await fetch('/.netlify/functions/customer-reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pot_id: STATE.potId }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      btn.disabled = false; btn.textContent = 'Doe betaling →';
+      showToast(j.error || 'Bestellen mislukt', 'error');
+      return;
+    }
+    STATE.reorderResp = j;
+    STATE.pot.status = 'pickup-with-reorder';
+    await renderReorderSuccess();
+  }
+
+  async function renderReorderSuccess() {
+    showView('reorder-success-view');
+    const p = STATE.pot;
+    $('#success-h1').innerHTML = 'Leuk ' + escapeHtml(p.voornaam || '') + '! Doe je betaling, dan bezorgen we binnen 4 weken 🎉';
+    // Tikkie URL
+    if (!STATE.configCache) await loadConfig();
+    const cfg = STATE.configCache || {};
+    const tikkieURL = (cfg.tikkieA && Math.random() > 0.5) ? cfg.tikkieA : (cfg.tikkieB || cfg.tikkieA || '#');
+    $('#tikkie-btn').href = tikkieURL;
+    // QR
+    const qrEl = $('#qrcode');
+    qrEl.innerHTML = '';
+    if (window.QRCode) {
+      try {
+        new QRCode(qrEl, { text: tikkieURL, width: 200, height: 200, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
+      } catch { qrEl.textContent = 'QR niet geladen — gebruik knop'; }
+    } else {
+      qrEl.textContent = 'QR laadt…';
+    }
+    // Recap
+    const addr = p.adres || '';
+    const stad = p.stad || '';
+    $('#success-recap').innerHTML =
+      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
+      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
+      '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
+      '<div class="order-meta">' +
+        '<strong>Bezorgadres</strong><br>' + escapeHtml(addr) + '<br>' + escapeHtml(stad) + '<br><br>' +
+        '<strong>Oude pot</strong> ' + escapeHtml(STATE.potId) + ' halen we mee.' +
+      '</div>';
+  }
+
+  // Events
+  $('#btn-pickup').addEventListener('click', requestPickup);
+  $('#btn-reorder').addEventListener('click', openReorderReview);
+  $('#reorder-back-btn').addEventListener('click', () => {
+    if (STATE.pot.status === 'pickup-with-reorder') showView('reordered-view');
+    else renderForCurrentState();
+  });
+  $('#reorder-confirm').addEventListener('change', () => {
+    $('#reorder-submit-btn').disabled = !$('#reorder-confirm').checked;
+  });
+  $('#reorder-submit-btn').addEventListener('click', submitReorder);
+
+  // Boot
+  (async () => {
+    STATE.potId = getPotIdFromURL();
+    if (!STATE.potId) {
+      showView('notfound-view');
+      return;
+    }
+    const p = await fetchPot(STATE.potId);
+    if (!p || p.error) {
+      showView('notfound-view');
+      return;
+    }
+    STATE.pot = p;
+    renderForCurrentState();
+  })();
+})();
+</script>
+
+</body>
+</html>
