@@ -623,6 +623,35 @@
   .status-dot.amber  { background: #f0ad00; }
   .order-meta .levering-block { margin-bottom: 16px; }
 
+
+  /* Admin picker (mode=admin) */
+  body.on-admin-picker { display: flex; flex-direction: column; min-height: 100dvh; }
+  body.on-admin-picker .progress-text { display: none; }
+  body.on-admin-picker #counter { display: none; }
+  body.on-admin-picker .steps,
+  body.on-admin-picker #restart-btn,
+  body.on-admin-picker .product-hero { display: none; }
+  #admin-picker { padding: 28px 24px 40px; max-width: 480px; margin: 0 auto; }
+  #admin-picker h1 { color: var(--red); font-size: 28px; font-weight: 700; line-height: 1.15; margin-bottom: 18px; letter-spacing: -0.2px; }
+  #admin-picker .sub { color: #666; font-size: 13px; margin: 18px 0 8px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+  #admin-picker input[type="text"] {
+    width: 100%; min-height: 56px; padding: 14px 16px; font-size: 17px;
+    border: 2px solid transparent; border-radius: 14px; background: var(--white);
+    box-shadow: 0 2px 10px rgba(139,26,14,0.08); color: var(--black);
+    appearance: none; -webkit-appearance: none;
+  }
+  #admin-picker input[type="text"]:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(217,48,30,0.12); }
+  #admin-customers { margin-top: 10px; max-height: 360px; overflow-y: auto; }
+  #admin-customers .cust-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px; padding: 12px 14px; margin-bottom: 8px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  #admin-customers .cust-card:active { transform: scale(0.99); }
+  #admin-customers .cust-name { font-weight: 700; font-size: 15px; color: var(--black); }
+  #admin-customers .cust-addr { color: #666; font-size: 13px; margin-top: 2px; }
+  #admin-customers .empty { color: #666; font-size: 14px; padding: 12px 0; text-align: center; }
+
 </style>
 </head>
 <body>
@@ -641,6 +670,8 @@
   <input name="aantal" type="text">
   <input name="delivery_date" type="text">
   <input name="delivery_mode" type="text">
+  <input name="is_admin_order" type="text">
+  <input name="customer_identifier" type="text">
   <input name="bot-field" type="text">
 </form>
 
@@ -651,7 +682,16 @@
 
 <main id="app">
 
-  <!-- Topbar (step progress only) -->
+  <!-- Admin picker (only shown for ?start=admin) -->
+<section id="admin-picker" hidden>
+  <h1>Voor wie?</h1>
+  <button class="btn-primary" id="admin-new-customer" type="button">Nieuwe klant →</button>
+  <div class="sub">Bestaande klant</div>
+  <input id="admin-customer-search" type="text" placeholder="Zoek op naam of adres" autocomplete="off">
+  <div id="admin-customers"></div>
+</section>
+
+<!-- Topbar (step progress only) -->
   <div class="topbar">
     <span class="progress-text" id="progress-text">Stap 1 van 7</span>
   </div>
@@ -1170,6 +1210,104 @@
     return `${y}-${m}-${d}`;
   }
 
+  // --- Admin order flow --------------------------------------------------
+  let __adminMode = null; // 'new' | 'existing' | null
+  let __adminCustomers = [];
+  function showAdminPicker() {
+    document.body.classList.add('on-admin-picker');
+    document.body.classList.remove('on-intro');
+    const ap = document.getElementById('admin-picker');
+    if (ap) ap.hidden = false;
+    loadAdminCustomers();
+  }
+  function hideAdminPicker() {
+    document.body.classList.remove('on-admin-picker');
+    const ap = document.getElementById('admin-picker');
+    if (ap) ap.hidden = true;
+  }
+  async function loadAdminCustomers() {
+    const wrap = document.getElementById('admin-customers');
+    let pw = null;
+    try {
+      const raw = localStorage.getItem('ellemelle_admin_session_v1') || localStorage.getItem('ellemelle_bezorger_session_v1');
+      if (raw) { const o = JSON.parse(raw); pw = o && o.password; }
+    } catch {}
+    if (!pw) {
+      wrap.innerHTML = '<div class="empty">Log eerst in op /bestellingen om klantenlijst te zien.</div>';
+      return;
+    }
+    try {
+      const r = await fetch('/.netlify/functions/klanten-list', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ password: pw }),
+      });
+      const j = await r.json().catch(()=>({}));
+      __adminCustomers = j.customers || [];
+      renderAdminCustomers();
+    } catch (e) {
+      wrap.innerHTML = '<div class="empty">Kon klantenlijst niet ophalen.</div>';
+    }
+  }
+  function renderAdminCustomers() {
+    const wrap = document.getElementById('admin-customers');
+    const q = (document.getElementById('admin-customer-search')?.value || '').toLowerCase().trim();
+    let list = __adminCustomers.slice();
+    if (q) list = list.filter(c => (c.voornaam||'').toLowerCase().includes(q) || (c.adres||'').toLowerCase().includes(q));
+    wrap.innerHTML = '';
+    if (list.length === 0) {
+      wrap.innerHTML = '<div class="empty">Geen klanten gevonden.</div>';
+      return;
+    }
+    list.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'cust-card';
+      card.innerHTML = `
+        <div class="cust-name">${escapeHtml(c.voornaam||'(geen naam)')}</div>
+        <div class="cust-addr">${escapeHtml(c.adres||'')}${c.plaats ? ' — ' + escapeHtml(c.plaats) : ''}</div>
+      `;
+      card.addEventListener('click', () => pickExistingCustomer(c));
+      wrap.appendChild(card);
+    });
+  }
+  function pickNewCustomer() {
+    __adminMode = 'new';
+    hideAdminPicker();
+    currentStep = 1;
+    prepareStep(1);
+    showStep(1);
+  }
+  function pickExistingCustomer(c) {
+    __adminMode = 'existing';
+    formData.voornaam = c.voornaam || '';
+    formData.kanaal   = c.kanaal || 'whatsapp';
+    formData.telefoon = c.telefoon || '';
+    formData.email    = c.email || '';
+    const m = /^(.*?)\s+(\d+)(?:-(.+))?$/.exec(c.adres || '');
+    if (m) {
+      formData.straat = m[1].trim();
+      formData.huisnummer = m[2];
+      formData.toevoeging = m[3] || '';
+    } else {
+      formData.straat = c.adres || '';
+      formData.huisnummer = '';
+    }
+    formData.plaats = c.plaats || 'Haarlem';
+    formData.__customer_identifier = c.key || '';
+    hideAdminPicker();
+    currentStep = 4;
+    prepareStep(4);
+    showStep(4);
+    saveState();
+  }
+  function nextStepAfter(n) {
+    if (__adminMode === 'existing' && n === 4) return 7;
+    return n + 1;
+  }
+  function prevStepBefore(n) {
+    if (__adminMode === 'existing' && n === 7) return 4;
+    return n - 1;
+  }
+
   // --- Submit ------------------------------------------------------------
   function encodeForm(data) {
     return Object.keys(data).map(k =>
@@ -1193,7 +1331,13 @@
     }
     const __delivery_date = (__lev && __lev.delivery_date) ? __lev.delivery_date : computeNoScheduleDeadline();
     const __delivery_mode = (__lev && __lev.mode) ? __lev.mode : 'no_schedule';
-    const payload = Object.assign({}, formData, { delivery_date: __delivery_date, delivery_mode: __delivery_mode });
+    const payload = Object.assign({}, formData, {
+      delivery_date: __delivery_date,
+      delivery_mode: __delivery_mode,
+      is_admin_order: __adminMode ? 'true' : '',
+      customer_identifier: formData.__customer_identifier || '',
+    });
+    delete payload.__customer_identifier;
 
     // Strategy: try our signup function first (Supabase if configured, else forwards to Netlify Forms).
     // Fall back to direct Netlify Forms POST if the function is unreachable.
@@ -1553,13 +1697,15 @@
         setTimeout(() => { lastLookup = ''; lookupAddress(); }, 200);
       }
     } else {
-      // Check ?start=1 query param — admin skips intro and jumps to step 1
+      // Check query params: ?start=admin → show customer picker; ?start=1 → jump to step 1
       const params = new URLSearchParams(location.search);
-      if (params.get('start') === '1') {
+      if (params.get('start') === 'admin') {
+        showAdminPicker();
+        try { history.replaceState({}, '', location.pathname); } catch {}
+      } else if (params.get('start') === '1') {
         currentStep = 1;
         prepareStep(1);
         showStep(1);
-        // Clean URL so refresh doesn't keep the flag
         try { history.replaceState({}, '', location.pathname); } catch {}
       } else {
         // Fresh visitor → intro screen
@@ -1568,7 +1714,13 @@
       }
     }
 
-    // Default kanaal to WhatsApp if nothing chosen yet
+    // Admin picker bindings
+    const apNew = document.getElementById('admin-new-customer');
+    if (apNew) apNew.addEventListener('click', pickNewCustomer);
+    const apSearch = document.getElementById('admin-customer-search');
+    if (apSearch) apSearch.addEventListener('input', renderAdminCustomers);
+
+        // Default kanaal to WhatsApp if nothing chosen yet
     if (!formData.kanaal) {
       formData.kanaal = 'whatsapp';
     }
