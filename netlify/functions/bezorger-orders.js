@@ -3,6 +3,7 @@
 
 const { getStore } = require('@netlify/blobs');
 const { deliveryWeekForDate, isoWeek } = require('./_lib/blobs');
+const { countInStock } = require('./_lib/inventory');
 
 function toISODate(d) {
   const x = new Date(d);
@@ -136,24 +137,23 @@ exports.handler = async (event) => {
   const geocodes = await Promise.all(subs.map(s => geocode((s.data||{}).postcode, (s.data||{}).huisnummer)));
   const enriched = [];
   for (let i = 0; i < subs.length; i++) {
-    const s = subs[i];
-    const d = s.data || {};
-    const orderId = s.id;
+    const sub = subs[i];
+    const d = sub.data || {};
+    const orderId = sub.id;
     let state = await ordersStore.get(orderId, { type: 'json' });
     state = state || {};
-    // Resolve delivery_date: prefer submitted form field; else state blob; else fallback (no_schedule deadline 28d → next sat)
-    let deliveryDate = d.delivery_date || state.delivery_date || null;
-    let deliveryMode = d.delivery_mode || state.delivery_mode || null;
-    if (!deliveryDate || !/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate)) {
-      deliveryDate = fallbackNoScheduleDate(s.created_at);
-      if (!deliveryMode) deliveryMode = 'no_schedule';
+    // Snapshot values from submit-time (frozen non-stock fallback)
+    let snapshotDate = d.delivery_date || state.delivery_date || null;
+    let snapshotMode = d.delivery_mode || state.delivery_mode || null;
+    if (!snapshotDate || !/^\d{4}-\d{2}-\d{2}$/.test(snapshotDate)) {
+      snapshotDate = fallbackNoScheduleDate(sub.created_at);
+      if (!snapshotMode) snapshotMode = 'no_schedule';
     }
-    if (!deliveryMode) deliveryMode = 'production';
-    const week = isoWeekOfDate(deliveryDate);
+    if (!snapshotMode) snapshotMode = 'production';
     const geo = geocodes[i] || {};
     enriched.push({
       id: orderId,
-      created_at: s.created_at,
+      created_at: sub.created_at,
       voornaam: d.voornaam || '',
       kanaal: d.kanaal || '',
       email: d.email || '',
@@ -165,18 +165,47 @@ exports.handler = async (event) => {
       plaats: d.plaats || '',
       lat: geo.lat || null,
       lng: geo.lng || null,
-      delivery_date: deliveryDate,
-      delivery_mode: deliveryMode,
-      delivery_week: week,
+      // Snapshot (non-stock fallback)
+      snapshot_delivery_date: snapshotDate,
+      snapshot_delivery_mode: snapshotMode,
       delivered_pot: state.delivered_pot || null,
       delivered_at: state.delivered_at || null,
       order_status: state.order_status || (state.delivered_pot ? 'delivered' : 'todo'),
     });
   }
 
-  // Group by week
+  // === Chronological stock allocation ===
+  // Sort by created_at ascending (oldest first). Walk through:
+  //  - If stock available → effective_mode = stock, effective_delivery_date = next Saturday from created_at, stock -= 1
+  //  - Else → use snapshot values (production / no_schedule).
+  // Pots already delivered/neighbors don't need allocation — those orders are done.
+  const totalStock = await countInStock();
+  const open = enriched.filter(o => !['delivered','neighbors'].includes(o.order_status));
+  const done = enriched.filter(o =>  ['delivered','neighbors'].includes(o.order_status));
+  open.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  let remainingStock = totalStock;
+  for (const o of open) {
+    if (remainingStock > 0) {
+      o.delivery_mode = 'stock';
+      o.delivery_date = nextSaturdayISO(toISODate(o.created_at));
+      remainingStock -= 1;
+    } else {
+      o.delivery_mode = o.snapshot_delivery_mode;
+      o.delivery_date = o.snapshot_delivery_date;
+    }
+    o.delivery_week = isoWeekOfDate(o.delivery_date);
+  }
+  // Already-delivered orders keep their snapshot values for grouping
+  for (const o of done) {
+    o.delivery_mode = o.snapshot_delivery_mode;
+    o.delivery_date = o.snapshot_delivery_date;
+    o.delivery_week = isoWeekOfDate(o.delivery_date);
+  }
+  const allEnriched = [...open, ...done];
+
+  // Group by week (using effective delivery_date)
   const map = new Map();
-  for (const o of enriched) {
+  for (const o of allEnriched) {
     const k = o.delivery_week;
     if (!map.has(k)) map.set(k, []);
     map.get(k).push(o);
@@ -197,5 +226,5 @@ exports.handler = async (event) => {
     };
   });
 
-  return { statusCode: 200, headers, body: JSON.stringify({ weeks: result, total: enriched.length }) };
+  return { statusCode: 200, headers, body: JSON.stringify({ weeks: result, total: allEnriched.length, stock_count: totalStock }) };
 };
