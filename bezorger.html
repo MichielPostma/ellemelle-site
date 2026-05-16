@@ -216,9 +216,47 @@
   .toast.success { background: #1c7d3f; }
   .toast.error { background: var(--red); }
   .toast.show { opacity: 1; }
+
+  /* Hamburger menu */
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .menu-btn {
+    width: 44px; height: 44px; border: none; background: transparent;
+    cursor: pointer; padding: 10px; -webkit-tap-highlight-color: transparent;
+  }
+  .menu-btn svg { width: 24px; height: 24px; }
+  .menu-panel {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: var(--cream); padding: 64px 20px 28px;
+    transform: translateY(-100%); transition: transform 260ms cubic-bezier(.2,.7,.2,1);
+    z-index: 80; box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+  }
+  .menu-panel.open { transform: translateY(0); }
+  .menu-panel a, .menu-panel button {
+    display: block; width: 100%; padding: 14px 16px;
+    background: transparent; border: none; cursor: pointer;
+    text-align: left; font: 700 17px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    text-decoration: none; border-radius: var(--radius-md);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-panel a:hover, .menu-panel button:hover { background: rgba(217,48,30,0.06); }
+  .menu-panel .close {
+    position: absolute; top: 14px; right: 14px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,0.06); font-size: 18px;
+  }
+
 </style>
 </head>
 <body>
+
+<!-- Menu panel (toggled by hamburger) -->
+<div class="menu-panel" id="menu-panel">
+  <button class="close" id="menu-close" type="button">×</button>
+  <a href="/bezorger">Bezorger</a>
+  <a href="/voorraad">Voorraad</a>
+  <a href="/admin">Admin</a>
+  <button id="menu-logout" type="button" style="margin-top: 14px; color: var(--red);">Uitloggen</button>
+</div>
 
 <main id="app">
 
@@ -234,7 +272,16 @@
 
   <!-- LIST -->
   <section id="list-view" hidden>
-    <h1 class="step-question">Bezorglijst</h1>
+    <div class="topbar">
+      <h1 class="step-question" style="margin-bottom: 0;">Bezorglijst</h1>
+      <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
     <div class="field">
       <select id="week-select"></select>
     </div>
@@ -754,6 +801,11 @@ Ellis en Melle`;
     else { stopReturnScanner(); $('#return-scan-view').hidden = true; }
   });
   $('#return-scan-cancel-btn').addEventListener('click', () => { stopReturnScanner(); $('#return-scan-view').hidden = true; });
+
+  // Hamburger
+  $('#menu-open')?.addEventListener('click', () => $('#menu-panel').classList.add('open'));
+  $('#menu-close')?.addEventListener('click', () => $('#menu-panel').classList.remove('open'));
+  $('#menu-logout')?.addEventListener('click', () => { clearSession(); location.reload(); });
 
   // Boot: auto-login if session valid
   STATE.password = loadSession();
