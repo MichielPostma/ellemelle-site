@@ -638,6 +638,8 @@
   <input name="toevoeging" type="text">
   <input name="postcode" type="text">
   <input name="plaats"   type="text">
+  <input name="delivery_date" type="text">
+  <input name="delivery_mode" type="text">
   <input name="bot-field" type="text">
 </form>
 
@@ -1115,7 +1117,22 @@
       '</div>';
     $('#order-summary-content').innerHTML = baseHtml(null);
     const lev = await loadLeveringInfo();
-    if (lev) $('#order-summary-content').innerHTML = baseHtml(lev);
+    if (lev) {
+      window.__leveringCached = lev;
+      $('#order-summary-content').innerHTML = baseHtml(lev);
+    }
+  }
+  // Fallback: deadline = today + 28 days, project to next Saturday (ISO)
+  function computeNoScheduleDeadline() {
+    const today = new Date();
+    const deadline = new Date(today.getTime() + 28 * 24 * 3600 * 1000);
+    const dow = deadline.getUTCDay();
+    const offset = (6 - dow + 7) % 7;
+    deadline.setUTCDate(deadline.getUTCDate() + offset);
+    const y = deadline.getUTCFullYear();
+    const m = String(deadline.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(deadline.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   // --- Submit ------------------------------------------------------------
@@ -1131,7 +1148,17 @@
     btn.textContent = 'Bezig…';
     hideError();
 
-    const payload = Object.assign({}, formData);
+    // Snapshot delivery info from /api/levering-info at submit-time (cached or fresh)
+    let __lev = window.__leveringCached || null;
+    if (!__lev) {
+      try {
+        const lr = await fetch('/.netlify/functions/levering-info?ts=' + Date.now());
+        if (lr.ok) __lev = await lr.json();
+      } catch {}
+    }
+    const __delivery_date = (__lev && __lev.delivery_date) ? __lev.delivery_date : computeNoScheduleDeadline();
+    const __delivery_mode = (__lev && __lev.mode) ? __lev.mode : 'no_schedule';
+    const payload = Object.assign({}, formData, { delivery_date: __delivery_date, delivery_mode: __delivery_mode });
 
     // Strategy: try our signup function first (Supabase if configured, else forwards to Netlify Forms).
     // Fall back to direct Netlify Forms POST if the function is unreachable.

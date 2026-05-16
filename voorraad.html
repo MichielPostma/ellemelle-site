@@ -217,6 +217,22 @@
 
   /* Errors */
   .error { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 500; min-height: 18px; }
+
+  /* Admin login design */
+  body.on-login { display: flex; flex-direction: column; align-items: center; }
+  body.on-login #login-view { text-align: center; max-width: 380px; margin: 0 auto; }
+  body.on-login #login-view input { text-align: center; }
+  body.on-login .login-hero {
+    width: 240px; max-width: 70vw; margin: 4px auto 18px; display: block;
+    animation: wiggle 2.6s ease-in-out infinite;
+  }
+  @keyframes wiggle {
+    0%, 24%, 100% { transform: rotate(0deg); }
+    6% { transform: rotate(-6deg); }
+    12% { transform: rotate(6deg); }
+    18% { transform: rotate(-3deg); }
+  }
+
 </style>
 </head>
 <body>
@@ -235,7 +251,8 @@
 
   <!-- LOGIN -->
   <section id="login-view">
-    <h1 class="step-question">Voer je wachtwoord in</h1>
+    <img class="login-hero" src="Images/product.png" alt="ELLEMELLE pot" loading="eager">
+    <h1 class="step-question" style="text-align: center;">Voer je wachtwoord in</h1>
     <div class="field">
       <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord">
     </div>
@@ -502,7 +519,7 @@
       STATE.config = res.data.config || {};
       $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
       renderGrid();
-      $('#login-view').hidden = true;
+      $('#login-view').hidden = true; document.body.classList.remove('on-login');
       $('#main-view').hidden = false;
     } else {
       $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
@@ -530,7 +547,7 @@
         STATE.config = res.data.config || {};
         $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
         renderGrid();
-        $('#login-view').hidden = true;
+        $('#login-view').hidden = true; document.body.classList.remove('on-login');
         $('#main-view').hidden = false;
       } else {
         clearSession(); STATE.password = null;

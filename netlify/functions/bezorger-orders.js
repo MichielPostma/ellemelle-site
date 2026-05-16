@@ -4,6 +4,34 @@
 const { getStore } = require('@netlify/blobs');
 const { deliveryWeekForDate, isoWeek } = require('./_lib/blobs');
 
+function toISODate(d) {
+  const x = new Date(d);
+  const y = x.getUTCFullYear();
+  const m = String(x.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(x.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function nextSaturdayISO(baseISO) {
+  const x = new Date(baseISO + 'T00:00:00Z');
+  const dow = x.getUTCDay();
+  const offset = (6 - dow + 7) % 7;
+  x.setUTCDate(x.getUTCDate() + offset);
+  return toISODate(x);
+}
+function isoWeekOfDate(isoDate) {
+  const d = new Date(isoDate + 'T00:00:00Z');
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+function fallbackNoScheduleDate(createdAt) {
+  const x = new Date(createdAt);
+  x.setUTCDate(x.getUTCDate() + 28);
+  return nextSaturdayISO(toISODate(x));
+}
+
 function blobOpts(name) {
   const opts = { name, consistency: 'strong' };
   if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_API_TOKEN) {
@@ -111,9 +139,17 @@ exports.handler = async (event) => {
     const s = subs[i];
     const d = s.data || {};
     const orderId = s.id;
-    const week = deliveryWeekForDate(s.created_at);
     let state = await ordersStore.get(orderId, { type: 'json' });
     state = state || {};
+    // Resolve delivery_date: prefer submitted form field; else state blob; else fallback (no_schedule deadline 28d → next sat)
+    let deliveryDate = d.delivery_date || state.delivery_date || null;
+    let deliveryMode = d.delivery_mode || state.delivery_mode || null;
+    if (!deliveryDate || !/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate)) {
+      deliveryDate = fallbackNoScheduleDate(s.created_at);
+      if (!deliveryMode) deliveryMode = 'no_schedule';
+    }
+    if (!deliveryMode) deliveryMode = 'production';
+    const week = isoWeekOfDate(deliveryDate);
     const geo = geocodes[i] || {};
     enriched.push({
       id: orderId,
@@ -129,6 +165,8 @@ exports.handler = async (event) => {
       plaats: d.plaats || '',
       lat: geo.lat || null,
       lng: geo.lng || null,
+      delivery_date: deliveryDate,
+      delivery_mode: deliveryMode,
       delivery_week: week,
       delivered_pot: state.delivered_pot || null,
       delivered_at: state.delivered_at || null,
@@ -147,6 +185,7 @@ exports.handler = async (event) => {
   const result = weeks.map(w => {
     const orders = map.get(w);
     const doneStatuses = new Set(['delivered','neighbors']);
+    const allStock = orders.length > 0 && orders.every(o => o.delivery_mode === 'stock');
     return {
       iso: w,
       label: formatRange(w),
@@ -154,6 +193,7 @@ exports.handler = async (event) => {
       total: orders.length,
       delivered: orders.filter(o => doneStatuses.has(o.order_status)).length,
       all_done: orders.length > 0 && orders.every(o => doneStatuses.has(o.order_status)),
+      has_all_stock: allStock,
     };
   });
 
