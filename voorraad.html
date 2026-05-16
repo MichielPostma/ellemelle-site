@@ -351,6 +351,12 @@
 
   <div class="error" id="drawer-err"></div>
   <button class="btn-primary" id="drawer-save" type="button">Opslaan</button>
+
+  <div id="drawer-customer" hidden style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--cream-dark);">
+    <div class="actions-label">Gekoppeld aan</div>
+    <div id="drawer-customer-text" style="color: var(--black); font-size: 15px; margin-bottom: 10px;">—</div>
+    <a class="btn-outline" id="drawer-customer-link" href="#">Bekijk bestelling</a>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -469,6 +475,18 @@
     $('#prod-date-input').value = pot.production_date || todayISO();
     togglePD(status === 'voorraad');
     $('#drawer-err').textContent = '';
+    // Customer block — only for delivered pots with a linked order
+    const custBlock = $('#drawer-customer');
+    if (status === 'delivered' && pot.order_id) {
+      const c = pot.customer || {};
+      const name = c.voornaam || 'klant';
+      const addr = c.adres ? ' — ' + c.adres : '';
+      $('#drawer-customer-text').textContent = 'Bij: ' + name + addr;
+      $('#drawer-customer-link').href = '/bestelling/' + pot.order_id;
+      custBlock.hidden = false;
+    } else {
+      custBlock.hidden = true;
+    }
     $('#drawer-backdrop').classList.add('open');
     $('#pot-drawer').classList.add('open');
   }
