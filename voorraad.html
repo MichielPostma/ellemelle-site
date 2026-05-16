@@ -227,6 +227,7 @@
   <div class="drawer-handle"></div>
   <a href="/bezorger">Bezorgen</a>
   <a href="/voorraad">Voorraad</a>
+  <a href="/koken">Koken</a>
   <button class="btn-outline" id="menu-logout" type="button" style="margin-top: 14px;">Uitloggen</button>
 </div>
 
@@ -257,8 +258,6 @@
         </svg>
       </button>
     </div>
-
-    <button class="btn-outline" id="prod-date-btn" type="button" style="margin-top: 14px;">Productiedatum: —</button>
 
     <div class="field" style="margin-top: 14px;">
       <select id="filter-select">
@@ -300,17 +299,6 @@
 
   <div class="error" id="drawer-err"></div>
   <button class="btn-primary" id="drawer-save" type="button">Opslaan</button>
-</div>
-
-<!-- Production date drawer -->
-<div class="drawer" id="prod-date-drawer" role="dialog" aria-modal="true">
-  <div class="drawer-handle"></div>
-  <h2>Productiedatum</h2>
-  <div class="sub">De datum dat de volgende batch chocopasta gemaakt wordt.</div>
-  <input type="date" id="prod-date-drawer-input" style="margin-top: 10px;">
-  <div class="error" id="prod-date-drawer-err"></div>
-  <button class="btn-primary" id="prod-date-save" type="button">Opslaan</button>
-  <button class="btn-outline" id="prod-date-clear" type="button">Wissen</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -378,7 +366,6 @@
     STATE.pots = res.data.pots || [];
     STATE.config = res.data.config || { next_production_date: null };
     $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
-    $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
     renderGrid();
   }
 
@@ -496,42 +483,7 @@
     if (STATE.qrScanner) { STATE.qrScanner.stop(); STATE.qrScanner.destroy(); STATE.qrScanner = null; }
   }
 
-  // --- Production date picker (drawer-based) ---
-  function openProdDateDrawer() {
-    const cur = STATE.config.next_production_date || todayISO();
-    $('#prod-date-drawer-input').value = cur;
-    $('#prod-date-drawer-err').textContent = '';
-    $('#drawer-backdrop').classList.add('open');
-    $('#prod-date-drawer').classList.add('open');
-  }
-  function closeProdDateDrawer() {
-    $('#drawer-backdrop').classList.remove('open');
-    $('#prod-date-drawer').classList.remove('open');
-  }
-  async function saveProdDate() {
-    const v = $('#prod-date-drawer-input').value;
-    if (!v) { $('#prod-date-drawer-err').textContent = 'Kies een datum'; return; }
-    const res = await api('voorraad-set-config', { next_production_date: v });
-    if (res.ok) {
-      showToast(`Productiedatum: ${fmtDate(v)}`, 'success');
-      STATE.config = res.data.config;
-      $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
-      closeProdDateDrawer();
-    } else {
-      $('#prod-date-drawer-err').textContent = res.data.error || 'Opslaan mislukt';
-    }
-  }
-  async function clearProdDate() {
-    const res = await api('voorraad-set-config', { next_production_date: '' });
-    if (res.ok) {
-      showToast('Productiedatum gewist', 'success');
-      STATE.config = res.data.config;
-      $('#prod-date-btn').textContent = 'Productiedatum: —';
-      closeProdDateDrawer();
-    } else {
-      $('#prod-date-drawer-err').textContent = res.data.error || 'Wissen mislukt';
-    }
-  }
+
 
   // --- Bindings ---
   $('#login-btn').addEventListener('click', async () => {
@@ -544,7 +496,6 @@
       STATE.pots = res.data.pots || [];
       STATE.config = res.data.config || {};
       $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
-      $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
       renderGrid();
       $('#login-view').hidden = true;
       $('#main-view').hidden = false;
@@ -553,17 +504,12 @@
     }
   });
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
-  $('#prod-date-btn').addEventListener('click', openProdDateDrawer);
   $('#filter-select').addEventListener('change', renderGrid);
   $('#scan-btn').addEventListener('click', () => { if (STATE.qrScanner) stopScan(); else startScan(); });
   $('#scan-cancel').addEventListener('click', stopScan);
   $('#drawer-close')?.addEventListener('click', closeDrawer);
-  $('#drawer-backdrop').addEventListener('click', () => { closeDrawer(); closeProdDateDrawer(); });
+  $('#drawer-backdrop').addEventListener('click', closeDrawer);
   $('#drawer-save').addEventListener('click', saveDrawer);
-
-  // Production date drawer
-  $('#prod-date-save').addEventListener('click', saveProdDate);
-  $('#prod-date-clear').addEventListener('click', clearProdDate);
 
   // Menu
   $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
@@ -578,7 +524,6 @@
         STATE.pots = res.data.pots || [];
         STATE.config = res.data.config || {};
         $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
-        $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
         renderGrid();
         $('#login-view').hidden = true;
         $('#main-view').hidden = false;

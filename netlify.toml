@@ -131,3 +131,8 @@
   from = "/voorraad"
   to = "/voorraad.html"
   status = 200
+
+[[redirects]]
+  from = "/koken"
+  to = "/koken.html"
+  status = 200

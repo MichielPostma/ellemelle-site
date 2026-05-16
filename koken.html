@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#D9301E">
+<title>ELLEMELLE — koken</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+  :root {
+    --red: #D9301E;
+    --red-dark: #8B1A0E;
+    --cream: #feece2;
+    --cream-dark: #ECE3D2;
+    --black: #1A1A1A;
+    --white: #FFFFFF;
+    --shadow-card: 0 2px 10px rgba(139,26,14,0.08);
+    --shadow-cta: 0 6px 18px rgba(217,48,30,0.28);
+    --radius-md: 14px;
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream); color: var(--black);
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 16px; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+  #app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; position: relative; }
+
+  .step-question {
+    color: var(--red); font-size: 28px; line-height: 1.15;
+    margin-bottom: 14px; letter-spacing: -0.2px; font-weight: 700;
+  }
+  .progress-text {
+    color: var(--red-dark); font-size: 13px; font-weight: 700;
+    text-align: left; letter-spacing: 0.4px; text-transform: uppercase;
+    opacity: 0.55; margin-bottom: 6px; display: block;
+  }
+  .field { margin-bottom: 10px; }
+  input[type="text"], input[type="password"], input[type="date"], select {
+    width: 100%; min-height: 60px;
+    padding: 16px 18px; font-size: 18px; font-family: inherit;
+    background: var(--white); border: 2px solid transparent;
+    border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+    color: var(--black);
+    appearance: none; -webkit-appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%238B1A0E' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 18px center;
+    background-size: 16px 16px;
+    padding-right: 48px;
+  }
+  input:focus, select:focus {
+    outline: none; border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card);
+  }
+
+  .btn-primary {
+    display: block; width: 100%; min-height: 60px;
+    text-align: center; line-height: 60px;
+    background: var(--red); color: var(--white); border: none;
+    border-radius: var(--radius-md); font-family: inherit;
+    font-size: 18px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 14px;
+    box-shadow: var(--shadow-cta);
+    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
+  }
+  .btn-outline {
+    display: block; width: 100%; min-height: 56px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 10px;
+    text-align: center; line-height: 52px; text-decoration: none;
+    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
+    box-shadow: none;
+  }
+  .actions-label {
+    color: #666; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  /* Topbar */
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .menu-btn {
+    width: 44px; height: 44px; border: none; background: transparent;
+    cursor: pointer; padding: 10px; color: var(--black);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-btn svg { width: 24px; height: 24px; }
+
+  /* Hamburger bottom-drawer menu */
+  .menu-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 110;
+  }
+  .menu-backdrop.open { opacity: 1; pointer-events: auto; }
+  .menu-panel {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--white); border-radius: 18px 18px 0 0;
+    padding: 14px 20px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    z-index: 120; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
+  }
+  .menu-panel.open { transform: translateY(0); }
+  .menu-panel .drawer-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.18); margin: 0 auto 18px;
+  }
+  .menu-panel a, .menu-panel > button:not(.btn-outline):not(.btn-primary) {
+    display: block; width: 100%; padding: 14px 16px;
+    background: transparent; border: none; cursor: pointer;
+    text-align: left; font: 700 17px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    text-decoration: none; border-radius: var(--radius-md);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-panel a:hover { background: rgba(217,48,30,0.06); }
+
+  /* Productiedatum drawer */
+  .drawer-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 90;
+  }
+  .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--cream); border-radius: 18px 18px 0 0;
+    padding: 14px 20px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    z-index: 100; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
+  }
+  .drawer.open { transform: translateY(0); }
+  .drawer-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.18); margin: 0 auto 14px;
+  }
+  .drawer h2 { font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
+  .drawer .sub { color: #666; font-size: 14px; margin-bottom: 14px; }
+
+  /* Recipe — Albert Heijn-style */
+  .recipe-header {
+    background: var(--white); border-radius: var(--radius-md);
+    padding: 18px 20px; margin-top: 20px; line-height: 1.4;
+  }
+  .recipe-header h2 { font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
+  .recipe-meta {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    color: #666; font-size: 13px; margin-top: 8px;
+  }
+  .recipe-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .recipe-yield {
+    margin-top: 10px; color: var(--black);
+    font-size: 15px; font-weight: 700;
+  }
+
+  .recipe-section { margin-top: 22px; }
+  .recipe-section h3 {
+    color: var(--red-dark); font-size: 13px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    opacity: 0.6; margin-bottom: 10px;
+  }
+
+  .ingredients {
+    background: var(--white); border-radius: var(--radius-md);
+    padding: 14px 18px;
+  }
+  .ingredient-row {
+    display: flex; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid var(--cream-dark);
+    align-items: baseline;
+    font-size: 15px; line-height: 1.4;
+  }
+  .ingredient-row:last-child { border-bottom: none; }
+  .ingredient-row .qty {
+    font-weight: 700; color: var(--black);
+    min-width: 70px; flex-shrink: 0;
+  }
+  .ingredient-row .name { color: var(--black); flex: 1; }
+  .ingredient-row .note { color: #888; font-size: 13px; }
+
+  .steps {
+    background: var(--white); border-radius: var(--radius-md);
+    padding: 6px 18px;
+  }
+  .step-row {
+    display: flex; gap: 14px; padding: 14px 0;
+    border-bottom: 1px solid var(--cream-dark);
+    line-height: 1.5; font-size: 15px;
+  }
+  .step-row:last-child { border-bottom: none; }
+  .step-row .num {
+    width: 28px; height: 28px; flex-shrink: 0;
+    background: var(--red); color: var(--white);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+  }
+  .step-row .body { flex: 1; color: var(--black); }
+  .step-row .body strong { color: var(--red-dark); }
+
+  .tip-box {
+    background: rgba(31,157,85,0.08);
+    border-left: 3px solid #1f9d55;
+    padding: 12px 16px; border-radius: 6px;
+    margin-top: 16px; font-size: 14px; line-height: 1.5;
+  }
+  .tip-box strong { color: #1c7d3f; }
+
+  /* Toast */
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--black); color: white; padding: 12px 20px; border-radius: 999px;
+    font-size: 14px; font-weight: 600; z-index: 200;
+    opacity: 0; transition: opacity 200ms;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    max-width: 90%; text-align: center; pointer-events: none;
+  }
+  .toast.success { background: #1c7d3f; }
+  .toast.error { background: var(--red); }
+  .toast.show { opacity: 1; }
+  .error { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 500; min-height: 18px; }
+</style>
+</head>
+<body>
+
+<!-- Hamburger bottom-drawer menu -->
+<div class="menu-backdrop" id="menu-backdrop"></div>
+<div class="menu-panel" id="menu-panel">
+  <div class="drawer-handle"></div>
+  <a href="/bezorger">Bezorgen</a>
+  <a href="/voorraad">Voorraad</a>
+  <a href="/koken">Koken</a>
+  <button class="btn-outline" id="menu-logout" type="button" style="margin-top: 14px;">Uitloggen</button>
+</div>
+
+<main id="app">
+
+  <!-- LOGIN -->
+  <section id="login-view">
+    <h1 class="step-question">Voer je wachtwoord in</h1>
+    <div class="field">
+      <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord">
+    </div>
+    <div class="error" id="login-err"></div>
+    <button class="btn-primary" id="login-btn">Open keuken →</button>
+  </section>
+
+  <!-- MAIN -->
+  <section id="main-view" hidden>
+    <div class="topbar">
+      <div style="flex: 1; min-width: 0;">
+        <span class="progress-text">KOK</span>
+        <h1 class="step-question" style="margin-bottom: 0;">Koken</h1>
+      </div>
+      <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <button class="btn-outline" id="prod-date-btn" type="button">Productiedatum: —</button>
+
+    <div class="field" style="margin-top: 14px;">
+      <select id="potten-select"></select>
+    </div>
+
+    <!-- Recipe header -->
+    <div class="recipe-header">
+      <h2>Ellemelle chocopasta</h2>
+      <div class="recipe-meta">
+        <span>⏱ 30 min bereiding</span>
+        <span>❄ 15 min afkoelen</span>
+      </div>
+      <div class="recipe-yield" id="recipe-yield">Voor 1 pot · 200g per pot</div>
+    </div>
+
+    <!-- Ingredients -->
+    <div class="recipe-section">
+      <h3>Ingredienten</h3>
+      <div class="ingredients" id="ingredients"></div>
+    </div>
+
+    <!-- Steps -->
+    <div class="recipe-section">
+      <h3>Bereiding</h3>
+      <div class="steps" id="steps"></div>
+      <div class="tip-box">
+        <strong>Tip:</strong> Gebruik kraakverse hazelnoten voor de beste smaak.
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Productiedatum drawer -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+<div class="drawer" id="prod-date-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2>Productiedatum</h2>
+  <div class="sub">De datum dat de volgende batch chocopasta gemaakt wordt.</div>
+  <input type="date" id="prod-date-drawer-input">
+  <div class="error" id="prod-date-drawer-err"></div>
+  <button class="btn-primary" id="prod-date-save" type="button">Opslaan</button>
+  <button class="btn-outline" id="prod-date-clear" type="button">Wissen</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  const $ = sel => document.querySelector(sel);
+  const STORAGE_KEY = 'ellemelle_bezorger_session_v1';
+  const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
+  const STATE = { password: null, config: { next_production_date: null }, potten: 1, todoCount: 0 };
+
+  // --- Recipe data (per 1 pot) ---
+  const INGREDIENTS = [
+    { qty: 100, unit: 'g',  name: 'Hazelnoten',              note: '(geroosterd, gepeld)' },
+    { qty: 30,  unit: 'g',  name: 'Pure cacaopoeder',        note: '' },
+    { qty: 40,  unit: 'g',  name: 'Honing of agavesiroop',   note: '' },
+    { qty: 20,  unit: 'g',  name: 'Kokosolie',               note: '' },
+    { qty: 10,  unit: 'ml', name: 'Plantaardige melk',       note: '(haver of amandel)' },
+    { qty: null, unit: '', name: 'Snufje zout',              note: '' },
+    { qty: null, unit: '', name: 'Vanille-extract',          note: '(optioneel)' },
+  ];
+  const STEPS = [
+    'Verwarm de oven op <strong>180°C</strong>. Rooster de hazelnoten <strong>8-10 min</strong> tot lichtbruin.',
+    'Laat afkoelen en wrijf met een schone theedoek om de velletjes te verwijderen.',
+    'Mix de noten in een keukenmachine <strong>5-7 min</strong> tot een gladde notenpasta.',
+    'Voeg cacao, honing, kokosolie, melk en zout toe. Mix nog <strong>2-3 min</strong>.',
+    'Proef en pas de zoetheid aan naar smaak.',
+    'Vul in schone glazen pot (<strong>200g per pot</strong>) en plak een QR-sticker op het deksel.',
+    'Houdbaarheid: <strong>8 weken</strong> in de koelkast.',
+  ];
+  const POTTEN_OPTIONS = [1, 5, 10, 15, 20, 25];
+
+  function loadSession() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      if (!o || !o.savedAt || (Date.now() - o.savedAt) > SESSION_TTL) {
+        localStorage.removeItem(STORAGE_KEY); return null;
+      }
+      return o.password || null;
+    } catch { return null; }
+  }
+  function saveSession(pw) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ password: pw, savedAt: Date.now() })); } catch {} }
+  function clearSession() { try { localStorage.removeItem(STORAGE_KEY); } catch {} }
+  function todayISO() {
+    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}-${m}-${y.slice(2)}`;
+  }
+  function showToast(msg, type) {
+    const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + (type||'') + ' show';
+    clearTimeout(window.__t); window.__t = setTimeout(()=>t.classList.remove('show'), 3000);
+  }
+  async function api(ep, body) {
+    const r = await fetch('/.netlify/functions/' + ep, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
+    });
+    const j = await r.json().catch(()=>({}));
+    return { ok: r.ok, status: r.status, data: j };
+  }
+
+  // --- Productiedatum drawer ---
+  function openProdDateDrawer() {
+    $('#prod-date-drawer-input').value = STATE.config.next_production_date || todayISO();
+    $('#prod-date-drawer-err').textContent = '';
+    $('#drawer-backdrop').classList.add('open');
+    $('#prod-date-drawer').classList.add('open');
+  }
+  function closeProdDateDrawer() {
+    $('#drawer-backdrop').classList.remove('open');
+    $('#prod-date-drawer').classList.remove('open');
+  }
+  async function saveProdDate() {
+    const v = $('#prod-date-drawer-input').value;
+    if (!v) { $('#prod-date-drawer-err').textContent = 'Kies een datum'; return; }
+    const res = await api('voorraad-set-config', { next_production_date: v });
+    if (res.ok) {
+      showToast(`Productiedatum: ${fmtDate(v)}`, 'success');
+      STATE.config = res.data.config;
+      $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
+      closeProdDateDrawer();
+    } else {
+      $('#prod-date-drawer-err').textContent = res.data.error || 'Opslaan mislukt';
+    }
+  }
+  async function clearProdDate() {
+    const res = await api('voorraad-set-config', { next_production_date: '' });
+    if (res.ok) {
+      showToast('Productiedatum gewist', 'success');
+      STATE.config = res.data.config;
+      $('#prod-date-btn').textContent = 'Productiedatum: —';
+      closeProdDateDrawer();
+    } else {
+      $('#prod-date-drawer-err').textContent = res.data.error || 'Wissen mislukt';
+    }
+  }
+
+  // --- Potten dropdown ---
+  function pickSuggestedDefault(todoCount) {
+    // Pick the smallest option >= todoCount (or last option)
+    for (const opt of POTTEN_OPTIONS) {
+      if (opt >= todoCount) return opt;
+    }
+    return POTTEN_OPTIONS[POTTEN_OPTIONS.length - 1];
+  }
+  function renderPottenDropdown() {
+    const sel = $('#potten-select'); sel.innerHTML = '';
+    POTTEN_OPTIONS.forEach(n => {
+      const opt = document.createElement('option');
+      opt.value = String(n);
+      const suggested = (n === STATE.suggestedDefault) ? ' (aanbevolen)' : '';
+      opt.textContent = `${n} pot${n === 1 ? '' : 'ten'}${suggested}`;
+      sel.appendChild(opt);
+    });
+    sel.value = String(STATE.potten);
+  }
+
+  // --- Recipe rendering ---
+  function formatQty(qty, unit) {
+    if (qty === null || qty === undefined) return '';
+    // Whole numbers stay whole; otherwise 1 decimal
+    const rounded = Math.round(qty * 10) / 10;
+    const str = (rounded % 1 === 0) ? String(rounded) : rounded.toFixed(1);
+    return str + (unit || '');
+  }
+  function renderRecipe() {
+    const n = STATE.potten;
+    $('#recipe-yield').textContent = `Voor ${n} pot${n === 1 ? '' : 'ten'} · 200g per pot`;
+    const ing = $('#ingredients'); ing.innerHTML = '';
+    INGREDIENTS.forEach(i => {
+      const row = document.createElement('div');
+      row.className = 'ingredient-row';
+      const scaled = (i.qty !== null) ? i.qty * n : null;
+      row.innerHTML = `
+        <span class="qty">${formatQty(scaled, i.unit) || '—'}</span>
+        <span class="name">${i.name}${i.note ? ' <span class="note">' + i.note + '</span>' : ''}</span>
+      `;
+      ing.appendChild(row);
+    });
+    const stp = $('#steps'); stp.innerHTML = '';
+    STEPS.forEach((s, idx) => {
+      const row = document.createElement('div');
+      row.className = 'step-row';
+      row.innerHTML = `<div class="num">${idx + 1}</div><div class="body">${s}</div>`;
+      stp.appendChild(row);
+    });
+  }
+
+  // --- Boot helpers ---
+  async function loadInitial() {
+    // Get config (production date) via voorraad-list endpoint (cheapest existing endpoint that returns config + pots)
+    const res = await api('voorraad-list');
+    if (res.ok) {
+      STATE.config = res.data.config || { next_production_date: null };
+      $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
+    }
+    // Get suggested default from open todos
+    const bz = await api('bezorger-orders');
+    let todoCount = 0;
+    if (bz.ok) {
+      const all = (bz.data.weeks || []).flatMap(w => w.orders || []);
+      todoCount = all.filter(o => !o.order_status || o.order_status === 'todo').length;
+    }
+    STATE.todoCount = todoCount;
+    STATE.suggestedDefault = pickSuggestedDefault(todoCount || 1);
+    STATE.potten = STATE.suggestedDefault;
+    renderPottenDropdown();
+    renderRecipe();
+  }
+
+  // --- Bindings ---
+  $('#login-btn').addEventListener('click', async () => {
+    const pw = $('#pw').value.trim();
+    if (!pw) return;
+    STATE.password = pw;
+    const res = await api('voorraad-list');
+    if (res.ok) {
+      saveSession(pw);
+      $('#login-view').hidden = true;
+      $('#main-view').hidden = false;
+      await loadInitial();
+    } else {
+      $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
+    }
+  });
+  $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
+  $('#prod-date-btn').addEventListener('click', openProdDateDrawer);
+  $('#prod-date-save').addEventListener('click', saveProdDate);
+  $('#prod-date-clear').addEventListener('click', clearProdDate);
+  $('#drawer-backdrop').addEventListener('click', closeProdDateDrawer);
+  $('#potten-select').addEventListener('change', () => {
+    STATE.potten = parseInt($('#potten-select').value, 10) || 1;
+    renderRecipe();
+  });
+  // Menu
+  $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
+  $('#menu-backdrop').addEventListener('click', () => { $('#menu-backdrop').classList.remove('open'); $('#menu-panel').classList.remove('open'); });
+  $('#menu-logout').addEventListener('click', () => { clearSession(); location.reload(); });
+
+  // Boot
+  STATE.password = loadSession();
+  if (STATE.password) {
+    api('voorraad-list').then(async res => {
+      if (res.ok) {
+        $('#login-view').hidden = true;
+        $('#main-view').hidden = false;
+        await loadInitial();
+      } else {
+        clearSession(); STATE.password = null;
+      }
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

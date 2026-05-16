@@ -23,3 +23,4 @@
 /api/voorraad/set-pot /.netlify/functions/voorraad-set-pot 200
 /api/voorraad/set-config /.netlify/functions/voorraad-set-config 200
 /voorraad /voorraad.html 200
+/koken /koken.html 200
