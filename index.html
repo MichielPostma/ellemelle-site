@@ -671,6 +671,12 @@
   .back-pill:hover { transform: translateY(-1px); }
   .back-pill:active { transform: translateY(1px); }
 
+
+  /* Embed mode (admin order drawer iframe) */
+  body.on-embed #counter { display: none; }
+  body.on-embed #restart-btn { display: none; }
+  body.on-embed { padding-top: 0; }
+
 </style>
 </head>
 <body>
@@ -706,7 +712,6 @@
   <h1>Voor wie?</h1>
   <button class="btn-primary" id="admin-new-customer" type="button">Nieuwe klant →</button>
   <div class="sub">Bestaande klant</div>
-  <input id="admin-customer-search" type="text" placeholder="Zoek op naam of adres" autocomplete="off">
   <div id="admin-customers"></div>
 </section>
 
@@ -1275,9 +1280,7 @@
   }
   function renderAdminCustomers() {
     const wrap = document.getElementById('admin-customers');
-    const q = (document.getElementById('admin-customer-search')?.value || '').toLowerCase().trim();
-    let list = __adminCustomers.slice();
-    if (q) list = list.filter(c => (c.voornaam||'').toLowerCase().includes(q) || (c.adres||'').toLowerCase().includes(q));
+    const list = __adminCustomers.slice();
     wrap.innerHTML = '';
     if (list.length === 0) {
       wrap.innerHTML = '<div class="empty">Geen klanten gevonden.</div>';
@@ -1407,6 +1410,13 @@
         body: JSON.stringify(payload),
       }).catch(() => {});
     } catch (e) { /* swallow */ }
+
+    // Notify parent (admin drawer) on success
+    try {
+      if (new URLSearchParams(location.search).get('embed') === '1' && window.parent !== window) {
+        window.parent.postMessage({ type: 'admin-order-success' }, '*');
+      }
+    } catch {}
 
     // Move to success
     currentStep = 8;
@@ -1550,6 +1560,12 @@
 
   // --- Wiring ------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', () => {
+    // Embed mode for admin drawer
+    const __isEmbed = new URLSearchParams(location.search).get('embed') === '1';
+    if (__isEmbed) {
+      document.body.classList.add('on-embed');
+    }
+
     loadConfig();
     loadCounter();
     showStep(1);
@@ -1742,9 +1758,6 @@
     // Admin picker bindings
     const apNew = document.getElementById('admin-new-customer');
     if (apNew) apNew.addEventListener('click', pickNewCustomer);
-    const apSearch = document.getElementById('admin-customer-search');
-    if (apSearch) apSearch.addEventListener('input', renderAdminCustomers);
-
         // Default kanaal to WhatsApp if nothing chosen yet
     if (!formData.kanaal) {
       formData.kanaal = 'whatsapp';

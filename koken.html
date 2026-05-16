@@ -292,6 +292,43 @@
   .fab:hover { transform: scale(1.05); }
   .fab:active { transform: scale(0.95); }
 
+
+  /* Admin order bottom drawer */
+  .admin-drawer-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    opacity: 0; pointer-events: none; transition: opacity 200ms;
+    z-index: 150;
+  }
+  .admin-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .admin-drawer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    height: 95dvh; max-height: 95dvh;
+    background: var(--cream); border-radius: 18px 18px 0 0;
+    transform: translateY(100%);
+    transition: transform 280ms cubic-bezier(.2,.7,.2,1);
+    z-index: 160; display: flex; flex-direction: column;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
+  }
+  .admin-drawer.open { transform: translateY(0); }
+  .admin-drawer-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+  .admin-drawer-handle {
+    position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
+    width: 40px; height: 4px; border-radius: 2px; background: rgba(0,0,0,0.18);
+  }
+  .admin-drawer-title { font-weight: 700; font-size: 16px; color: var(--black); }
+  .admin-drawer-close {
+    background: transparent; border: none; cursor: pointer;
+    padding: 8px 12px; font-size: 15px; font-weight: 600;
+    color: var(--red); -webkit-tap-highlight-color: transparent;
+  }
+  .admin-drawer iframe {
+    flex: 1; width: 100%; border: 0; background: var(--cream);
+  }
+
 </style>
 <script>
 (function(){
@@ -649,5 +686,47 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </a>
 
+<!-- Admin order drawer -->
+<div class="admin-drawer-backdrop" id="admin-order-backdrop"></div>
+<div class="admin-drawer" id="admin-order-drawer" role="dialog" aria-modal="true">
+  <div class="admin-drawer-handle"></div>
+  <div class="admin-drawer-header">
+    <span class="admin-drawer-title">Nieuwe bestelling</span>
+    <button class="admin-drawer-close" id="admin-order-close" type="button">Annuleren</button>
+  </div>
+  <iframe id="admin-order-iframe" src="about:blank" title="Nieuwe bestelling"></iframe>
+</div>
+
+<script>
+(function(){
+  const fab = document.getElementById('fab-add');
+  const drawer = document.getElementById('admin-order-drawer');
+  const backdrop = document.getElementById('admin-order-backdrop');
+  const closeBtn = document.getElementById('admin-order-close');
+  const iframe = document.getElementById('admin-order-iframe');
+  if (!fab || !drawer || !iframe) return;
+  function openDrawer(e) {
+    if (e) e.preventDefault();
+    iframe.src = '/?start=admin&embed=1';
+    backdrop.classList.add('open');
+    drawer.classList.add('open');
+  }
+  function closeDrawer() {
+    backdrop.classList.remove('open');
+    drawer.classList.remove('open');
+    setTimeout(() => { iframe.src = 'about:blank'; }, 300);
+  }
+  fab.addEventListener('click', openDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  window.addEventListener('message', (ev) => {
+    if (ev.data && ev.data.type === 'admin-order-success') {
+      closeDrawer();
+      // Refresh page data — easiest is full reload; consumers may override
+      setTimeout(() => location.reload(), 600);
+    }
+  });
+})();
+</script>
 </body>
 </html>
