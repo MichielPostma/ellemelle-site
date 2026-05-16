@@ -1298,6 +1298,11 @@
     });
   }
   function pickNewCustomer() {
+    // In embed (drawer) mode, ask parent to open a new tab for normal flow + close drawer
+    if (new URLSearchParams(location.search).get('embed') === '1' && window.parent !== window) {
+      try { window.parent.postMessage({ type: 'admin-open-new-customer' }, '*'); } catch {}
+      return;
+    }
     __adminMode = 'new';
     hideAdminPicker();
     currentStep = 1;
