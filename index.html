@@ -1070,12 +1070,19 @@
   }
   function leveringHtml(info) {
     if (!info) return '';
-    const stock = info.in_stock;
-    const dot = stock ? 'green' : 'amber';
+    const mode = info.mode || (info.in_stock ? 'stock' : (info.next_production_date ? 'production' : 'no_schedule'));
     const date = fmtDeliveryDate(info.delivery_date);
-    const text = stock
-      ? 'Op voorraad, thuisgebracht in weekend van ' + date
-      : 'Wordt vers gemaakt, thuisgebracht ' + date;
+    let dot, text;
+    if (mode === 'stock') {
+      dot = 'green';
+      text = 'Op voorraad, thuisgebracht in weekend van ' + date;
+    } else if (mode === 'production') {
+      dot = 'amber';
+      text = 'Wordt vers gemaakt, thuisgebracht ' + date;
+    } else {
+      dot = 'amber';
+      text = 'Wordt vers gemaakt, als niet binnen 4 weken geleverd wordt storten we je geld terug.';
+    }
     return '<div class="levering-block">' +
       '<strong>Levering</strong>' +
       '<div class="delivery-info"><span class="status-dot ' + dot + '"></span><span>' + text + '</span></div>' +
