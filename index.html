@@ -676,8 +676,10 @@
   body.on-embed #counter { display: none; }
   body.on-embed #restart-btn { display: none; }
   body.on-embed { padding-top: 0; }
+  /* In embed mode, drop the 480px max-width and nested padding so content uses full drawer width */
   body.on-embed #app { max-width: none; width: 100%; padding: 20px; }
-  body.on-embed #admin-picker { max-width: none; width: 100%; padding: 20px; }
+  body.on-embed #admin-picker { max-width: none; width: 100%; padding: 0; }
+  body.on-embed .step-eyebrow { padding: 0; }
 
 </style>
 </head>
