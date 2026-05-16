@@ -87,6 +87,7 @@
     margin-bottom: 6px;
   }
   .stats { color: #666; font-size: 13px; text-align: left; margin: 0 0 14px; font-weight: 500; }
+  .progress-text { color: var(--red-dark); font-size: 13px; font-weight: 700; text-align: left; letter-spacing: 0.4px; text-transform: uppercase; opacity: 0.55; margin-bottom: 6px; display: block; }
 
   /* Top bar */
   .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
@@ -136,6 +137,10 @@
     box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
   }
   .drawer.open { transform: translateY(0); }
+  .drawer-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.18); margin: 0 auto 14px;
+  }
   .drawer h2 { font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
   .drawer .sub { color: #666; font-size: 14px; margin-bottom: 14px; }
   .drawer .close-btn {
@@ -153,27 +158,33 @@
   }
   .status-options button.sel { border-color: var(--red); background: rgba(217,48,30,0.04); font-weight: 700; }
 
-  /* Hamburger panel */
+  /* Hamburger bottom-drawer menu */
+  .menu-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 110;
+  }
+  .menu-backdrop.open { opacity: 1; pointer-events: auto; }
   .menu-panel {
-    position: fixed; top: 0; left: 0; right: 0;
-    background: var(--cream); padding: 64px 20px 28px;
-    transform: translateY(-100%); transition: transform 260ms cubic-bezier(.2,.7,.2,1);
-    z-index: 80; box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--white); border-radius: 18px 18px 0 0;
+    padding: 14px 20px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    z-index: 120; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
   }
   .menu-panel.open { transform: translateY(0); }
-  .menu-panel a, .menu-panel button {
+  .menu-panel .drawer-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.18); margin: 0 auto 18px;
+  }
+  .menu-panel a, .menu-panel > button:not(.btn-outline):not(.btn-primary) {
     display: block; width: 100%; padding: 14px 16px;
     background: transparent; border: none; cursor: pointer;
     text-align: left; font: 700 17px 'DM Sans', system-ui, sans-serif; color: var(--black);
     text-decoration: none; border-radius: var(--radius-md);
     -webkit-tap-highlight-color: transparent;
   }
-  .menu-panel a:hover, .menu-panel button:hover { background: rgba(217,48,30,0.06); }
-  .menu-panel .close {
-    position: absolute; top: 14px; right: 14px;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: rgba(0,0,0,0.06); font-size: 18px;
-  }
+  .menu-panel a:hover { background: rgba(217,48,30,0.06); }
 
   /* Scanner */
   #scanner-wrap {
@@ -210,13 +221,13 @@
 </head>
 <body>
 
-<!-- Menu panel (hidden by default; same on /bezorger via inline script in Phase 3) -->
+<!-- Hamburger bottom-drawer menu -->
+<div class="menu-backdrop" id="menu-backdrop"></div>
 <div class="menu-panel" id="menu-panel">
-  <button class="close" id="menu-close" type="button">×</button>
-  <a href="/bezorger">Bezorger</a>
+  <div class="drawer-handle"></div>
+  <a href="/bezorger">Bezorgen</a>
   <a href="/voorraad">Voorraad</a>
-  <a href="/admin">Admin</a>
-  <button id="menu-logout" type="button" style="margin-top: 14px; color: var(--red);">Uitloggen</button>
+  <button class="btn-outline" id="menu-logout" type="button" style="margin-top: 14px;">Uitloggen</button>
 </div>
 
 <main id="app">
@@ -233,9 +244,12 @@
 
   <!-- MAIN -->
   <section id="main-view" hidden>
-    <div class="topbar">
-      <h1 class="step-question" style="margin-bottom: 0;">Voorraad</h1>
-      <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
+    <div class="topbar" style="align-items: flex-start;">
+      <div style="flex: 1; min-width: 0;">
+        <span class="progress-text" id="stock-stats">0 potten op voorraad</span>
+        <h1 class="step-question" style="margin-bottom: 0;">Voorraad</h1>
+      </div>
+      <button class="menu-btn" id="menu-open" aria-label="Menu" type="button" style="color: var(--black);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <line x1="3" y1="6"  x2="21" y2="6"/>
           <line x1="3" y1="12" x2="21" y2="12"/>
@@ -244,10 +258,21 @@
       </button>
     </div>
 
-    <button class="btn-outline" id="prod-date-btn" type="button">Productiedatum: —</button>
-    <div class="stats" id="stock-stats" style="margin-top: 14px;">Op voorraad: 0 potten</div>
+    <button class="btn-outline" id="prod-date-btn" type="button" style="margin-top: 14px;">Productiedatum: —</button>
 
-    <button class="btn-primary" id="scan-btn" type="button">Pot in voorraad zetten →</button>
+    <div class="field" style="margin-top: 14px;">
+      <select id="filter-select">
+        <option value="all">Filter</option>
+        <option value="voorraad">Voorraad</option>
+        <option value="delivered">Bezorgd</option>
+        <option value="returned">Retour</option>
+        <option value="available">Leeg</option>
+      </select>
+    </div>
+
+    <div class="pot-grid" id="pot-grid"></div>
+
+    <button class="btn-outline" id="scan-btn" type="button" style="margin-top: 20px;">Pot in voorraad zetten</button>
     <div id="scan-view" hidden>
       <div id="scanner-wrap">
         <video id="scanner-video" playsinline muted></video>
@@ -255,26 +280,13 @@
       </div>
       <button class="btn-outline" id="scan-cancel" type="button">Annuleer</button>
     </div>
-
-    <div class="field" style="margin-top: 14px;">
-      <select id="filter-select">
-        <option value="all">Alle statussen</option>
-        <option value="voorraad">Op voorraad</option>
-        <option value="delivered">Bezorgd</option>
-        <option value="returned">Retour</option>
-        <option value="available">Leeg</option>
-        <option value="uninitialized">Niet geseed</option>
-      </select>
-    </div>
-
-    <div class="pot-grid" id="pot-grid"></div>
   </section>
 </main>
 
 <!-- Drawer for individual pot -->
 <div class="drawer-backdrop" id="drawer-backdrop"></div>
 <div class="drawer" id="pot-drawer" role="dialog" aria-modal="true">
-  <button class="close-btn" id="drawer-close" type="button" aria-label="Sluiten">×</button>
+  <div class="drawer-handle"></div>
   <h2 id="drawer-pid">POT-XXX</h2>
   <div class="sub" id="drawer-sub">—</div>
 
@@ -290,6 +302,17 @@
   <button class="btn-primary" id="drawer-save" type="button">Opslaan</button>
 </div>
 
+<!-- Production date drawer -->
+<div class="drawer" id="prod-date-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2>Productiedatum</h2>
+  <div class="sub">De datum dat de volgende batch chocopasta gemaakt wordt.</div>
+  <input type="date" id="prod-date-drawer-input" style="margin-top: 10px;">
+  <div class="error" id="prod-date-drawer-err"></div>
+  <button class="btn-primary" id="prod-date-save" type="button">Opslaan</button>
+  <button class="btn-outline" id="prod-date-clear" type="button">Wissen</button>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -303,7 +326,7 @@
   const STATUS_LABELS = {
     uninitialized: 'Niet geseed',
     available:     'Leeg',
-    voorraad:      'Op voorraad',
+    voorraad:      'Voorraad',
     delivered:     'Bezorgd',
     returned:      'Retour',
   };
@@ -354,7 +377,7 @@
     if (!res.ok) { showToast(res.data.error || 'Laden mislukt', 'error'); return; }
     STATE.pots = res.data.pots || [];
     STATE.config = res.data.config || { next_production_date: null };
-    $('#stock-stats').textContent = `Op voorraad: ${res.data.stock_count} potten`;
+    $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
     $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
     renderGrid();
   }
@@ -413,7 +436,7 @@
   function renderStatusOptions(currentSelected) {
     const wrap = $('#status-options'); wrap.innerHTML = '';
     const opts = [
-      ['voorraad', 'Op voorraad'],
+      ['voorraad', 'Voorraad'],
       ['available', 'Leeg'],
       ['delivered', 'Bezorgd'],
       ['returned', 'Retour'],
@@ -473,29 +496,41 @@
     if (STATE.qrScanner) { STATE.qrScanner.stop(); STATE.qrScanner.destroy(); STATE.qrScanner = null; }
   }
 
-  // --- Production date picker ---
-  function pickProdDate() {
-    // Build an in-place native date input flow
+  // --- Production date picker (drawer-based) ---
+  function openProdDateDrawer() {
     const cur = STATE.config.next_production_date || todayISO();
-    const inp = document.createElement('input');
-    inp.type = 'date';
-    inp.value = cur;
-    inp.style.position = 'fixed'; inp.style.left = '-9999px';
-    document.body.appendChild(inp);
-    inp.addEventListener('change', async () => {
-      const v = inp.value;
-      inp.remove();
-      if (!v) return;
-      const res = await api('voorraad-set-config', { next_production_date: v });
-      if (res.ok) {
-        showToast(`Productiedatum: ${fmtDate(v)}`, 'success');
-        STATE.config = res.data.config;
-        $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
-      } else {
-        showToast(res.data.error || 'Mislukt', 'error');
-      }
-    });
-    setTimeout(()=>inp.showPicker ? inp.showPicker() : inp.click(), 0);
+    $('#prod-date-drawer-input').value = cur;
+    $('#prod-date-drawer-err').textContent = '';
+    $('#drawer-backdrop').classList.add('open');
+    $('#prod-date-drawer').classList.add('open');
+  }
+  function closeProdDateDrawer() {
+    $('#drawer-backdrop').classList.remove('open');
+    $('#prod-date-drawer').classList.remove('open');
+  }
+  async function saveProdDate() {
+    const v = $('#prod-date-drawer-input').value;
+    if (!v) { $('#prod-date-drawer-err').textContent = 'Kies een datum'; return; }
+    const res = await api('voorraad-set-config', { next_production_date: v });
+    if (res.ok) {
+      showToast(`Productiedatum: ${fmtDate(v)}`, 'success');
+      STATE.config = res.data.config;
+      $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
+      closeProdDateDrawer();
+    } else {
+      $('#prod-date-drawer-err').textContent = res.data.error || 'Opslaan mislukt';
+    }
+  }
+  async function clearProdDate() {
+    const res = await api('voorraad-set-config', { next_production_date: '' });
+    if (res.ok) {
+      showToast('Productiedatum gewist', 'success');
+      STATE.config = res.data.config;
+      $('#prod-date-btn').textContent = 'Productiedatum: —';
+      closeProdDateDrawer();
+    } else {
+      $('#prod-date-drawer-err').textContent = res.data.error || 'Wissen mislukt';
+    }
   }
 
   // --- Bindings ---
@@ -508,7 +543,7 @@
       saveSession(pw);
       STATE.pots = res.data.pots || [];
       STATE.config = res.data.config || {};
-      $('#stock-stats').textContent = `Op voorraad: ${res.data.stock_count} potten`;
+      $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
       $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
       renderGrid();
       $('#login-view').hidden = true;
@@ -518,17 +553,21 @@
     }
   });
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
-  $('#prod-date-btn').addEventListener('click', pickProdDate);
+  $('#prod-date-btn').addEventListener('click', openProdDateDrawer);
   $('#filter-select').addEventListener('change', renderGrid);
   $('#scan-btn').addEventListener('click', () => { if (STATE.qrScanner) stopScan(); else startScan(); });
   $('#scan-cancel').addEventListener('click', stopScan);
-  $('#drawer-close').addEventListener('click', closeDrawer);
-  $('#drawer-backdrop').addEventListener('click', closeDrawer);
+  $('#drawer-close')?.addEventListener('click', closeDrawer);
+  $('#drawer-backdrop').addEventListener('click', () => { closeDrawer(); closeProdDateDrawer(); });
   $('#drawer-save').addEventListener('click', saveDrawer);
 
+  // Production date drawer
+  $('#prod-date-save').addEventListener('click', saveProdDate);
+  $('#prod-date-clear').addEventListener('click', clearProdDate);
+
   // Menu
-  $('#menu-open').addEventListener('click', () => $('#menu-panel').classList.add('open'));
-  $('#menu-close').addEventListener('click', () => $('#menu-panel').classList.remove('open'));
+  $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
+  $('#menu-backdrop').addEventListener('click', () => { $('#menu-backdrop').classList.remove('open'); $('#menu-panel').classList.remove('open'); });
   $('#menu-logout').addEventListener('click', () => { clearSession(); location.reload(); });
 
   // Boot
@@ -538,7 +577,7 @@
       if (res.ok) {
         STATE.pots = res.data.pots || [];
         STATE.config = res.data.config || {};
-        $('#stock-stats').textContent = `Op voorraad: ${res.data.stock_count} potten`;
+        $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
         $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
         renderGrid();
         $('#login-view').hidden = true;

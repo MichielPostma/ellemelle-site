@@ -217,45 +217,52 @@
   .toast.error { background: var(--red); }
   .toast.show { opacity: 1; }
 
-  /* Hamburger menu */
+  /* Hamburger menu (bottom drawer) */
   .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
   .menu-btn {
     width: 44px; height: 44px; border: none; background: transparent;
-    cursor: pointer; padding: 10px; -webkit-tap-highlight-color: transparent;
+    cursor: pointer; padding: 10px; color: var(--black);
+    -webkit-tap-highlight-color: transparent;
   }
   .menu-btn svg { width: 24px; height: 24px; }
+  .menu-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 110;
+  }
+  .menu-backdrop.open { opacity: 1; pointer-events: auto; }
   .menu-panel {
-    position: fixed; top: 0; left: 0; right: 0;
-    background: var(--cream); padding: 64px 20px 28px;
-    transform: translateY(-100%); transition: transform 260ms cubic-bezier(.2,.7,.2,1);
-    z-index: 80; box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--white); border-radius: 18px 18px 0 0;
+    padding: 14px 20px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    z-index: 120; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
   }
   .menu-panel.open { transform: translateY(0); }
-  .menu-panel a, .menu-panel button {
+  .menu-panel .drawer-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.18); margin: 0 auto 18px;
+  }
+  .menu-panel a, .menu-panel > button:not(.btn-outline):not(.btn-primary) {
     display: block; width: 100%; padding: 14px 16px;
     background: transparent; border: none; cursor: pointer;
     text-align: left; font: 700 17px 'DM Sans', system-ui, sans-serif; color: var(--black);
     text-decoration: none; border-radius: var(--radius-md);
     -webkit-tap-highlight-color: transparent;
   }
-  .menu-panel a:hover, .menu-panel button:hover { background: rgba(217,48,30,0.06); }
-  .menu-panel .close {
-    position: absolute; top: 14px; right: 14px;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: rgba(0,0,0,0.06); font-size: 18px;
-  }
+  .menu-panel a:hover { background: rgba(217,48,30,0.06); }
 
 </style>
 </head>
 <body>
 
-<!-- Menu panel (toggled by hamburger) -->
+<!-- Hamburger bottom-drawer menu -->
+<div class="menu-backdrop" id="menu-backdrop"></div>
 <div class="menu-panel" id="menu-panel">
-  <button class="close" id="menu-close" type="button">×</button>
-  <a href="/bezorger">Bezorger</a>
+  <div class="drawer-handle"></div>
+  <a href="/bezorger">Bezorgen</a>
   <a href="/voorraad">Voorraad</a>
-  <a href="/admin">Admin</a>
-  <button id="menu-logout" type="button" style="margin-top: 14px; color: var(--red);">Uitloggen</button>
+  <button class="btn-outline" id="menu-logout" type="button" style="margin-top: 14px;">Uitloggen</button>
 </div>
 
 <main id="app">
@@ -803,8 +810,8 @@ Ellis en Melle`;
   $('#return-scan-cancel-btn').addEventListener('click', () => { stopReturnScanner(); $('#return-scan-view').hidden = true; });
 
   // Hamburger
-  $('#menu-open')?.addEventListener('click', () => $('#menu-panel').classList.add('open'));
-  $('#menu-close')?.addEventListener('click', () => $('#menu-panel').classList.remove('open'));
+  $('#menu-open')?.addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
+  $('#menu-backdrop').addEventListener('click', () => { $('#menu-backdrop').classList.remove('open'); $('#menu-panel').classList.remove('open'); });
   $('#menu-logout')?.addEventListener('click', () => { clearSession(); location.reload(); });
 
   // Boot: auto-login if session valid
