@@ -652,6 +652,25 @@
   #admin-customers .cust-addr { color: #666; font-size: 13px; margin-top: 2px; }
   #admin-customers .empty { color: #666; font-size: 14px; padding: 12px 0; text-align: center; }
 
+
+  /* Step actions row: back-pill + primary button */
+  .step-actions { display: flex; gap: 10px; align-items: stretch; margin-top: 22px; }
+  .step-actions .btn-primary { flex: 1; margin-top: 0; }
+  .back-pill {
+    flex-shrink: 0;
+    width: 60px; min-height: 60px;
+    background: var(--white); color: var(--red);
+    border: none; border-radius: var(--radius-md);
+    cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    -webkit-tap-highlight-color: transparent;
+    appearance: none; -webkit-appearance: none;
+  }
+  .back-pill svg { width: 22px; height: 22px; }
+  .back-pill:hover { transform: translateY(-1px); }
+  .back-pill:active { transform: translateY(1px); }
+
 </style>
 </head>
 <body>
@@ -1734,6 +1753,30 @@
     });
     const kbDef = document.getElementById('kanaal-next');
     if (kbDef) kbDef.disabled = !formData.kanaal;
+
+    // Install back-pill next to every Volgende button (except step 1)
+    (function installBackPills() {
+      const ARROW_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>';
+      $$('.step [data-next]').forEach(btn => {
+        const step = btn.closest('.step');
+        if (!step) return;
+        if (step.dataset.step === '1') return; // no back from step 1
+        if (step.dataset.step === '0') return; // intro
+        if (btn.previousElementSibling && btn.previousElementSibling.classList && btn.previousElementSibling.classList.contains('back-pill')) return;
+        if (btn.parentNode && btn.parentNode.classList && btn.parentNode.classList.contains('step-actions')) return;
+        const backPill = document.createElement('button');
+        backPill.type = 'button';
+        backPill.className = 'back-pill';
+        backPill.setAttribute('aria-label', 'Vorige');
+        backPill.innerHTML = ARROW_SVG;
+        backPill.addEventListener('click', back);
+        const wrap = document.createElement('div');
+        wrap.className = 'step-actions';
+        btn.parentNode.insertBefore(wrap, btn);
+        wrap.appendChild(backPill);
+        wrap.appendChild(btn);
+      });
+    })();
 
     // Refresh counter every 30s
     setInterval(loadCounter, 30000);

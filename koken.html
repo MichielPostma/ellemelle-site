@@ -514,18 +514,25 @@
   function renderPottenDropdown() {
     const sel = $('#potten-select'); sel.innerHTML = '';
     const todo = STATE.todoCount || 0;
-    // Dynamic top option (only when todoCount > 0 and not already in fixed options)
-    if (todo > 0) {
-      const opt = document.createElement('option');
-      opt.value = String(todo);
-      opt.textContent = `${todo} pot${todo === 1 ? '' : 'ten'} (huidige bestellingen)`;
-      opt.dataset.dynamic = '1';
-      sel.appendChild(opt);
-    } else {
+    const stock = STATE.stock_count || 0;
+    const teMaken = Math.max(0, todo - stock);
+    if (todo === 0) {
       const opt = document.createElement('option');
       opt.value = '5';
       opt.textContent = 'Geen huidige bestellingen — start met 5 potten';
       opt.disabled = true;
+      sel.appendChild(opt);
+    } else if (teMaken === 0) {
+      const opt = document.createElement('option');
+      opt.value = '5';
+      opt.textContent = '0 potten (voorraad dekt alle bestellingen)';
+      opt.disabled = true;
+      sel.appendChild(opt);
+    } else {
+      const opt = document.createElement('option');
+      opt.value = String(teMaken);
+      opt.textContent = `${teMaken} pot${teMaken === 1 ? '' : 'ten'} (te maken voor openstaande bestellingen)`;
+      opt.dataset.dynamic = '1';
       sel.appendChild(opt);
     }
     POTTEN_OPTIONS.forEach(n => {
@@ -574,6 +581,7 @@
     const res = await api('voorraad-list');
     if (res.ok) {
       STATE.config = res.data.config || { next_production_date: null };
+      STATE.stock_count = res.data.stock_count || 0;
       renderProdDateBtn();
     }
     // Get suggested default from open todos
@@ -584,7 +592,9 @@
       todoCount = all.filter(o => !o.order_status || o.order_status === 'todo').length;
     }
     STATE.todoCount = todoCount;
-    STATE.suggestedDefault = pickSuggestedDefault(todoCount || 1);
+    // To-make = open orders minus stock already produced
+    const teMaken = Math.max(0, todoCount - (STATE.stock_count || 0));
+    STATE.suggestedDefault = teMaken > 0 ? teMaken : 5;
     STATE.potten = STATE.suggestedDefault;
     renderPottenDropdown();
     renderRecipe();
