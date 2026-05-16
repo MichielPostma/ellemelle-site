@@ -638,6 +638,7 @@
   <input name="toevoeging" type="text">
   <input name="postcode" type="text">
   <input name="plaats"   type="text">
+  <input name="aantal" type="text">
   <input name="delivery_date" type="text">
   <input name="delivery_mode" type="text">
   <input name="bot-field" type="text">
@@ -652,7 +653,7 @@
 
   <!-- Topbar (step progress only) -->
   <div class="topbar">
-    <span class="progress-text" id="progress-text">Stap 1 van 6</span>
+    <span class="progress-text" id="progress-text">Stap 1 van 7</span>
   </div>
 
   <!-- Step container -->
@@ -709,8 +710,26 @@
       <button class="btn-primary" data-next>Volgende →</button>
     </section>
 
-    <!-- STEP 4: Kanaal -->
+    <!-- STEP 4: Aantal potten -->
     <section class="step" data-step="4">
+      <h1 class="step-question">Hoeveel potten wil je?</h1>
+      <div class="kanaal-options">
+        <button class="kanaal-card aantal-card" data-aantal="1" type="button">
+          <span><span class="label">1 pot</span><span class="sub">€6 incl. statiegeld</span></span>
+        </button>
+        <button class="kanaal-card aantal-card" data-aantal="2" type="button">
+          <span><span class="label">2 potten</span><span class="sub">€12 incl. statiegeld</span></span>
+        </button>
+        <button class="kanaal-card aantal-card" data-aantal="3" type="button">
+          <span><span class="label">3 potten</span><span class="sub">€18 incl. statiegeld</span></span>
+        </button>
+      </div>
+      <div class="error" data-step-error></div>
+      <button class="btn-primary" id="aantal-next" data-next>Volgende →</button>
+    </section>
+
+    <!-- STEP 5: Kanaal -->
+    <section class="step" data-step="5">
       <h1 class="step-question">Hoe kunnen we je laten weten wanneer je bestelling komt?</h1>
       <div class="kanaal-options">
         <button class="kanaal-card" data-kanaal="whatsapp" type="button">
@@ -724,8 +743,8 @@
       <button class="btn-primary" id="kanaal-next" data-next disabled>Volgende →</button>
     </section>
 
-    <!-- STEP 5: Contact -->
-    <section class="step" data-step="5">
+    <!-- STEP 6: Contact -->
+    <section class="step" data-step="6">
       <h1 class="step-question">En je <span id="contact-noun">06-nummer</span>?</h1>
       <div class="field" id="field-tel" hidden>
         <input id="input-tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" maxlength="14">
@@ -737,20 +756,20 @@
       <button class="btn-primary" data-next>Volgende →</button>
     </section>
 
-    <!-- STEP 6: Bevestig -->
-    <section class="step" data-step="6">
+    <!-- STEP 7: Bevestig -->
+    <section class="step" data-step="7">
       <h1 class="step-question">Klopt dit, <span data-name-slot>…</span>?</h1>
       <div class="order-card" id="order-summary-content"></div>
       <label class="check-row">
         <input type="checkbox" id="confirm-checkbox">
-        <span>Ja, ik wil 1 pot Ellemelle chocopasta, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
+        <span>Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
       </label>
       <div class="error" data-step-error></div>
       <button class="btn-primary" id="submit-btn" data-next>Doe betaling →</button>
     </section>
 
-    <!-- STEP 7: Success — dynamic title + QR + iDeal CTA + order recap -->
-    <section class="step success" data-step="7">
+    <!-- STEP 8: Success — dynamic title + QR + iDeal CTA + order recap -->
+    <section class="step success" data-step="8">
       <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉</h1>
       <p class="success-subtitle">Doe je betaling via QR code of gebruik de button.</p>
       <div id="qrcode"></div>
@@ -786,10 +805,11 @@
 
   // --- Config & state ----------------------------------------------------
   const TIKKIE_FALLBACK = ['https://tikkie.example.com/A', 'https://tikkie.example.com/B'];
-  const TOTAL_STEPS = 6;
+  const TOTAL_STEPS = 7;
   const formData = {
     voornaam: '', telefoon: '', email: '', kanaal: '',
-    straat: '', huisnummer: '', toevoeging: '', postcode: '', plaats: ''
+    straat: '', huisnummer: '', toevoeging: '', postcode: '', plaats: '',
+    aantal: 1
   };
   let currentStep = 0;
   let counterCount = 0;
@@ -902,14 +922,14 @@
     // Substitute name slot
     $$('[data-name-slot]').forEach(el => { el.textContent = formData.voornaam || 'jij'; });
 
-    if (n === 5) {
+    if (n === 6) {
       // Show right contact field based on kanaal
       const isWA = formData.kanaal === 'whatsapp';
       $('#field-tel').hidden = !isWA;
       $('#field-email').hidden = isWA;
       $('#contact-noun').textContent = isWA ? '06-nummer' : 'e-mailadres';
     }
-    if (n === 6) renderOrderSummary();
+    if (n === 7) renderOrderSummary();
   }
 
   // --- Validation --------------------------------------------------------
@@ -972,10 +992,16 @@
         return true;
       }
       case 4: {
-        if (!formData.kanaal) { showError('Kies een kanaal.'); return false; }
+        if (!formData.aantal || !Number.isInteger(formData.aantal) || formData.aantal < 1 || formData.aantal > 3) {
+          showError('Kies aantal potten.'); return false;
+        }
         return true;
       }
       case 5: {
+        if (!formData.kanaal) { showError('Kies een kanaal.'); return false; }
+        return true;
+      }
+      case 6: {
         if (formData.kanaal === 'whatsapp') {
           const tel = $('#input-tel').value.trim();
           const cleaned = tel.replace(/[\s\-]/g, '');
@@ -992,7 +1018,7 @@
         }
         return true;
       }
-      case 6: {
+      case 7: {
         if (!$('#confirm-checkbox').checked) {
           showError('Vink het hokje aan om te bevestigen.'); return false;
         }
@@ -1098,22 +1124,28 @@
     return null;
   }
 
+  function fmtEuro(cents) {
+    const e = (cents/100).toFixed(2).replace('.', ',');
+    return '€' + e;
+  }
   async function renderOrderSummary() {
     const adres = (formData.straat || '(straat)') + ' ' + formData.huisnummer +
       (formData.toevoeging ? '-' + formData.toevoeging : '');
     const stad  = formData.postcode + ' ' + (formData.plaats || 'Haarlem');
-    const kIcon = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
+    const kLabel = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'e-mail';
     const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
-    // Render immediately with placeholder, then enrich asynchronously.
+    const n = Math.max(1, parseInt(formData.aantal, 10) || 1);
+    const potsTotal = n * 500; // €5.00 per pot in cents
+    const stat = n * 100;       // €1.00 statiegeld per pot
+    const total = potsTotal + stat;
     const baseHtml = (lev) =>
-      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
-      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
-      '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
+      '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(potsTotal) + '</span></div>' +
+      '<div class="order-line"><span>Statiegeld (' + n + ' pot' + (n===1?'':'ten') + ')</span><span>' + fmtEuro(stat) + '</span></div>' +
+      '<div class="order-line total"><span>Totaal</span><span>' + fmtEuro(total) + '</span></div>' +
       '<div class="order-meta">' +
         leveringHtml(lev) +
         '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
-        '<strong>Updates via</strong> ' + kIcon + '<br>' + escapeHtml(contact) + '<br><br>' +
-        'Binnen 4 weken aan je deur door Ellis & Melle.' +
+        'We sturen je updates via ' + kLabel + ' op ' + escapeHtml(contact) + '.' +
       '</div>';
     $('#order-summary-content').innerHTML = baseHtml(null);
     const lev = await loadLeveringInfo();
@@ -1232,14 +1264,16 @@
       const stad  = formData.postcode + ' ' + (formData.plaats || 'Haarlem');
       const kIcon = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
       const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
+      const sn = Math.max(1, parseInt(formData.aantal, 10) || 1);
+      const sPots = sn * 500, sStat = sn * 100, sTot = sPots + sStat;
+      const sKLabel = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'e-mail';
       recap.innerHTML =
-        '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
-        '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
-        '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
+        '<div class="order-line"><span>' + sn + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(sPots) + '</span></div>' +
+        '<div class="order-line"><span>Statiegeld (' + sn + ' pot' + (sn===1?'':'ten') + ')</span><span>' + fmtEuro(sStat) + '</span></div>' +
+        '<div class="order-line total"><span>Totaal</span><span>' + fmtEuro(sTot) + '</span></div>' +
         '<div class="order-meta">' +
           '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
-          '<strong>Updates via</strong> ' + kIcon + '<br>' + escapeHtml(contact) + '<br><br>' +
-          'Binnen 4 weken aan je deur door Ellis & Melle.' +
+          'We sturen je updates via ' + sKLabel + ' op ' + escapeHtml(contact) + '.' +
         '</div>';
     }
 
@@ -1369,7 +1403,19 @@
       });
     }
 
-    $$('.kanaal-card').forEach(card => {
+    // Aantal cards — same pattern as kanaal-cards
+    $$('.aantal-card').forEach(card => {
+      card.addEventListener('click', () => {
+        $$('.aantal-card').forEach(c => { c.classList.remove('selected'); c.style.borderColor = ''; });
+        card.classList.add('selected');
+        formData.aantal = parseInt(card.dataset.aantal, 10) || 1;
+        saveState();
+        const btn = document.getElementById('aantal-next');
+        if (btn) btn.disabled = false;
+      });
+    });
+
+        $$('.kanaal-card').forEach(card => {
       card.addEventListener('click', () => {
         formData.kanaal = card.dataset.kanaal;
         $$('.kanaal-card').forEach(c => {
@@ -1483,11 +1529,17 @@
       }
       // Hydrate kanaal selection (highlight matching kanaal-card + enable button)
       if (formData.kanaal) {
-        $$('.kanaal-card').forEach(c => {
+        $$('.kanaal-card[data-kanaal]').forEach(c => {
           c.classList.toggle('selected', c.dataset.kanaal === formData.kanaal); c.style.borderColor = '';
         });
         const kb = document.getElementById('kanaal-next');
         if (kb) kb.disabled = false;
+      }
+      // Hydrate aantal selection
+      if (formData.aantal) {
+        $$('.aantal-card').forEach(c => {
+          c.classList.toggle('selected', parseInt(c.dataset.aantal, 10) === formData.aantal);
+        });
       }
       // Jump to saved step (prepare + show)
       currentStep = saved.step;
@@ -1517,8 +1569,13 @@
     if (!formData.kanaal) {
       formData.kanaal = 'whatsapp';
     }
-    $$('.kanaal-card').forEach(c => {
+    $$('.kanaal-card[data-kanaal]').forEach(c => {
       c.classList.toggle('selected', c.dataset.kanaal === formData.kanaal); c.style.borderColor = '';
+    });
+    // Default aantal = 1 (pre-select first card)
+    if (!formData.aantal) formData.aantal = 1;
+    $$('.aantal-card').forEach(c => {
+      c.classList.toggle('selected', parseInt(c.dataset.aantal, 10) === formData.aantal);
     });
     const kbDef = document.getElementById('kanaal-next');
     if (kbDef) kbDef.disabled = !formData.kanaal;
