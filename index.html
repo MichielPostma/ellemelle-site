@@ -969,6 +969,12 @@
   }
 
   function back() {
+    // Admin existing customer: back from step 4 → admin picker
+    if (__adminMode === 'existing' && currentStep === 4) {
+      hideError();
+      showAdminPicker();
+      return;
+    }
     if (currentStep > 1 && currentStep < 8) {
       const prev = prevStepBefore(currentStep);
       if (prev >= 1) {
