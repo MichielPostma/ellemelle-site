@@ -304,9 +304,6 @@
     <div class="recipe-section">
       <h3>Bereiding</h3>
       <div class="steps" id="steps"></div>
-      <div class="tip-box">
-        <strong>Tip:</strong> Gebruik kraakverse hazelnoten voor de beste smaak.
-      </div>
     </div>
   </section>
 </main>
@@ -329,7 +326,7 @@
 (function(){
   'use strict';
   const $ = sel => document.querySelector(sel);
-  const STORAGE_KEY = 'ellemelle_bezorger_session_v1';
+  const STORAGE_KEY = 'ellemelle_admin_session_v1';
   const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
   const STATE = { password: null, config: { next_production_date: null }, potten: 1, todoCount: 0 };
 
@@ -356,7 +353,12 @@
 
   function loadSession() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      let raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        // Backward-compat: migrate old key
+        const oldRaw = localStorage.getItem('ellemelle_bezorger_session_v1');
+        if (oldRaw) { localStorage.setItem(STORAGE_KEY, oldRaw); localStorage.removeItem('ellemelle_bezorger_session_v1'); raw = oldRaw; }
+      }
       if (!raw) return null;
       const o = JSON.parse(raw);
       if (!o || !o.savedAt || (Date.now() - o.savedAt) > SESSION_TTL) {

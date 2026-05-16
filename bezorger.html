@@ -358,7 +358,7 @@
   const $  = sel => document.querySelector(sel);
   const $$ = sel => Array.from(document.querySelectorAll(sel));
 
-  const STORAGE_KEY = 'ellemelle_bezorger_session_v1';
+  const STORAGE_KEY = 'ellemelle_admin_session_v1';
   const SESSION_TTL = 90 * 24 * 60 * 60 * 1000; // 90 days
 
   // Base location for route optimisation (Busken Huëtstraat 11, 2032 VJ Haarlem)
@@ -378,7 +378,12 @@
   // --- Session helpers (90-day) ---
   function loadSession() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      let raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        // Backward-compat: migrate old key
+        const oldRaw = localStorage.getItem('ellemelle_bezorger_session_v1');
+        if (oldRaw) { localStorage.setItem(STORAGE_KEY, oldRaw); localStorage.removeItem('ellemelle_bezorger_session_v1'); raw = oldRaw; }
+      }
       if (!raw) return null;
       const o = JSON.parse(raw);
       if (!o || !o.savedAt || (Date.now() - o.savedAt) > SESSION_TTL) {
