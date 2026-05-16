@@ -227,6 +227,22 @@
   .toast.error { background: var(--red); }
   .toast.show { opacity: 1; }
   .error { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 500; min-height: 18px; }
+
+  /* Product hero — edge-to-edge */
+  .product-hero {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 8px 0 16px;
+    padding: 0;
+    line-height: 0;
+  }
+  .product-img {
+    width: 100%; max-width: none;
+    height: auto; display: block; margin: 0; padding: 0;
+  }
+
 </style>
 </head>
 <body>
@@ -274,19 +290,13 @@
       <select id="potten-select"></select>
     </div>
 
-    <!-- Recipe header -->
-    <div class="recipe-header">
-      <h2>Ellemelle chocopasta</h2>
-      <div class="recipe-meta">
-        <span>⏱ 30 min bereiding</span>
-        <span>❄ 15 min afkoelen</span>
-      </div>
-      <div class="recipe-yield" id="recipe-yield">Voor 1 pot · 200g per pot</div>
-    </div>
+    <section class="product-hero">
+      <img class="product-img" src="Images/product.png" alt="ELLEMELLE chocopasta pot" loading="lazy">
+    </section>
 
     <!-- Ingredients -->
     <div class="recipe-section">
-      <h3>Ingredienten</h3>
+      <h3>Ingredienten <span style="color:#666; font-weight:500; text-transform: none; letter-spacing: 0; opacity: 1; font-size: 12px; margin-left: 6px;" id="recipe-yield">Voor 1 pot</span></h3>
       <div class="ingredients" id="ingredients"></div>
     </div>
 
@@ -461,7 +471,7 @@
   }
   function renderRecipe() {
     const n = STATE.potten;
-    $('#recipe-yield').textContent = `Voor ${n} pot${n === 1 ? '' : 'ten'} · 200g per pot`;
+    $('#recipe-yield').textContent = `· Voor ${n} pot${n === 1 ? '' : 'ten'} (${200 * n}g)`;
     const ing = $('#ingredients'); ing.innerHTML = '';
     INGREDIENTS.forEach(i => {
       const row = document.createElement('div');
