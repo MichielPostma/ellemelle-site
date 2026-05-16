@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
-<link rel="manifest" href="/manifest.webmanifest">
 <style>
   :root {
     --red: #D9301E; --red-dark: #8B1A0E;
@@ -261,6 +259,13 @@
   /* JS may still toggle [hidden] attribute on these sections; it wins via specificity bump */
   #login-view[hidden], #main-view[hidden], #detail-view[hidden], #list-view[hidden] { display: none !important; }
 </style>
+<link rel="manifest" href="/admin-manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ELLEMELLE Admin">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-touch-icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/apple-touch-icon-167.png">
 </head>
 <body>
 
@@ -368,6 +373,19 @@
     const d = new Date(iso);
     return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}`;
   }
+  function deliveryCountdown(deliveryIsoDate) {
+    if (!deliveryIsoDate) return { label: '', overdue: false };
+    const [y, m, d] = deliveryIsoDate.split('-').map(Number);
+    const target = new Date(Date.UTC(y, m - 1, d));
+    const today = new Date();
+    const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const diffMs = target - todayUtc;
+    const diff = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    if (diff < 0) return { label: `Te laat (${Math.abs(diff)} ${Math.abs(diff)===1?'dag':'dagen'})`, overdue: true };
+    if (diff === 0) return { label: 'Vandaag uiterlijk bezorgd', overdue: false };
+    if (diff === 1) return { label: 'Morgen uiterlijk bezorgd', overdue: false };
+    return { label: `Nog ${diff} dagen uiterlijk bezorgd`, overdue: false };
+  }
   async function api(ep, body) {
     const r = await fetch('/.netlify/functions/' + ep, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -404,10 +422,12 @@
       const stockClass = inStock ? 'in' : 'out';
       const stockText = inStock ? '· op voorraad' : '· niet op voorraad';
       const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
+      const cd = deliveryCountdown(o.delivery_date);
+      const cdColor = cd.overdue ? 'color:var(--red);font-weight:700;' : 'color:#888;';
       card.innerHTML = `
         <div class="head">
           <span class="name">${o.voornaam || '(geen naam)'}</span>
-          <span class="date">${fmtShortDate(o.created_at)}</span>
+          <span class="date" style="${cdColor}">${cd.label}</span>
         </div>
         <div class="addr">${addr}${o.plaats ? ' — ' + o.plaats : ''}</div>
         <div class="row2">
