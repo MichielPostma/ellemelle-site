@@ -197,6 +197,29 @@
   .klant-tag.statiegeld { background: rgba(0,0,0,0.04); color: #555; }
 
 </style>
+<script>
+(function(){
+  try {
+    var raw = localStorage.getItem('ellemelle_admin_session_v1') || localStorage.getItem('ellemelle_bezorger_session_v1');
+    var ok = false;
+    if (raw) {
+      var o = JSON.parse(raw);
+      if (o && o.savedAt && (Date.now() - o.savedAt) < 90*24*60*60*1000) ok = true;
+    }
+    document.documentElement.classList.add(ok ? 'sess-yes' : 'sess-no');
+  } catch (e) {
+    document.documentElement.classList.add('sess-no');
+  }
+})();
+</script>
+<style>
+  /* FOUC guard — hide auth-gated sections until session decision is made */
+  #login-view, #main-view, #detail-view, #list-view { display: none; }
+  html.sess-yes #main-view, html.sess-yes #detail-view, html.sess-yes #list-view { display: block; }
+  html.sess-no  #login-view { display: block; }
+  /* JS may still toggle [hidden] attribute on these sections; it wins via specificity bump */
+  #login-view[hidden], #main-view[hidden], #detail-view[hidden], #list-view[hidden] { display: none !important; }
+</style>
 </head>
 <body>
 
