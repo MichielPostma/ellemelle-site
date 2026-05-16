@@ -863,7 +863,7 @@
     } else {
       document.body.classList.remove('on-intro');
     }
-    if (n === 7) {
+    if (n === 8) {
       progressEl.textContent = '';
       backBtn.hidden = true;
       document.body.classList.add('on-success');
@@ -1237,10 +1237,10 @@
     } catch (e) { /* swallow */ }
 
     // Move to success
-    currentStep = 7;
+    currentStep = 8;
     clearState();
     prepareSuccessStep();
-    showStep(7);
+    showStep(8);
     setTimeout(burstConfetti, 200);
   }
 
