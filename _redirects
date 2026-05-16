@@ -18,3 +18,4 @@
 /api/bezorger/pot-return /.netlify/functions/bezorger-pot-return 200
 /api/bezorger/extra-pot /.netlify/functions/bezorger-extra-pot 200
 /api/bezorger/customer-history /.netlify/functions/bezorger-customer-history 200
+/api/levering-info /.netlify/functions/levering-info 200

@@ -106,3 +106,8 @@
   from = "/api/bezorger/customer-history"
   to = "/.netlify/functions/bezorger-customer-history"
   status = 200
+
+[[redirects]]
+  from = "/api/levering-info"
+  to = "/.netlify/functions/levering-info"
+  status = 200
