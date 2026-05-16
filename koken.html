@@ -276,6 +276,22 @@
     line-height: 1.2;
     min-height: 0;
   }
+
+  /* Floating + FAB */
+  .fab {
+    position: fixed; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom));
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--white); color: var(--red);
+    border: none; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50; -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
+  }
+  .fab svg { width: 24px; height: 24px; }
+  .fab:hover { transform: scale(1.05); }
+  .fab:active { transform: scale(0.95); }
+
 </style>
 <script>
 (function(){
@@ -618,6 +634,10 @@
   }
 })();
 </script>
+
+<a class="fab" id="fab-add" href="https://ellemelle.netlify.app/?start=admin" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</a>
 
 </body>
 </html>

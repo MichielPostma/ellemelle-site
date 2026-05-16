@@ -903,18 +903,21 @@
       submitOrder();
       return;
     }
-    currentStep++;
+    currentStep = nextStepAfter(currentStep);
     prepareStep(currentStep);
     showStep(currentStep);
     saveState();
   }
 
   function back() {
-    if (currentStep > 1 && currentStep < 7) {
-      currentStep--;
-      hideError();
-      showStep(currentStep);
-      saveState();
+    if (currentStep > 1 && currentStep < 8) {
+      const prev = prevStepBefore(currentStep);
+      if (prev >= 1) {
+        currentStep = prev;
+        hideError();
+        showStep(currentStep);
+        saveState();
+      }
     }
   }
 
