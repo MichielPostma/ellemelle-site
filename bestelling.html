@@ -135,6 +135,13 @@
   body.on-login #login-view input { text-align: center; }
   body.on-login .login-hero { width: 240px; max-width: 70vw; margin: 4px auto 18px; display: block; animation: wiggle 2.6s ease-in-out infinite; }
   @keyframes wiggle { 0%,24%,100% { transform: rotate(0deg); } 6% { transform: rotate(-6deg); } 12% { transform: rotate(6deg); } 18% { transform: rotate(-3deg); } }
+  .menu-panel .menu-logout-btn {
+    margin-top: 14px;
+    text-align: left;
+    padding: 14px 16px;
+    line-height: 1.2;
+    min-height: 0;
+  }
 </style>
 </head>
 <body>
@@ -143,11 +150,12 @@
 <div class="menu-backdrop" id="menu-backdrop"></div>
 <div class="menu-panel" id="menu-panel">
   <div class="drawer-handle"></div>
+  <a href="/admin">Admin</a>
   <a href="/bezorger">Bezorgen</a>
   <a href="/bestellingen">Bestellingen</a>
   <a href="/voorraad">Voorraad</a>
   <a href="/koken">Koken</a>
-  <button class="btn-outline" id="menu-logout" type="button" style="margin-top: 14px;">Uitloggen</button>
+  <button class="btn-outline menu-logout-btn" id="menu-logout" type="button">Uitloggen</button>
 </div>
 
 <main id="app">
