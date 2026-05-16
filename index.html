@@ -1498,9 +1498,19 @@
         setTimeout(() => { lastLookup = ''; lookupAddress(); }, 200);
       }
     } else {
-      // Fresh visitor → intro screen
-      currentStep = 0;
-      showStep(0);
+      // Check ?start=1 query param — admin skips intro and jumps to step 1
+      const params = new URLSearchParams(location.search);
+      if (params.get('start') === '1') {
+        currentStep = 1;
+        prepareStep(1);
+        showStep(1);
+        // Clean URL so refresh doesn't keep the flag
+        try { history.replaceState({}, '', location.pathname); } catch {}
+      } else {
+        // Fresh visitor → intro screen
+        currentStep = 0;
+        showStep(0);
+      }
     }
 
     // Default kanaal to WhatsApp if nothing chosen yet
