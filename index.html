@@ -1313,7 +1313,7 @@
     if (nb2) nb2.disabled = false;
     const pCard = document.getElementById('postcode-card');
     if (pCard) pCard.hidden = true;
-    $$('.kanaal-card').forEach(c => { c.style.borderColor = ''; c.classList.remove('selected'); });
+    $$('.kanaal-card[data-kanaal]').forEach(c => { c.style.borderColor = ''; c.classList.remove('selected'); });
     const kbReset = document.getElementById('kanaal-next');
     if (kbReset) kbReset.disabled = true;
     const cb = document.getElementById('confirm-checkbox'); if (cb) cb.checked = false;
@@ -1415,10 +1415,10 @@
       });
     });
 
-        $$('.kanaal-card').forEach(card => {
+        $$('.kanaal-card[data-kanaal]').forEach(card => {
       card.addEventListener('click', () => {
         formData.kanaal = card.dataset.kanaal;
-        $$('.kanaal-card').forEach(c => {
+        $$('.kanaal-card[data-kanaal]').forEach(c => {
           c.classList.toggle('selected', c === card);
           c.style.borderColor = '';
         });
