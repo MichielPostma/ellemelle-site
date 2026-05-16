@@ -164,9 +164,15 @@
 
   .recipe-section { margin-top: 22px; }
   .recipe-section h3 {
-    color: var(--red-dark); font-size: 13px; font-weight: 700;
+    color: #666; font-size: 12px; font-weight: 700;
     letter-spacing: 0.5px; text-transform: uppercase;
-    opacity: 0.6; margin-bottom: 10px;
+    margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  }
+  .recipe-section h3 .yield {
+    color: #666; font-weight: 500;
+    letter-spacing: 0; text-transform: none;
+    font-size: 12px; flex-shrink: 0;
   }
 
   .ingredients {
@@ -296,7 +302,7 @@
 
     <!-- Ingredients -->
     <div class="recipe-section">
-      <h3>Ingredienten <span style="color:#666; font-weight:500; text-transform: none; letter-spacing: 0; opacity: 1; font-size: 12px; margin-left: 6px;" id="recipe-yield">Voor 1 pot</span></h3>
+      <h3><span>Ingredienten</span><span class="yield" id="recipe-yield">Voor 1 pot</span></h3>
       <div class="ingredients" id="ingredients"></div>
     </div>
 
@@ -473,7 +479,7 @@
   }
   function renderRecipe() {
     const n = STATE.potten;
-    $('#recipe-yield').textContent = `· Voor ${n} pot${n === 1 ? '' : 'ten'} (${200 * n}g)`;
+    $('#recipe-yield').textContent = `Voor ${n} pot${n === 1 ? '' : 'ten'} · 200g per pot`;
     const ing = $('#ingredients'); ing.innerHTML = '';
     INGREDIENTS.forEach(i => {
       const row = document.createElement('div');
