@@ -132,7 +132,11 @@
   /* Login design */
   body.on-login { display: flex; flex-direction: column; align-items: center; }
   body.on-login #login-view { text-align: center; max-width: 380px; margin: 0 auto; }
-  body.on-login #login-view input { text-align: center; }
+  body.on-login #login-view h1 { margin-bottom: 32px; }
+  body.on-login #login-view .field { margin-bottom: 4px; }
+  body.on-login #login-view input { text-align: left; }
+  body.on-login #login-view input::placeholder { text-align: left; }
+  body.on-login #login-view .btn-primary { margin-top: 14px; }
   body.on-login .login-hero { width: 240px; max-width: 70vw; margin: 4px auto 18px; display: block; animation: wiggle 2.6s ease-in-out infinite; }
   @keyframes wiggle { 0%,24%,100% { transform: rotate(0deg); } 6% { transform: rotate(-6deg); } 12% { transform: rotate(6deg); } 18% { transform: rotate(-3deg); } }
   .menu-panel .menu-logout-btn {
@@ -169,7 +173,7 @@
 
   <!-- LOGIN -->
   <section id="login-view">
-    <img class="login-hero" src="Images/product.png" alt="ELLEMELLE pot" loading="eager">
+    <img class="login-hero" src="/Images/product.png" alt="ELLEMELLE pot" loading="eager">
     <h1 class="step-question" style="text-align: center;">Voer je wachtwoord in</h1>
     <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord">
     <div class="error" id="login-err"></div>
