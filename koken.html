@@ -257,7 +257,6 @@
   <section id="main-view" hidden>
     <div class="topbar">
       <div style="flex: 1; min-width: 0;">
-        <span class="progress-text">KOK</span>
         <h1 class="step-question" style="margin-bottom: 0;">Koken</h1>
       </div>
       <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
@@ -366,6 +365,12 @@
     const [y, m, d] = iso.split('-');
     return `${d}-${m}-${y.slice(2)}`;
   }
+  function renderProdDateBtn() {
+    const date = STATE.config && STATE.config.next_production_date;
+    $('#prod-date-btn').textContent = date
+      ? ('Productiedatum: ' + fmtDate(date))
+      : 'Nog geen productiedatum';
+  }
   function showToast(msg, type) {
     const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + (type||'') + ' show';
     clearTimeout(window.__t); window.__t = setTimeout(()=>t.classList.remove('show'), 3000);
@@ -397,7 +402,7 @@
     if (res.ok) {
       showToast(`Productiedatum: ${fmtDate(v)}`, 'success');
       STATE.config = res.data.config;
-      $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
+      renderProdDateBtn();
       closeProdDateDrawer();
     } else {
       $('#prod-date-drawer-err').textContent = res.data.error || 'Opslaan mislukt';
@@ -408,7 +413,7 @@
     if (res.ok) {
       showToast('Productiedatum gewist', 'success');
       STATE.config = res.data.config;
-      $('#prod-date-btn').textContent = 'Productiedatum: —';
+      renderProdDateBtn();
       closeProdDateDrawer();
     } else {
       $('#prod-date-drawer-err').textContent = res.data.error || 'Wissen mislukt';
@@ -417,19 +422,30 @@
 
   // --- Potten dropdown ---
   function pickSuggestedDefault(todoCount) {
-    // Pick the smallest option >= todoCount (or last option)
-    for (const opt of POTTEN_OPTIONS) {
-      if (opt >= todoCount) return opt;
-    }
-    return POTTEN_OPTIONS[POTTEN_OPTIONS.length - 1];
+    if (!todoCount || todoCount <= 0) return 5;
+    return todoCount; // dynamic option uses exact count
   }
   function renderPottenDropdown() {
     const sel = $('#potten-select'); sel.innerHTML = '';
+    const todo = STATE.todoCount || 0;
+    // Dynamic top option (only when todoCount > 0 and not already in fixed options)
+    if (todo > 0) {
+      const opt = document.createElement('option');
+      opt.value = String(todo);
+      opt.textContent = `${todo} pot${todo === 1 ? '' : 'ten'} (huidige bestellingen)`;
+      opt.dataset.dynamic = '1';
+      sel.appendChild(opt);
+    } else {
+      const opt = document.createElement('option');
+      opt.value = '5';
+      opt.textContent = 'Geen huidige bestellingen — start met 5 potten';
+      opt.disabled = true;
+      sel.appendChild(opt);
+    }
     POTTEN_OPTIONS.forEach(n => {
       const opt = document.createElement('option');
       opt.value = String(n);
-      const suggested = (n === STATE.suggestedDefault) ? ' (aanbevolen)' : '';
-      opt.textContent = `${n} pot${n === 1 ? '' : 'ten'}${suggested}`;
+      opt.textContent = `${n} pot${n === 1 ? '' : 'ten'}`;
       sel.appendChild(opt);
     });
     sel.value = String(STATE.potten);
@@ -472,7 +488,7 @@
     const res = await api('voorraad-list');
     if (res.ok) {
       STATE.config = res.data.config || { next_production_date: null };
-      $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
+      renderProdDateBtn();
     }
     // Get suggested default from open todos
     const bz = await api('bezorger-orders');
