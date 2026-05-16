@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#D9301E">
+<title>ELLEMELLE — bestelling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+  :root {
+    --red: #D9301E; --red-dark: #8B1A0E;
+    --cream: #feece2; --cream-dark: #ECE3D2;
+    --black: #1A1A1A; --white: #FFFFFF;
+    --shadow-card: 0 2px 10px rgba(139,26,14,0.08);
+    --shadow-cta: 0 6px 18px rgba(217,48,30,0.28);
+    --radius-md: 14px;
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream); color: var(--black);
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 16px; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+  #app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; position: relative; }
+
+  .step-question { color: var(--red); font-size: 28px; line-height: 1.15; margin-bottom: 14px; letter-spacing: -0.2px; font-weight: 700; }
+  .actions-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+
+  .back-link { background: transparent; border: none; padding: 6px 0; color: var(--black); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 4px; }
+
+  input[type="date"], input[type="password"] {
+    width: 100%; min-height: 60px; padding: 16px 18px; font-size: 18px; font-family: inherit;
+    background: var(--white); border: 2px solid transparent; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card); color: var(--black); appearance: none; -webkit-appearance: none;
+  }
+  input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card); }
+
+  .btn-primary {
+    display: block; width: 100%; min-height: 60px; text-align: center; line-height: 60px;
+    background: var(--red); color: var(--white); border: none; border-radius: var(--radius-md);
+    font-family: inherit; font-size: 18px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 14px; box-shadow: var(--shadow-cta);
+    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
+  }
+  .btn-outline {
+    display: block; width: 100%; min-height: 56px; background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 10px; text-align: center; line-height: 52px; text-decoration: none;
+    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
+    box-shadow: none;
+  }
+  .btn-danger {
+    display: block; width: 100%; min-height: 56px; background: transparent; color: var(--red-dark);
+    border: 2px solid var(--red-dark); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 24px; text-align: center; line-height: 52px;
+    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
+  }
+  .btn-danger:hover { background: rgba(139,26,14,0.06); }
+
+  /* Topbar */
+  .menu-btn { width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; padding: 10px; color: var(--black); -webkit-tap-highlight-color: transparent; position: absolute; top: 28px; right: 20px; }
+  .menu-btn svg { width: 24px; height: 24px; }
+
+  .menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 110; }
+  .menu-backdrop.open { opacity: 1; pointer-events: auto; }
+  .menu-panel {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--white); border-radius: 18px 18px 0 0;
+    padding: 14px 20px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    z-index: 120; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
+  }
+  .menu-panel.open { transform: translateY(0); }
+  .menu-panel .drawer-handle { width: 40px; height: 4px; border-radius: 2px; background: rgba(0,0,0,0.18); margin: 0 auto 18px; }
+  .menu-panel a, .menu-panel > button:not(.btn-outline):not(.btn-primary) {
+    display: block; width: 100%; padding: 14px 16px;
+    background: transparent; border: none; cursor: pointer;
+    text-align: left; font: 700 17px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    text-decoration: none; border-radius: var(--radius-md);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-panel a:hover { background: rgba(217,48,30,0.06); }
+
+  /* Drawer for date picker */
+  .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 90; }
+  .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--cream); border-radius: 18px 18px 0 0;
+    padding: 14px 20px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    z-index: 100; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
+  }
+  .drawer.open { transform: translateY(0); }
+  .drawer-handle { width: 40px; height: 4px; border-radius: 2px; background: rgba(0,0,0,0.18); margin: 0 auto 14px; }
+  .drawer h2 { font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
+  .drawer .sub { color: #666; font-size: 14px; margin-bottom: 14px; }
+
+  /* Sections */
+  .info-card { background: var(--white); border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 14px; line-height: 1.45; }
+  .info-card strong { display: block; color: var(--black); font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+  .detail-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--cream-dark); font-size: 14px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .k { color: #666; font-weight: 500; }
+  .detail-row .v { color: var(--black); font-weight: 600; text-align: right; }
+  .detail-row .v a { color: var(--red); text-decoration: none; }
+
+  .big-date { font-size: 22px; font-weight: 700; color: var(--black); margin: 4px 0 10px; }
+
+  hr.actions-divider { border: none; border-top: 1px dashed var(--cream-dark); margin: 28px 0 10px; height: 0; }
+
+  .badge { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; }
+  .badge.stock-in  { background: rgba(31,157,85,0.12); color: #1f9d55; }
+  .badge.stock-out { background: rgba(184,92,0,0.12); color: #b85c00; }
+  .badge.todo      { background: rgba(0,0,0,0.06); color: #555; }
+  .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
+  .badge.neighbors { background: rgba(255,210,74,0.25); color: #b85c00; }
+  .badge.retry     { background: rgba(139,26,14,0.08); color: var(--red-dark); }
+
+  .error { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 500; min-height: 18px; }
+
+  /* Login design */
+  body.on-login { display: flex; flex-direction: column; align-items: center; }
+  body.on-login #login-view { text-align: center; max-width: 380px; margin: 0 auto; }
+  body.on-login #login-view input { text-align: center; }
+  body.on-login .login-hero { width: 240px; max-width: 70vw; margin: 4px auto 18px; display: block; animation: wiggle 2.6s ease-in-out infinite; }
+  @keyframes wiggle { 0%,24%,100% { transform: rotate(0deg); } 6% { transform: rotate(-6deg); } 12% { transform: rotate(6deg); } 18% { transform: rotate(-3deg); } }
+</style>
+</head>
+<body>
+
+<!-- Hamburger -->
+<div class="menu-backdrop" id="menu-backdrop"></div>
+<div class="menu-panel" id="menu-panel">
+  <div class="drawer-handle"></div>
+  <a href="/bezorger">Bezorgen</a>
+  <a href="/bestellingen">Bestellingen</a>
+  <a href="/voorraad">Voorraad</a>
+  <a href="/koken">Koken</a>
+  <button class="btn-outline" id="menu-logout" type="button" style="margin-top: 14px;">Uitloggen</button>
+</div>
+
+<main id="app">
+  <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="3" y1="6"  x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+
+  <!-- LOGIN -->
+  <section id="login-view">
+    <img class="login-hero" src="Images/product.png" alt="ELLEMELLE pot" loading="eager">
+    <h1 class="step-question" style="text-align: center;">Voer je wachtwoord in</h1>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord">
+    <div class="error" id="login-err"></div>
+    <button class="btn-primary" id="login-btn">Open bestelling →</button>
+  </section>
+
+  <!-- DETAIL -->
+  <section id="detail-view" hidden>
+    <a class="back-link" href="/bestellingen">← Terug</a>
+    <h1 class="step-question" id="d-name">—</h1>
+
+    <div class="actions-label">Bezorging</div>
+    <div class="info-card">
+      <div class="big-date" id="d-deliverydate">—</div>
+      <div class="detail-row"><span class="k">Status</span><span class="v"><span class="badge" id="d-statusbadge">—</span></span></div>
+      <div class="detail-row"><span class="k">Levering</span><span class="v" id="d-mode">—</span></div>
+      <button class="btn-outline" id="edit-date-btn" type="button" style="margin-top: 10px;">Datum aanpassen</button>
+    </div>
+
+    <div class="actions-label">Klant</div>
+    <div class="info-card">
+      <div class="detail-row"><span class="k">Voornaam</span><span class="v" id="d-voornaam">—</span></div>
+      <div class="detail-row"><span class="k">Adres</span><span class="v" id="d-adres">—</span></div>
+      <div class="detail-row"><span class="k">Postcode</span><span class="v" id="d-postcode">—</span></div>
+      <div class="detail-row"><span class="k">Plaats</span><span class="v" id="d-plaats">—</span></div>
+      <div class="detail-row"><span class="k">Kanaal</span><span class="v" id="d-kanaal">—</span></div>
+      <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact">—</span></div>
+    </div>
+
+    <div class="actions-label">Bestelling</div>
+    <div class="info-card">
+      <div class="detail-row"><span class="k">Aantal potten</span><span class="v" id="d-aantal">1</span></div>
+      <div class="detail-row"><span class="k">Prijs</span><span class="v" id="d-prijs">€6,00</span></div>
+      <div class="detail-row"><span class="k">Aangemaakt</span><span class="v" id="d-created">—</span></div>
+    </div>
+
+    <div class="actions-label">Bestelhistorie van deze klant</div>
+    <div class="info-card" id="d-history"></div>
+
+    <button class="btn-danger" id="delete-btn" type="button">Bestelling verwijderen</button>
+  </section>
+</main>
+
+<!-- Date drawer -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+<div class="drawer" id="date-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2>Bezorgdatum aanpassen</h2>
+  <div class="sub">Overschrijft de automatisch berekende datum voor deze bestelling.</div>
+  <input type="date" id="date-input">
+  <div class="error" id="date-err"></div>
+  <button class="btn-primary" id="date-save" type="button">Opslaan</button>
+  <button class="btn-outline" id="date-clear" type="button">Override wissen (auto)</button>
+</div>
+
+<div id="toast" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--black); color: white; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 200ms; pointer-events: none;"></div>
+
+<script>
+(function(){
+  'use strict';
+  const $ = sel => document.querySelector(sel);
+  const STORAGE_KEY = 'ellemelle_admin_session_v1';
+  const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
+  const STATE = { password: null, order: null, history: [] };
+
+  // Extract order_id from URL: /bestelling/<id>
+  function getOrderId() {
+    const m = location.pathname.match(/^\/bestelling\/(.+)$/);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  function loadSession() {
+    try {
+      let raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        const oldRaw = localStorage.getItem('ellemelle_bezorger_session_v1');
+        if (oldRaw) { localStorage.setItem(STORAGE_KEY, oldRaw); localStorage.removeItem('ellemelle_bezorger_session_v1'); raw = oldRaw; }
+      }
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      if (!o || !o.savedAt || (Date.now() - o.savedAt) > SESSION_TTL) { localStorage.removeItem(STORAGE_KEY); return null; }
+      return o.password || null;
+    } catch { return null; }
+  }
+  function saveSession(pw) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ password: pw, savedAt: Date.now() })); } catch {} }
+  function clearSession() { try { localStorage.removeItem(STORAGE_KEY); } catch {} }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-'); return `${d}-${m}-${y}`;
+  }
+  function fmtDateTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+  }
+  function fmtWaLink(tel, text) {
+    if (!tel) return '';
+    const cleaned = tel.replace(/[^\d+]/g, '').replace(/^00/, '+').replace(/^0/, '+31');
+    return 'https://wa.me/' + cleaned.replace('+','');
+  }
+  async function api(ep, body) {
+    const r = await fetch('/.netlify/functions/' + ep, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
+    });
+    return { ok: r.ok, data: await r.json().catch(()=>({})) };
+  }
+  function showToast(msg, type) {
+    const t = $('#toast'); t.textContent = msg;
+    t.style.opacity = '1'; t.style.background = type === 'error' ? 'var(--red)' : (type === 'success' ? '#1c7d3f' : 'var(--black)');
+    clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
+  }
+
+  const STATUS_LABELS = { todo: 'Todo', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
+  function modeLabel(o) {
+    if (o.delivery_mode === 'stock') return 'Op voorraad';
+    if (o.delivery_mode === 'production') return 'Wordt vers gemaakt';
+    if (o.delivery_mode === 'no_schedule') return 'Nog geen productiedatum';
+    if (o.delivery_mode === 'override') return 'Handmatig aangepast';
+    return o.delivery_mode || '—';
+  }
+
+  function renderDetail() {
+    const o = STATE.order;
+    if (!o) return;
+    $('#d-name').textContent = o.voornaam || '(geen naam)';
+    $('#d-deliverydate').textContent = fmtDate(o.delivery_date);
+    const status = o.order_status || 'todo';
+    const sb = $('#d-statusbadge'); sb.textContent = STATUS_LABELS[status] || status; sb.className = 'badge ' + status;
+    $('#d-mode').textContent = modeLabel(o);
+    $('#d-voornaam').textContent = o.voornaam || '—';
+    $('#d-adres').textContent = `${o.straat || ''} ${o.huisnummer || ''}${o.toevoeging ? '-' + o.toevoeging : ''}`.trim() || '—';
+    $('#d-postcode').textContent = o.postcode || '—';
+    $('#d-plaats').textContent = o.plaats || '—';
+    $('#d-kanaal').textContent = (o.kanaal === 'whatsapp') ? 'WhatsApp' : (o.kanaal === 'email' ? 'E-mail' : (o.kanaal || '—'));
+    const c = $('#d-contact');
+    if (o.kanaal === 'whatsapp' && o.telefoon) {
+      c.innerHTML = `<a href="${fmtWaLink(o.telefoon)}" target="_blank">${o.telefoon}</a>`;
+    } else if (o.email) {
+      c.innerHTML = `<a href="mailto:${o.email}">${o.email}</a>`;
+    } else { c.textContent = '—'; }
+    $('#d-aantal').textContent = '1';
+    $('#d-prijs').textContent = '€6,00';
+    $('#d-created').textContent = fmtDateTime(o.created_at);
+
+    // History
+    const h = $('#d-history'); h.innerHTML = '';
+    if (!STATE.history || STATE.history.length === 0) {
+      h.innerHTML = '<div style="color:#666; font-size:13px;">Eerste bestelling van deze klant.</div>';
+    } else {
+      STATE.history.forEach(x => {
+        const row = document.createElement('div');
+        row.className = 'detail-row';
+        const status = x.order_status || 'todo';
+        row.innerHTML = `<span class="k">${fmtDateTime(x.created_at)}</span><span class="v"><span class="badge ${status}" style="font-size:10px;">${STATUS_LABELS[status]||status}</span></span>`;
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => { location.href = '/bestelling/' + x.id; });
+        h.appendChild(row);
+      });
+    }
+  }
+
+  async function load() {
+    const orderId = getOrderId();
+    if (!orderId) { document.body.innerHTML = '<div style="padding:40px; text-align:center;">Geen order_id in URL.</div>'; return; }
+    const res = await api('bestellingen-get', { order_id: orderId });
+    if (!res.ok) { showToast(res.data.error || 'Order niet gevonden', 'error'); return; }
+    STATE.order = res.data.order;
+    STATE.history = res.data.history || [];
+    renderDetail();
+  }
+
+  // Date drawer
+  function openDateDrawer() {
+    const cur = STATE.order && (STATE.order.delivery_date_override || STATE.order.delivery_date) || '';
+    $('#date-input').value = cur;
+    $('#date-err').textContent = '';
+    $('#drawer-backdrop').classList.add('open');
+    $('#date-drawer').classList.add('open');
+  }
+  function closeDateDrawer() {
+    $('#drawer-backdrop').classList.remove('open');
+    $('#date-drawer').classList.remove('open');
+  }
+  async function saveDate() {
+    const v = $('#date-input').value;
+    if (!v) { $('#date-err').textContent = 'Kies een datum'; return; }
+    const res = await api('bestellingen-update-delivery-date', { order_id: STATE.order.id, delivery_date: v });
+    if (res.ok) { showToast('Datum opgeslagen', 'success'); closeDateDrawer(); load(); }
+    else { $('#date-err').textContent = res.data.error || 'Mislukt'; }
+  }
+  async function clearDate() {
+    const res = await api('bestellingen-update-delivery-date', { order_id: STATE.order.id, delivery_date: '' });
+    if (res.ok) { showToast('Override gewist — terug naar auto', 'success'); closeDateDrawer(); load(); }
+    else { $('#date-err').textContent = res.data.error || 'Mislukt'; }
+  }
+  async function deleteOrder() {
+    const o = STATE.order;
+    if (!o) return;
+    if (!confirm(`Bestelling van ${o.voornaam} permanent verwijderen? Dit kan niet ongedaan worden gemaakt.`)) return;
+    const res = await api('bestellingen-delete', { order_id: o.id });
+    if (res.ok) { showToast('Bestelling verwijderd', 'success'); setTimeout(()=>location.href='/bestellingen', 800); }
+    else { showToast(res.data.error || 'Verwijderen mislukt', 'error'); }
+  }
+
+  // Bindings
+  $('#login-btn').addEventListener('click', async () => {
+    const pw = $('#pw').value.trim();
+    if (!pw) return;
+    STATE.password = pw;
+    const res = await api('bestellingen-get', { order_id: getOrderId() });
+    if (res.ok) {
+      saveSession(pw);
+      $('#login-view').hidden = true; $('#detail-view').hidden = false;
+      document.body.classList.remove('on-login');
+      STATE.order = res.data.order; STATE.history = res.data.history || [];
+      renderDetail();
+    } else {
+      $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
+    }
+  });
+  $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
+
+  $('#edit-date-btn').addEventListener('click', openDateDrawer);
+  $('#drawer-backdrop').addEventListener('click', closeDateDrawer);
+  $('#date-save').addEventListener('click', saveDate);
+  $('#date-clear').addEventListener('click', clearDate);
+  $('#delete-btn').addEventListener('click', deleteOrder);
+
+  $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
+  $('#menu-backdrop').addEventListener('click', () => { $('#menu-backdrop').classList.remove('open'); $('#menu-panel').classList.remove('open'); });
+  $('#menu-logout').addEventListener('click', () => { clearSession(); location.reload(); });
+
+  // Boot
+  document.body.classList.add('on-login');
+  STATE.password = loadSession();
+  if (STATE.password) {
+    const orderId = getOrderId();
+    if (!orderId) { document.body.innerHTML = '<div style="padding:40px; text-align:center;">Geen order_id in URL.</div>'; return; }
+    api('bestellingen-get', { order_id: orderId }).then(res => {
+      if (res.ok) {
+        $('#login-view').hidden = true; $('#detail-view').hidden = false;
+        document.body.classList.remove('on-login');
+        STATE.order = res.data.order; STATE.history = res.data.history || [];
+        renderDetail();
+      } else {
+        clearSession(); STATE.password = null;
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>

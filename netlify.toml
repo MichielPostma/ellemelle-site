@@ -136,3 +136,33 @@
   from = "/koken"
   to = "/koken.html"
   status = 200
+
+[[redirects]]
+  from = "/api/bestellingen/list"
+  to = "/.netlify/functions/bestellingen-list"
+  status = 200
+
+[[redirects]]
+  from = "/api/bestellingen/get"
+  to = "/.netlify/functions/bestellingen-get"
+  status = 200
+
+[[redirects]]
+  from = "/api/bestellingen/update-delivery-date"
+  to = "/.netlify/functions/bestellingen-update-delivery-date"
+  status = 200
+
+[[redirects]]
+  from = "/api/bestellingen/delete"
+  to = "/.netlify/functions/bestellingen-delete"
+  status = 200
+
+[[redirects]]
+  from = "/bestellingen"
+  to = "/bestellingen.html"
+  status = 200
+
+[[redirects]]
+  from = "/bestelling/*"
+  to = "/bestelling.html"
+  status = 200

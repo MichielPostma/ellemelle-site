@@ -1,54 +1,13 @@
-// Lists Netlify Forms signups grouped by ISO delivery-week (next Saturday after order).
-// Merges delivery state from blob store `ellemelle-orders/{submission_id}`.
+// Lists Netlify Forms signups grouped by ISO delivery-week,
+// using the shared chronological stock-allocation in _lib/orders.
 
-const { getStore } = require('@netlify/blobs');
-const { deliveryWeekForDate, isoWeek } = require('./_lib/blobs');
-const { countInStock } = require('./_lib/inventory');
-
-function toISODate(d) {
-  const x = new Date(d);
-  const y = x.getUTCFullYear();
-  const m = String(x.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(x.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-function nextSaturdayISO(baseISO) {
-  const x = new Date(baseISO + 'T00:00:00Z');
-  const dow = x.getUTCDay();
-  const offset = (6 - dow + 7) % 7;
-  x.setUTCDate(x.getUTCDate() + offset);
-  return toISODate(x);
-}
-function isoWeekOfDate(isoDate) {
-  const d = new Date(isoDate + 'T00:00:00Z');
-  const day = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
-}
-function fallbackNoScheduleDate(createdAt) {
-  const x = new Date(createdAt);
-  x.setUTCDate(x.getUTCDate() + 28);
-  return nextSaturdayISO(toISODate(x));
-}
-
-function blobOpts(name) {
-  const opts = { name, consistency: 'strong' };
-  if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_API_TOKEN) {
-    opts.siteID = process.env.NETLIFY_SITE_ID;
-    opts.token = process.env.NETLIFY_API_TOKEN;
-  }
-  return opts;
-}
+const { listEnrichedOrders, isoWeekOfDate } = require('./_lib/orders');
 
 function isoWeekToDateRange(iso) {
-  // "2026-W20" → { start: Date(Mon), end: Date(Sun), saturday: Date }
   const m = /^(\d{4})-W(\d{2})$/.exec(iso);
   if (!m) return null;
   const year = parseInt(m[1], 10);
   const week = parseInt(m[2], 10);
-  // ISO 8601: week 1 is the week with the first Thursday.
   const jan4 = new Date(Date.UTC(year, 0, 4));
   const dayOfWeek = jan4.getUTCDay() || 7;
   const mondayWeek1 = new Date(jan4);
@@ -74,6 +33,26 @@ function formatRange(iso) {
   return `Week ${parseInt(iso.split('-W')[1],10)} — ${r.start.getUTCDate()} ${m1} t/m ${r.end.getUTCDate()} ${m2}`;
 }
 
+// PDOK geocoder
+async function geocode(postcode, number) {
+  if (!postcode || !number) return null;
+  const pc = postcode.replace(/\s+/g,'').toUpperCase();
+  const nr = String(number).replace(/\D/g,'');
+  const q  = encodeURIComponent(`postcode:${pc} AND huisnummer:${nr}`);
+  try {
+    const r = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${q}&fl=centroide_ll&rows=1&fq=type:adres`, {
+      headers: { 'User-Agent': 'ELLEMELLE-bezorger/1.0' },
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const doc = j && j.response && j.response.docs && j.response.docs[0];
+    if (!doc) return null;
+    const m = /POINT\(([-\d.]+)\s+([-\d.]+)\)/.exec(String(doc.centroide_ll || ''));
+    if (!m) return null;
+    return { lat: parseFloat(m[2]), lng: parseFloat(m[1]) };
+  } catch { return null; }
+}
+
 exports.handler = async (event) => {
   const headers = { 'Content-Type': 'application/json' };
   if (event.httpMethod !== 'POST') {
@@ -85,125 +64,22 @@ exports.handler = async (event) => {
   if (!expected || body.password !== expected) {
     return { statusCode: 401, headers, body: JSON.stringify({ error: 'unauthorized' }) };
   }
-
-  // Fetch Netlify Forms submissions
-  const token = process.env.NETLIFY_API_TOKEN;
-  const siteId = process.env.NETLIFY_SITE_ID;
-  if (!token || !siteId) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'missing NETLIFY_API_TOKEN or NETLIFY_SITE_ID' }) };
+  let allEnriched, totalStock;
+  try {
+    const res = await listEnrichedOrders();
+    allEnriched = res.all;
+    totalStock = res.total_stock;
+  } catch (e) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: String(e && e.message || e) }) };
   }
-  // Find the ellemelle-signup form
-  const formsRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/forms`, {
-    headers: { Authorization: `Bearer ${token}` },
+
+  // Geocode in parallel for bezorger view
+  const geos = await Promise.all(allEnriched.map(o => geocode(o.postcode, o.huisnummer)));
+  allEnriched.forEach((o, i) => {
+    if (geos[i]) { o.lat = geos[i].lat; o.lng = geos[i].lng; }
   });
-  if (!formsRes.ok) {
-    return { statusCode: 502, headers, body: JSON.stringify({ error: 'forms list failed' }) };
-  }
-  const forms = await formsRes.json();
-  const form = forms.find(f => f.name === 'ellemelle-signup');
-  if (!form) {
-    return { statusCode: 200, headers, body: JSON.stringify({ weeks: [], total: 0 }) };
-  }
-  const subsRes = await fetch(`https://api.netlify.com/api/v1/forms/${form.id}/submissions?per_page=200`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!subsRes.ok) {
-    return { statusCode: 502, headers, body: JSON.stringify({ error: 'submissions fetch failed' }) };
-  }
-  const subs = await subsRes.json();
 
-  // Helper: lookup lat/lng via PDOK Locatieserver (no key required)
-  async function geocode(postcode, number) {
-    if (!postcode || !number) return null;
-    const pc = postcode.replace(/\s+/g,'').toUpperCase();
-    const nr = String(number).replace(/\D/g,'');
-    const q  = encodeURIComponent(`postcode:${pc} AND huisnummer:${nr}`);
-    try {
-      const r = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q=${q}&fl=centroide_ll&rows=1&fq=type:adres`, {
-        headers: { 'User-Agent': 'ELLEMELLE-bezorger/1.0' },
-      });
-      if (!r.ok) return null;
-      const j = await r.json();
-      const doc = j && j.response && j.response.docs && j.response.docs[0];
-      if (!doc) return null;
-      const m = /POINT\(([-\d.]+)\s+([-\d.]+)\)/.exec(String(doc.centroide_ll || ''));
-      if (!m) return null;
-      return { lat: parseFloat(m[2]), lng: parseFloat(m[1]) };
-    } catch { return null; }
-  }
-
-  // Merge with blob delivery state + geocode each address (parallel)
-  const ordersStore = getStore(blobOpts('ellemelle-orders'));
-  const geocodes = await Promise.all(subs.map(s => geocode((s.data||{}).postcode, (s.data||{}).huisnummer)));
-  const enriched = [];
-  for (let i = 0; i < subs.length; i++) {
-    const sub = subs[i];
-    const d = sub.data || {};
-    const orderId = sub.id;
-    let state = await ordersStore.get(orderId, { type: 'json' });
-    state = state || {};
-    // Snapshot values from submit-time (frozen non-stock fallback)
-    let snapshotDate = d.delivery_date || state.delivery_date || null;
-    let snapshotMode = d.delivery_mode || state.delivery_mode || null;
-    if (!snapshotDate || !/^\d{4}-\d{2}-\d{2}$/.test(snapshotDate)) {
-      snapshotDate = fallbackNoScheduleDate(sub.created_at);
-      if (!snapshotMode) snapshotMode = 'no_schedule';
-    }
-    if (!snapshotMode) snapshotMode = 'production';
-    const geo = geocodes[i] || {};
-    enriched.push({
-      id: orderId,
-      created_at: sub.created_at,
-      voornaam: d.voornaam || '',
-      kanaal: d.kanaal || '',
-      email: d.email || '',
-      telefoon: d.telefoon || '',
-      straat: d.straat || '',
-      huisnummer: d.huisnummer || '',
-      toevoeging: d.toevoeging || '',
-      postcode: d.postcode || '',
-      plaats: d.plaats || '',
-      lat: geo.lat || null,
-      lng: geo.lng || null,
-      // Snapshot (non-stock fallback)
-      snapshot_delivery_date: snapshotDate,
-      snapshot_delivery_mode: snapshotMode,
-      delivered_pot: state.delivered_pot || null,
-      delivered_at: state.delivered_at || null,
-      order_status: state.order_status || (state.delivered_pot ? 'delivered' : 'todo'),
-    });
-  }
-
-  // === Chronological stock allocation ===
-  // Sort by created_at ascending (oldest first). Walk through:
-  //  - If stock available → effective_mode = stock, effective_delivery_date = next Saturday from created_at, stock -= 1
-  //  - Else → use snapshot values (production / no_schedule).
-  // Pots already delivered/neighbors don't need allocation — those orders are done.
-  const totalStock = await countInStock();
-  const open = enriched.filter(o => !['delivered','neighbors'].includes(o.order_status));
-  const done = enriched.filter(o =>  ['delivered','neighbors'].includes(o.order_status));
-  open.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
-  let remainingStock = totalStock;
-  for (const o of open) {
-    if (remainingStock > 0) {
-      o.delivery_mode = 'stock';
-      o.delivery_date = nextSaturdayISO(toISODate(o.created_at));
-      remainingStock -= 1;
-    } else {
-      o.delivery_mode = o.snapshot_delivery_mode;
-      o.delivery_date = o.snapshot_delivery_date;
-    }
-    o.delivery_week = isoWeekOfDate(o.delivery_date);
-  }
-  // Already-delivered orders keep their snapshot values for grouping
-  for (const o of done) {
-    o.delivery_mode = o.snapshot_delivery_mode;
-    o.delivery_date = o.snapshot_delivery_date;
-    o.delivery_week = isoWeekOfDate(o.delivery_date);
-  }
-  const allEnriched = [...open, ...done];
-
-  // Group by week (using effective delivery_date)
+  // Group by ISO week of delivery_date
   const map = new Map();
   for (const o of allEnriched) {
     const k = o.delivery_week;

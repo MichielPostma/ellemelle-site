@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#D9301E">
+<title>ELLEMELLE — bestellingen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+  :root {
+    --red: #D9301E; --red-dark: #8B1A0E;
+    --cream: #feece2; --cream-dark: #ECE3D2;
+    --black: #1A1A1A; --white: #FFFFFF;
+    --shadow-card: 0 2px 10px rgba(139,26,14,0.08);
+    --shadow-cta: 0 6px 18px rgba(217,48,30,0.28);
+    --radius-md: 14px;
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream); color: var(--black);
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 16px; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+  #app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; position: relative; }
+
+  .step-question { color: var(--red); font-size: 28px; line-height: 1.15; margin-bottom: 14px; letter-spacing: -0.2px; font-weight: 700; }
+  .progress-text { color: var(--red-dark); font-size: 13px; font-weight: 700; text-align: left; letter-spacing: 0.4px; text-transform: uppercase; opacity: 0.55; margin-bottom: 6px; display: block; }
+
+  .field { margin-bottom: 10px; }
+  input[type="password"], select {
+    width: 100%; min-height: 60px;
+    padding: 16px 18px; font-size: 18px; font-family: inherit;
+    background: var(--white); border: 2px solid transparent;
+    border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+    color: var(--black);
+    appearance: none; -webkit-appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%238B1A0E' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 18px center;
+    background-size: 16px 16px;
+    padding-right: 48px;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card); }
+
+  .btn-primary {
+    display: block; width: 100%; min-height: 60px;
+    text-align: center; line-height: 60px;
+    background: var(--red); color: var(--white); border: none;
+    border-radius: var(--radius-md); font-family: inherit;
+    font-size: 18px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 14px;
+    box-shadow: var(--shadow-cta);
+    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
+  }
+  .btn-outline {
+    display: block; width: 100%; min-height: 56px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 10px;
+    text-align: center; line-height: 52px; text-decoration: none;
+    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
+    box-shadow: none;
+  }
+  .actions-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .stats { color: #666; font-size: 13px; margin: 0 0 14px; font-weight: 500; }
+  .error { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 500; min-height: 18px; }
+  .empty { color: #666; text-align: center; padding: 32px 0; font-size: 15px; }
+
+  /* Topbar */
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .menu-btn { width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; padding: 10px; color: var(--black); -webkit-tap-highlight-color: transparent; }
+  .menu-btn svg { width: 24px; height: 24px; }
+
+  /* Hamburger bottom-drawer */
+  .menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 110; }
+  .menu-backdrop.open { opacity: 1; pointer-events: auto; }
+  .menu-panel {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--white); border-radius: 18px 18px 0 0;
+    padding: 14px 20px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    z-index: 120; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
+  }
+  .menu-panel.open { transform: translateY(0); }
+  .menu-panel .drawer-handle { width: 40px; height: 4px; border-radius: 2px; background: rgba(0,0,0,0.18); margin: 0 auto 18px; }
+  .menu-panel a, .menu-panel > button:not(.btn-outline):not(.btn-primary) {
+    display: block; width: 100%; padding: 14px 16px;
+    background: transparent; border: none; cursor: pointer;
+    text-align: left; font: 700 17px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    text-decoration: none; border-radius: var(--radius-md);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-panel a:hover { background: rgba(217,48,30,0.06); }
+
+  /* Order cards */
+  .order-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 14px 16px;
+    margin-bottom: 10px; line-height: 1.45;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .order-card:active { transform: scale(0.99); }
+  .order-card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .order-card .name { font-weight: 700; font-size: 17px; color: var(--black); }
+  .order-card .date { color: #888; font-size: 12px; }
+  .order-card .addr { color: #666; font-size: 14px; }
+  .order-card .row2 { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px; }
+  .order-card .badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
+  .badge.todo       { background: rgba(0,0,0,0.06); color: #555; }
+  .badge.delivered  { background: rgba(28,125,63,0.12); color: #1c7d3f; }
+  .badge.neighbors  { background: rgba(255,210,74,0.25); color: #b85c00; }
+  .badge.retry      { background: rgba(139,26,14,0.08); color: var(--red-dark); }
+  .order-card .stock-tag { color: #666; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
+  .order-card .stock-tag.in { color: #1f9d55; }
+  .order-card .stock-tag.out { color: #b85c00; }
+
+  /* Login design */
+  body.on-login { display: flex; flex-direction: column; align-items: center; }
+  body.on-login #login-view { text-align: center; max-width: 380px; margin: 0 auto; }
+  body.on-login #login-view input { text-align: center; }
+  body.on-login .login-hero {
+    width: 240px; max-width: 70vw; margin: 4px auto 18px; display: block;
+    animation: wiggle 2.6s ease-in-out infinite;
+  }
+  @keyframes wiggle {
+    0%, 24%, 100% { transform: rotate(0deg); }
+    6% { transform: rotate(-6deg); }
+    12% { transform: rotate(6deg); }
+    18% { transform: rotate(-3deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hamburger -->
+<div class="menu-backdrop" id="menu-backdrop"></div>
+<div class="menu-panel" id="menu-panel">
+  <div class="drawer-handle"></div>
+  <a href="/bezorger">Bezorgen</a>
+  <a href="/bestellingen">Bestellingen</a>
+  <a href="/voorraad">Voorraad</a>
+  <a href="/koken">Koken</a>
+  <button class="btn-outline" id="menu-logout" type="button" style="margin-top: 14px;">Uitloggen</button>
+</div>
+
+<main id="app">
+  <!-- LOGIN -->
+  <section id="login-view">
+    <img class="login-hero" src="Images/product.png" alt="ELLEMELLE pot" loading="eager">
+    <h1 class="step-question" style="text-align: center;">Voer je wachtwoord in</h1>
+    <div class="field"><input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord"></div>
+    <div class="error" id="login-err"></div>
+    <button class="btn-primary" id="login-btn">Open bestellingen →</button>
+  </section>
+
+  <!-- MAIN -->
+  <section id="main-view" hidden>
+    <div class="topbar" style="align-items: flex-start;">
+      <div style="flex: 1; min-width: 0;">
+        <span class="progress-text" id="orders-count">0 BESTELLINGEN TOTAAL</span>
+        <h1 class="step-question" style="margin-bottom: 0;">Bestellingen</h1>
+      </div>
+      <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="field" style="margin-top: 14px;">
+      <select id="filter-select">
+        <option value="all">Filter</option>
+        <option value="stock">Op voorraad</option>
+        <option value="not_stock">Niet op voorraad</option>
+        <option value="delivered">Bezorgd</option>
+        <option value="todo">Open (todo)</option>
+      </select>
+    </div>
+
+    <div id="orders-list"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--black); color: white; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 200ms; pointer-events: none;"></div>
+
+<script>
+(function(){
+  'use strict';
+  const $ = sel => document.querySelector(sel);
+  const STORAGE_KEY = 'ellemelle_admin_session_v1';
+  const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
+  const STATE = { password: null, orders: [] };
+
+  function loadSession() {
+    try {
+      let raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        const oldRaw = localStorage.getItem('ellemelle_bezorger_session_v1');
+        if (oldRaw) { localStorage.setItem(STORAGE_KEY, oldRaw); localStorage.removeItem('ellemelle_bezorger_session_v1'); raw = oldRaw; }
+      }
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      if (!o || !o.savedAt || (Date.now() - o.savedAt) > SESSION_TTL) {
+        localStorage.removeItem(STORAGE_KEY); return null;
+      }
+      return o.password || null;
+    } catch { return null; }
+  }
+  function saveSession(pw) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ password: pw, savedAt: Date.now() })); } catch {} }
+  function clearSession() { try { localStorage.removeItem(STORAGE_KEY); } catch {} }
+  function fmtShortDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+  async function api(ep, body) {
+    const r = await fetch('/.netlify/functions/' + ep, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
+    });
+    return { ok: r.ok, data: await r.json().catch(()=>({})) };
+  }
+
+  function showToast(msg, type) {
+    const t = $('#toast'); t.textContent = msg;
+    t.style.opacity = '1'; t.style.background = type === 'error' ? 'var(--red)' : (type === 'success' ? '#1c7d3f' : 'var(--black)');
+    clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
+  }
+
+  const STATUS_LABELS = { todo: 'Todo', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
+
+  function renderOrders() {
+    const wrap = $('#orders-list'); wrap.innerHTML = '';
+    const f = $('#filter-select').value;
+    let list = STATE.orders.slice();
+    if (f === 'stock')      list = list.filter(o => o.delivery_mode === 'stock');
+    else if (f === 'not_stock') list = list.filter(o => o.delivery_mode !== 'stock');
+    else if (f === 'delivered') list = list.filter(o => ['delivered','neighbors'].includes(o.order_status));
+    else if (f === 'todo')      list = list.filter(o => o.order_status === 'todo');
+    if (list.length === 0) {
+      wrap.innerHTML = '<div class="empty">Geen bestellingen in deze filter.</div>';
+      return;
+    }
+    list.forEach(o => {
+      const card = document.createElement('div');
+      card.className = 'order-card';
+      const status = o.order_status || 'todo';
+      const inStock = (o.delivery_mode === 'stock');
+      const stockClass = inStock ? 'in' : 'out';
+      const stockText = inStock ? '· op voorraad' : '· niet op voorraad';
+      const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
+      card.innerHTML = `
+        <div class="head">
+          <span class="name">${o.voornaam || '(geen naam)'}</span>
+          <span class="date">${fmtShortDate(o.created_at)}</span>
+        </div>
+        <div class="addr">${addr}${o.plaats ? ' — ' + o.plaats : ''}</div>
+        <div class="row2">
+          <span class="badge ${status}">${STATUS_LABELS[status] || status}</span>
+          <span class="stock-tag ${stockClass}">${stockText}</span>
+        </div>
+      `;
+      card.addEventListener('click', () => { location.href = '/bestelling/' + o.id; });
+      wrap.appendChild(card);
+    });
+  }
+
+  async function load() {
+    const res = await api('bestellingen-list');
+    if (!res.ok) { showToast(res.data.error || 'Laden mislukt', 'error'); return; }
+    STATE.orders = res.data.orders || [];
+    $('#orders-count').textContent = `${STATE.orders.length} BESTELLING${STATE.orders.length === 1 ? '' : 'EN'} TOTAAL`;
+    renderOrders();
+  }
+
+  // Bindings
+  $('#login-btn').addEventListener('click', async () => {
+    const pw = $('#pw').value.trim();
+    if (!pw) return;
+    STATE.password = pw;
+    const res = await api('bestellingen-list');
+    if (res.ok) {
+      saveSession(pw);
+      $('#login-view').hidden = true; $('#main-view').hidden = false;
+      document.body.classList.remove('on-login');
+      STATE.orders = res.data.orders || [];
+      $('#orders-count').textContent = `${STATE.orders.length} BESTELLING${STATE.orders.length === 1 ? '' : 'EN'} TOTAAL`;
+      renderOrders();
+    } else {
+      $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
+    }
+  });
+  $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
+  $('#filter-select').addEventListener('change', renderOrders);
+  $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
+  $('#menu-backdrop').addEventListener('click', () => { $('#menu-backdrop').classList.remove('open'); $('#menu-panel').classList.remove('open'); });
+  $('#menu-logout').addEventListener('click', () => { clearSession(); location.reload(); });
+
+  // Boot
+  document.body.classList.add('on-login');
+  STATE.password = loadSession();
+  if (STATE.password) {
+    api('bestellingen-list').then(res => {
+      if (res.ok) {
+        $('#login-view').hidden = true; $('#main-view').hidden = false;
+        document.body.classList.remove('on-login');
+        STATE.orders = res.data.orders || [];
+        $('#orders-count').textContent = `${STATE.orders.length} BESTELLING${STATE.orders.length === 1 ? '' : 'EN'} TOTAAL`;
+        renderOrders();
+      } else {
+        clearSession(); STATE.password = null;
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>

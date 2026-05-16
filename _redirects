@@ -24,3 +24,9 @@
 /api/voorraad/set-config /.netlify/functions/voorraad-set-config 200
 /voorraad /voorraad.html 200
 /koken /koken.html 200
+/api/bestellingen/list /.netlify/functions/bestellingen-list 200
+/api/bestellingen/get /.netlify/functions/bestellingen-get 200
+/api/bestellingen/update-delivery-date /.netlify/functions/bestellingen-update-delivery-date 200
+/api/bestellingen/delete /.netlify/functions/bestellingen-delete 200
+/bestellingen /bestellingen.html 200
+/bestelling/* /bestelling.html 200
