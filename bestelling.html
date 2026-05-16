@@ -146,6 +146,15 @@
     line-height: 1.2;
     min-height: 0;
   }
+
+  #status-options button {
+    width: 100%; padding: 14px 16px; border-radius: var(--radius-md);
+    background: var(--white); border: 2px solid transparent; cursor: pointer;
+    text-align: left; font: 500 15px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    -webkit-tap-highlight-color: transparent;
+  }
+  #status-options button.sel { border-color: var(--red); background: rgba(217,48,30,0.04); font-weight: 700; }
+
 </style>
 </head>
 <body>
@@ -189,6 +198,7 @@
       <div class="big-date" id="d-deliverydate">—</div>
       <div class="detail-row"><span class="k">Status</span><span class="v"><span class="badge" id="d-statusbadge">—</span></span></div>
       <div class="detail-row"><span class="k">Levering</span><span class="v" id="d-mode">—</span></div>
+      <button class="btn-outline" id="edit-status-btn" type="button" style="margin-top: 10px;">Status wijzigen</button>
       <button class="btn-outline" id="edit-date-btn" type="button" style="margin-top: 10px;">Datum aanpassen</button>
     </div>
 
@@ -215,6 +225,16 @@
     <button class="btn-danger" id="delete-btn" type="button">Bestelling verwijderen</button>
   </section>
 </main>
+
+<!-- Status drawer -->
+<div class="drawer" id="status-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2>Status wijzigen</h2>
+  <div class="sub">Reset of overschrijf de huidige bezorgstatus.</div>
+  <div id="status-options" style="display:grid; gap:8px; margin-top:12px;"></div>
+  <div class="error" id="status-err"></div>
+  <button class="btn-primary" id="status-save" type="button">Opslaan</button>
+</div>
 
 <!-- Date drawer -->
 <div class="drawer-backdrop" id="drawer-backdrop"></div>
@@ -369,6 +389,44 @@
     if (res.ok) { showToast('Override gewist — terug naar auto', 'success'); closeDateDrawer(); load(); }
     else { $('#date-err').textContent = res.data.error || 'Mislukt'; }
   }
+  // --- Status changer drawer ---
+  const STATUS_OPTS = [
+    { val: 'todo',      label: 'Todo (reset — ontkoppel pot)' },
+    { val: 'delivered', label: 'Bezorgd' },
+    { val: 'neighbors', label: 'Buren' },
+    { val: 'retry',     label: 'Nieuwe poging' },
+  ];
+  function renderStatusOptions(cur) {
+    const wrap = $('#status-options'); wrap.innerHTML = '';
+    STATUS_OPTS.forEach(o => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = o.label; b.dataset.val = o.val;
+      if (o.val === cur) b.classList.add('sel');
+      b.addEventListener('click', () => {
+        wrap.querySelectorAll('button').forEach(x => x.classList.remove('sel'));
+        b.classList.add('sel');
+      });
+      wrap.appendChild(b);
+    });
+  }
+  function openStatusDrawer() {
+    renderStatusOptions(STATE.order?.order_status || 'todo');
+    $('#status-err').textContent = '';
+    $('#drawer-backdrop').classList.add('open');
+    $('#status-drawer').classList.add('open');
+  }
+  function closeStatusDrawer() {
+    $('#drawer-backdrop').classList.remove('open');
+    $('#status-drawer').classList.remove('open');
+  }
+  async function saveStatus() {
+    const sel = document.querySelector('#status-options button.sel');
+    if (!sel) { $('#status-err').textContent = 'Kies een status'; return; }
+    const res = await api('bezorger-set-status', { order_id: STATE.order.id, status: sel.dataset.val });
+    if (res.ok) { showToast('Status bijgewerkt', 'success'); closeStatusDrawer(); load(); }
+    else { $('#status-err').textContent = res.data.error || 'Mislukt'; }
+  }
+
   async function deleteOrder() {
     const o = STATE.order;
     if (!o) return;
@@ -397,7 +455,9 @@
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
 
   $('#edit-date-btn').addEventListener('click', openDateDrawer);
-  $('#drawer-backdrop').addEventListener('click', closeDateDrawer);
+  $('#edit-status-btn').addEventListener('click', openStatusDrawer);
+  $('#status-save').addEventListener('click', saveStatus);
+  $('#drawer-backdrop').addEventListener('click', () => { closeDateDrawer(); closeStatusDrawer(); });
   $('#date-save').addEventListener('click', saveDate);
   $('#date-clear').addEventListener('click', clearDate);
   $('#delete-btn').addEventListener('click', deleteOrder);

@@ -1,6 +1,8 @@
-// Update an order's status (used for neighbors / retry flows).
+// Update an order's status manually (admin override).
 // POST { password, order_id, status }
 // Allowed status values: 'todo' | 'delivered' | 'neighbors' | 'retry'
+// Special: when resetting to 'todo' and a pot was previously delivered, unlink the pot
+// (return it to 'available' stock) so it can be re-used.
 
 const { getStore } = require('@netlify/blobs');
 
@@ -32,9 +34,32 @@ exports.handler = async (event) => {
   if (!ALLOWED.has(status)) return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid status' }) };
 
   const ordersStore = getStore(blobOpts('ellemelle-orders'));
+  const potsStore   = getStore(blobOpts('ellemelle-pots'));
   const existing = (await ordersStore.get(orderId, { type: 'json' })) || {};
   const now = new Date().toISOString();
-  await ordersStore.setJSON(orderId, { ...existing, order_status: status, status_updated_at: now });
 
+  // Reset path: if status=todo and a pot was linked, free it up.
+  if (status === 'todo' && existing.delivered_pot) {
+    const potId = existing.delivered_pot;
+    try {
+      const pot = await potsStore.get(potId, { type: 'json' });
+      if (pot) {
+        await potsStore.setJSON(potId, {
+          ...pot, status: 'available', order_id: null, delivered_at: null,
+        });
+      }
+    } catch {}
+    await ordersStore.setJSON(orderId, {
+      ...existing,
+      order_status: 'todo',
+      status_updated_at: now,
+      delivered_pot: null,
+      delivered_at: null,
+      pot_returned_at: null,
+    });
+    return { statusCode: 200, headers, body: JSON.stringify({ ok: true, order_id: orderId, order_status: 'todo', unlinked_pot: potId }) };
+  }
+
+  await ordersStore.setJSON(orderId, { ...existing, order_status: status, status_updated_at: now });
   return { statusCode: 200, headers, body: JSON.stringify({ ok: true, order_id: orderId, order_status: status }) };
 };
