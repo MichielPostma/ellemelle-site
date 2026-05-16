@@ -547,8 +547,29 @@
       opt.textContent = 'Week ' + weekNum + suffix;
       sel.appendChild(opt);
     });
-    sel.selectedIndex = STATE.weeks.length - 1;
-    STATE.currentWeek = STATE.weeks[STATE.weeks.length - 1];
+    // Default = first chronological week in current-or-future that has orders.
+    // Fallback = most recent past week.
+    const now = new Date();
+    const day = now.getUTCDay() || 7;
+    const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    monday.setUTCDate(monday.getUTCDate() - (day - 1));
+    function isoWeekKey(d) {
+      const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+      const dow = x.getUTCDay() || 7;
+      x.setUTCDate(x.getUTCDate() + 4 - dow);
+      const yearStart = new Date(Date.UTC(x.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil(((x - yearStart) / 86400000 + 1) / 7);
+      return `${x.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    }
+    const nowIso = isoWeekKey(monday);
+    let pick = STATE.weeks.find(w => w.iso >= nowIso && w.total > 0);
+    if (!pick) {
+      // Fallback: most recent past week with orders
+      const past = STATE.weeks.filter(w => w.total > 0);
+      pick = past.length ? past[past.length - 1] : STATE.weeks[STATE.weeks.length - 1];
+    }
+    sel.value = pick.iso;
+    STATE.currentWeek = pick;
     renderOrders();
   }
 
