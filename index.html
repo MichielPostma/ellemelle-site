@@ -1299,7 +1299,7 @@
   }
   function pickNewCustomer() {
     // In embed (drawer) mode, ask parent to open a new tab for normal flow + close drawer
-    if (new URLSearchParams(location.search).get('embed') === '1' && window.parent !== window) {
+    if (window.__isEmbed && window.parent !== window) {
       try { window.parent.postMessage({ type: 'admin-open-new-customer' }, '*'); } catch {}
       return;
     }
@@ -1418,7 +1418,7 @@
 
     // Notify parent (admin drawer) on success
     try {
-      if (new URLSearchParams(location.search).get('embed') === '1' && window.parent !== window) {
+      if (window.__isEmbed && window.parent !== window) {
         window.parent.postMessage({ type: 'admin-order-success' }, '*');
       }
     } catch {}
@@ -1565,9 +1565,9 @@
 
   // --- Wiring ------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', () => {
-    // Embed mode for admin drawer
-    const __isEmbed = new URLSearchParams(location.search).get('embed') === '1';
-    if (__isEmbed) {
+    // Embed mode for admin drawer (set early; persists even after history.replaceState clears search)
+    window.__isEmbed = new URLSearchParams(location.search).get('embed') === '1';
+    if (window.__isEmbed) {
       document.body.classList.add('on-embed');
     }
 
