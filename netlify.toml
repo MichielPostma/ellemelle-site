@@ -111,3 +111,23 @@
   from = "/api/levering-info"
   to = "/.netlify/functions/levering-info"
   status = 200
+
+[[redirects]]
+  from = "/api/voorraad/list"
+  to = "/.netlify/functions/voorraad-list"
+  status = 200
+
+[[redirects]]
+  from = "/api/voorraad/set-pot"
+  to = "/.netlify/functions/voorraad-set-pot"
+  status = 200
+
+[[redirects]]
+  from = "/api/voorraad/set-config"
+  to = "/.netlify/functions/voorraad-set-config"
+  status = 200
+
+[[redirects]]
+  from = "/voorraad"
+  to = "/voorraad.html"
+  status = 200

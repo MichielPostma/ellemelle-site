@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#D9301E">
+<title>ELLEMELLE — voorraad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+  :root {
+    --red: #D9301E;
+    --red-dark: #8B1A0E;
+    --cream: #feece2;
+    --cream-dark: #ECE3D2;
+    --black: #1A1A1A;
+    --white: #FFFFFF;
+    --green: #1f9d55;
+    --amber: #b85c00;
+    --shadow-card: 0 2px 10px rgba(139,26,14,0.08);
+    --shadow-cta: 0 6px 18px rgba(217,48,30,0.28);
+    --radius-md: 14px;
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream); color: var(--black);
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 16px; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+  #app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; position: relative; }
+
+  .step-question {
+    color: var(--red); font-size: 28px; line-height: 1.15;
+    margin-bottom: 14px; letter-spacing: -0.2px; font-weight: 700;
+  }
+  .field { margin-bottom: 10px; }
+  input[type="text"], input[type="password"], input[type="date"], select {
+    width: 100%; min-height: 60px;
+    padding: 16px 18px; font-size: 18px; font-family: inherit;
+    background: var(--white); border: 2px solid transparent;
+    border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+    color: var(--black);
+    appearance: none; -webkit-appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%238B1A0E' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 18px center;
+    background-size: 16px 16px;
+    padding-right: 48px;
+  }
+  input:focus, select:focus {
+    outline: none; border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card);
+  }
+
+  .btn-primary {
+    display: block; width: 100%; min-height: 60px;
+    text-align: center; text-decoration: none; line-height: 60px;
+    background: var(--red); color: var(--white); border: none;
+    border-radius: var(--radius-md); font-family: inherit;
+    font-size: 18px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 14px;
+    box-shadow: var(--shadow-cta);
+    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
+  }
+  .btn-primary:disabled { background: #d4cfc4; color: rgba(0,0,0,0.4); cursor: not-allowed; box-shadow: none; }
+
+  .btn-outline {
+    display: block; width: 100%; min-height: 56px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: 0.2px;
+    cursor: pointer; margin-top: 10px;
+    text-align: center; line-height: 52px; text-decoration: none;
+    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
+    box-shadow: none;
+  }
+
+  .actions-label {
+    color: #666; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .stats { color: #666; font-size: 13px; text-align: left; margin: 0 0 14px; font-weight: 500; }
+
+  /* Top bar */
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .menu-btn {
+    width: 44px; height: 44px; border: none; background: transparent;
+    cursor: pointer; padding: 10px; -webkit-tap-highlight-color: transparent;
+  }
+  .menu-btn svg { width: 24px; height: 24px; }
+
+  /* Pot grid */
+  .pot-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    margin-top: 14px;
+  }
+  .pot-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 12px 14px;
+    cursor: pointer; text-align: left;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 90ms;
+  }
+  .pot-card:active { transform: scale(0.98); }
+  .pot-card .pid { font-weight: 700; font-size: 15px; color: var(--black); }
+  .pot-card .badge {
+    display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 999px;
+    font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; margin-top: 4px;
+  }
+  .badge.uninitialized { background: rgba(0,0,0,0.04); color: #888; }
+  .badge.available     { background: rgba(0,0,0,0.06); color: #555; }
+  .badge.voorraad      { background: rgba(31,157,85,0.12); color: var(--green); }
+  .badge.delivered     { background: rgba(28,125,63,0.12); color: #1c7d3f; }
+  .badge.returned      { background: rgba(139,26,14,0.08); color: var(--red-dark); }
+  .pot-card .meta { color: #888; font-size: 11px; margin-top: 6px; line-height: 1.3; }
+
+  /* Bottom sheet drawer */
+  .drawer-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 90;
+  }
+  .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--cream); border-radius: 18px 18px 0 0;
+    padding: 24px 20px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    z-index: 100; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
+  }
+  .drawer.open { transform: translateY(0); }
+  .drawer h2 { font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
+  .drawer .sub { color: #666; font-size: 14px; margin-bottom: 14px; }
+  .drawer .close-btn {
+    position: absolute; top: 14px; right: 14px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,0.06); border: none; cursor: pointer;
+    font-size: 18px; color: var(--black); -webkit-tap-highlight-color: transparent;
+  }
+  .status-options { display: grid; gap: 8px; margin-top: 12px; }
+  .status-options button {
+    width: 100%; padding: 14px 16px; border-radius: var(--radius-md);
+    background: var(--white); border: 2px solid transparent; cursor: pointer;
+    text-align: left; font: 500 15px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .status-options button.sel { border-color: var(--red); background: rgba(217,48,30,0.04); font-weight: 700; }
+
+  /* Hamburger panel */
+  .menu-panel {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: var(--cream); padding: 64px 20px 28px;
+    transform: translateY(-100%); transition: transform 260ms cubic-bezier(.2,.7,.2,1);
+    z-index: 80; box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+  }
+  .menu-panel.open { transform: translateY(0); }
+  .menu-panel a, .menu-panel button {
+    display: block; width: 100%; padding: 14px 16px;
+    background: transparent; border: none; cursor: pointer;
+    text-align: left; font: 700 17px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    text-decoration: none; border-radius: var(--radius-md);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-panel a:hover, .menu-panel button:hover { background: rgba(217,48,30,0.06); }
+  .menu-panel .close {
+    position: absolute; top: 14px; right: 14px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,0.06); font-size: 18px;
+  }
+
+  /* Scanner */
+  #scanner-wrap {
+    position: relative; background: #000;
+    border-radius: var(--radius-md); overflow: hidden;
+    margin: 10px 0;
+  }
+  #scanner-video { width: 100%; display: block; aspect-ratio: 1 / 1; object-fit: cover; }
+  .scanner-overlay {
+    position: absolute; inset: 0; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .scanner-overlay::after {
+    content: ''; width: 60%; height: 60%;
+    border: 3px solid rgba(255,255,255,0.6); border-radius: 14px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--black); color: white; padding: 12px 20px; border-radius: 999px;
+    font-size: 14px; font-weight: 600; z-index: 200;
+    opacity: 0; transition: opacity 200ms;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    max-width: 90%; text-align: center; pointer-events: none;
+  }
+  .toast.success { background: #1c7d3f; }
+  .toast.error { background: var(--red); }
+  .toast.show { opacity: 1; }
+
+  /* Errors */
+  .error { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 500; min-height: 18px; }
+</style>
+</head>
+<body>
+
+<!-- Menu panel (hidden by default; same on /bezorger via inline script in Phase 3) -->
+<div class="menu-panel" id="menu-panel">
+  <button class="close" id="menu-close" type="button">×</button>
+  <a href="/bezorger">Bezorger</a>
+  <a href="/voorraad">Voorraad</a>
+  <a href="/admin">Admin</a>
+  <button id="menu-logout" type="button" style="margin-top: 14px; color: var(--red);">Uitloggen</button>
+</div>
+
+<main id="app">
+
+  <!-- LOGIN -->
+  <section id="login-view">
+    <h1 class="step-question">Voer je wachtwoord in</h1>
+    <div class="field">
+      <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord">
+    </div>
+    <div class="error" id="login-err"></div>
+    <button class="btn-primary" id="login-btn">Open voorraad →</button>
+  </section>
+
+  <!-- MAIN -->
+  <section id="main-view" hidden>
+    <div class="topbar">
+      <h1 class="step-question" style="margin-bottom: 0;">Voorraad</h1>
+      <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <button class="btn-outline" id="prod-date-btn" type="button">Productiedatum: —</button>
+    <div class="stats" id="stock-stats" style="margin-top: 14px;">Op voorraad: 0 potten</div>
+
+    <button class="btn-primary" id="scan-btn" type="button">Pot in voorraad zetten →</button>
+    <div id="scan-view" hidden>
+      <div id="scanner-wrap">
+        <video id="scanner-video" playsinline muted></video>
+        <div class="scanner-overlay"></div>
+      </div>
+      <button class="btn-outline" id="scan-cancel" type="button">Annuleer</button>
+    </div>
+
+    <div class="field" style="margin-top: 14px;">
+      <select id="filter-select">
+        <option value="all">Alle statussen</option>
+        <option value="voorraad">Op voorraad</option>
+        <option value="delivered">Bezorgd</option>
+        <option value="returned">Retour</option>
+        <option value="available">Beschikbaar (leeg)</option>
+        <option value="uninitialized">Niet geseed</option>
+      </select>
+    </div>
+
+    <div class="pot-grid" id="pot-grid"></div>
+  </section>
+</main>
+
+<!-- Drawer for individual pot -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+<div class="drawer" id="pot-drawer" role="dialog" aria-modal="true">
+  <button class="close-btn" id="drawer-close" type="button" aria-label="Sluiten">×</button>
+  <h2 id="drawer-pid">POT-XXX</h2>
+  <div class="sub" id="drawer-sub">—</div>
+
+  <div class="actions-label" style="margin-top: 14px;">Status wijzigen</div>
+  <div class="status-options" id="status-options"></div>
+
+  <div id="prod-date-field" hidden style="margin-top: 14px;">
+    <div class="actions-label">Productiedatum</div>
+    <input type="date" id="prod-date-input" />
+  </div>
+
+  <div class="error" id="drawer-err"></div>
+  <button class="btn-primary" id="drawer-save" type="button">Opslaan</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
+
+  const $ = sel => document.querySelector(sel);
+  const STORAGE_KEY = 'ellemelle_bezorger_session_v1'; // shared with /bezorger
+  const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
+  const STATE = { password: null, pots: [], config: { next_production_date: null }, currentPot: null, qrScanner: null };
+
+  const STATUS_LABELS = {
+    uninitialized: 'Niet geseed',
+    available:     'Beschikbaar (leeg)',
+    voorraad:      'Op voorraad',
+    delivered:     'Bezorgd',
+    returned:      'Retour',
+  };
+
+  function loadSession() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      if (!o || !o.savedAt || (Date.now() - o.savedAt) > SESSION_TTL) {
+        localStorage.removeItem(STORAGE_KEY); return null;
+      }
+      return o.password || null;
+    } catch { return null; }
+  }
+  function saveSession(pw) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ password: pw, savedAt: Date.now() })); } catch {}
+  }
+  function clearSession() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  }
+  function todayISO() {
+    const d = new Date(); const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const dd = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}-${m}-${y.slice(2)}`;
+  }
+  function showToast(msg, type) {
+    const t = $('#toast');
+    t.textContent = msg; t.className = 'toast ' + (type||'') + ' show';
+    clearTimeout(window.__t); window.__t = setTimeout(()=>t.classList.remove('show'), 3000);
+  }
+  async function api(ep, body) {
+    const r = await fetch('/.netlify/functions/' + ep, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
+    });
+    const j = await r.json().catch(()=>({}));
+    return { ok: r.ok, status: r.status, data: j };
+  }
+
+  // --- Load ---
+  async function refresh() {
+    const res = await api('voorraad-list');
+    if (!res.ok) { showToast(res.data.error || 'Laden mislukt', 'error'); return; }
+    STATE.pots = res.data.pots || [];
+    STATE.config = res.data.config || { next_production_date: null };
+    $('#stock-stats').textContent = `Op voorraad: ${res.data.stock_count} potten`;
+    $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const grid = $('#pot-grid');
+    const filter = $('#filter-select').value;
+    grid.innerHTML = '';
+    const pots = filter === 'all'
+      ? STATE.pots
+      : STATE.pots.filter(p => (p.status || 'uninitialized') === filter);
+    if (pots.length === 0) {
+      grid.innerHTML = '<div class="stats" style="grid-column: 1 / -1;">Geen pots in deze filter.</div>';
+      return;
+    }
+    pots.forEach(p => {
+      const status = p.status || 'uninitialized';
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'pot-card';
+      let meta = '';
+      if (status === 'voorraad' && p.expiry_date) {
+        meta = `Houdbaar t/m ${fmtDate(p.expiry_date)}`;
+      } else if (status === 'delivered' && p.order_id) {
+        meta = `Order #${String(p.order_id).slice(-6)}`;
+      }
+      card.innerHTML = `
+        <div class="pid">${p.id}</div>
+        <div class="badge ${status}">${STATUS_LABELS[status] || status}</div>
+        ${meta ? `<div class="meta">${meta}</div>` : ''}
+      `;
+      card.addEventListener('click', () => openDrawer(p));
+      grid.appendChild(card);
+    });
+  }
+
+  // --- Drawer ---
+  function openDrawer(pot) {
+    STATE.currentPot = pot;
+    $('#drawer-pid').textContent = pot.id;
+    const status = pot.status || 'uninitialized';
+    $('#drawer-sub').textContent = `Huidig: ${STATUS_LABELS[status] || status}` +
+      (pot.production_date ? ` · Geproduceerd ${fmtDate(pot.production_date)}` : '');
+    renderStatusOptions(status);
+    $('#prod-date-input').value = pot.production_date || todayISO();
+    togglePD(status === 'voorraad');
+    $('#drawer-err').textContent = '';
+    $('#drawer-backdrop').classList.add('open');
+    $('#pot-drawer').classList.add('open');
+  }
+  function closeDrawer() {
+    STATE.currentPot = null;
+    $('#drawer-backdrop').classList.remove('open');
+    $('#pot-drawer').classList.remove('open');
+  }
+  function renderStatusOptions(currentSelected) {
+    const wrap = $('#status-options'); wrap.innerHTML = '';
+    const opts = [
+      ['voorraad', 'Op voorraad'],
+      ['available', 'Beschikbaar (leeg)'],
+      ['delivered', 'Bezorgd'],
+      ['returned', 'Retour'],
+    ];
+    opts.forEach(([val, lbl]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = lbl;
+      b.dataset.val = val;
+      if (val === currentSelected) b.classList.add('sel');
+      b.addEventListener('click', () => {
+        wrap.querySelectorAll('button').forEach(x => x.classList.remove('sel'));
+        b.classList.add('sel');
+        togglePD(val === 'voorraad');
+      });
+      wrap.appendChild(b);
+    });
+  }
+  function togglePD(show) { $('#prod-date-field').hidden = !show; }
+  async function saveDrawer() {
+    if (!STATE.currentPot) return;
+    const sel = document.querySelector('#status-options button.sel');
+    if (!sel) { $('#drawer-err').textContent = 'Kies een status'; return; }
+    const body = { pot_id: STATE.currentPot.id, status: sel.dataset.val };
+    if (sel.dataset.val === 'voorraad') body.production_date = $('#prod-date-input').value || todayISO();
+    const res = await api('voorraad-set-pot', body);
+    if (!res.ok) { $('#drawer-err').textContent = res.data.error || 'Opslaan mislukt'; return; }
+    showToast(`${body.pot_id} → ${STATUS_LABELS[body.status]}`, 'success');
+    closeDrawer();
+    refresh();
+  }
+
+  // --- Scanner ---
+  async function startScan() {
+    const video = $('#scanner-video');
+    $('#scan-view').hidden = false;
+    if (STATE.qrScanner) return;
+    STATE.qrScanner = new QrScanner(video, async result => {
+      const text = result.data || result;
+      const m = /POT-\d{3}/i.exec(text);
+      if (!m) return;
+      const potId = m[0].toUpperCase();
+      // immediately set to voorraad with today as production date
+      const res = await api('voorraad-set-pot', { pot_id: potId, status: 'voorraad', production_date: todayISO() });
+      if (res.ok) {
+        showToast(`${potId} in voorraad (vandaag geproduceerd)`, 'success');
+        await refresh();
+      } else {
+        showToast(res.data.error || 'Mislukt', 'error');
+      }
+    }, { highlightScanRegion: true, returnDetailedScanResult: true });
+    try { await STATE.qrScanner.start(); }
+    catch { stopScan(); showToast('Camera niet beschikbaar', 'error'); }
+  }
+  function stopScan() {
+    $('#scan-view').hidden = true;
+    if (STATE.qrScanner) { STATE.qrScanner.stop(); STATE.qrScanner.destroy(); STATE.qrScanner = null; }
+  }
+
+  // --- Production date picker ---
+  function pickProdDate() {
+    // Build an in-place native date input flow
+    const cur = STATE.config.next_production_date || todayISO();
+    const inp = document.createElement('input');
+    inp.type = 'date';
+    inp.value = cur;
+    inp.style.position = 'fixed'; inp.style.left = '-9999px';
+    document.body.appendChild(inp);
+    inp.addEventListener('change', async () => {
+      const v = inp.value;
+      inp.remove();
+      if (!v) return;
+      const res = await api('voorraad-set-config', { next_production_date: v });
+      if (res.ok) {
+        showToast(`Productiedatum: ${fmtDate(v)}`, 'success');
+        STATE.config = res.data.config;
+        $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
+      } else {
+        showToast(res.data.error || 'Mislukt', 'error');
+      }
+    });
+    setTimeout(()=>inp.showPicker ? inp.showPicker() : inp.click(), 0);
+  }
+
+  // --- Bindings ---
+  $('#login-btn').addEventListener('click', async () => {
+    const pw = $('#pw').value.trim();
+    if (!pw) return;
+    STATE.password = pw;
+    const res = await api('voorraad-list');
+    if (res.ok) {
+      saveSession(pw);
+      STATE.pots = res.data.pots || [];
+      STATE.config = res.data.config || {};
+      $('#stock-stats').textContent = `Op voorraad: ${res.data.stock_count} potten`;
+      $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
+      renderGrid();
+      $('#login-view').hidden = true;
+      $('#main-view').hidden = false;
+    } else {
+      $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
+    }
+  });
+  $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
+  $('#prod-date-btn').addEventListener('click', pickProdDate);
+  $('#filter-select').addEventListener('change', renderGrid);
+  $('#scan-btn').addEventListener('click', () => { if (STATE.qrScanner) stopScan(); else startScan(); });
+  $('#scan-cancel').addEventListener('click', stopScan);
+  $('#drawer-close').addEventListener('click', closeDrawer);
+  $('#drawer-backdrop').addEventListener('click', closeDrawer);
+  $('#drawer-save').addEventListener('click', saveDrawer);
+
+  // Menu
+  $('#menu-open').addEventListener('click', () => $('#menu-panel').classList.add('open'));
+  $('#menu-close').addEventListener('click', () => $('#menu-panel').classList.remove('open'));
+  $('#menu-logout').addEventListener('click', () => { clearSession(); location.reload(); });
+
+  // Boot
+  STATE.password = loadSession();
+  if (STATE.password) {
+    api('voorraad-list').then(res => {
+      if (res.ok) {
+        STATE.pots = res.data.pots || [];
+        STATE.config = res.data.config || {};
+        $('#stock-stats').textContent = `Op voorraad: ${res.data.stock_count} potten`;
+        $('#prod-date-btn').textContent = 'Productiedatum: ' + fmtDate(STATE.config.next_production_date);
+        renderGrid();
+        $('#login-view').hidden = true;
+        $('#main-view').hidden = false;
+      } else {
+        clearSession(); STATE.password = null;
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -19,3 +19,7 @@
 /api/bezorger/extra-pot /.netlify/functions/bezorger-extra-pot 200
 /api/bezorger/customer-history /.netlify/functions/bezorger-customer-history 200
 /api/levering-info /.netlify/functions/levering-info 200
+/api/voorraad/list /.netlify/functions/voorraad-list 200
+/api/voorraad/set-pot /.netlify/functions/voorraad-set-pot 200
+/api/voorraad/set-config /.netlify/functions/voorraad-set-config 200
+/voorraad /voorraad.html 200
