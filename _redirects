@@ -30,3 +30,4 @@
 /api/bestellingen/delete /.netlify/functions/bestellingen-delete 200
 /bestellingen /bestellingen.html 200
 /bestelling/* /bestelling.html 200
+/api/klanten/list /.netlify/functions/klanten-list 200

@@ -144,6 +144,54 @@
     line-height: 1.2;
     min-height: 0;
   }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin: 14px 0 14px; border-bottom: 1px solid var(--cream-dark); }
+  .tab {
+    flex: 1; background: transparent; border: none; cursor: pointer;
+    padding: 12px 8px; font: 700 15px 'DM Sans', system-ui, sans-serif; color: #888;
+    border-bottom: 3px solid transparent; margin-bottom: -1px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab.active { color: var(--red); border-bottom-color: var(--red); }
+
+  /* Floating + button */
+  .fab {
+    position: fixed; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom));
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    border: none; cursor: pointer;
+    box-shadow: var(--shadow-cta);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50; -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
+  }
+  .fab svg { width: 24px; height: 24px; }
+  .fab:hover { transform: scale(1.05); }
+  .fab:active { transform: scale(0.95); }
+
+  /* Klanten cards */
+  .klant-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 14px 16px;
+    margin-bottom: 10px; line-height: 1.45;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .klant-card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .klant-card .name { font-weight: 700; font-size: 17px; color: var(--black); }
+  .klant-card .count { color: #888; font-size: 12px; }
+  .klant-card .addr { color: #666; font-size: 14px; }
+  .klant-card .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .klant-tag {
+    display: inline-block; font-size: 10px; padding: 3px 8px; border-radius: 999px;
+    font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .klant-tag.active     { background: rgba(31,157,85,0.12); color: #1f9d55; }
+  .klant-tag.inactive   { background: rgba(0,0,0,0.06); color: #888; }
+  .klant-tag.top        { background: rgba(217,48,30,0.10); color: var(--red); }
+  .klant-tag.pot-home   { background: rgba(255,210,74,0.25); color: #b85c00; }
+  .klant-tag.statiegeld { background: rgba(0,0,0,0.04); color: #555; }
+
 </style>
 </head>
 <body>
@@ -174,7 +222,6 @@
   <section id="main-view" hidden>
     <div class="topbar" style="align-items: flex-start;">
       <div style="flex: 1; min-width: 0;">
-        <span class="progress-text" id="orders-count">0 BESTELLINGEN TOTAAL</span>
         <h1 class="step-question" style="margin-bottom: 0;">Bestellingen</h1>
       </div>
       <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
@@ -186,17 +233,42 @@
       </button>
     </div>
 
-    <div class="field" style="margin-top: 14px;">
-      <select id="filter-select">
-        <option value="all">Filter</option>
-        <option value="stock">Op voorraad</option>
-        <option value="not_stock">Niet op voorraad</option>
-        <option value="delivered">Bezorgd</option>
-        <option value="todo">Open (todo)</option>
-      </select>
+    <div class="tabs">
+      <button class="tab active" id="tab-bestellingen" type="button">Bestellingen</button>
+      <button class="tab" id="tab-klanten" type="button">Klanten</button>
     </div>
 
-    <div id="orders-list"></div>
+    <!-- Bestellingen tab content -->
+    <div id="tab-content-bestellingen">
+      <div class="field" style="margin-top: 14px;">
+        <select id="filter-select">
+          <option value="all">Filter</option>
+          <option value="stock">Op voorraad</option>
+          <option value="not_stock">Niet op voorraad</option>
+          <option value="delivered">Bezorgd</option>
+          <option value="todo">Open (todo)</option>
+        </select>
+      </div>
+      <div id="orders-list"></div>
+    </div>
+
+    <!-- Klanten tab content -->
+    <div id="tab-content-klanten" hidden>
+      <div class="field" style="margin-top: 14px;">
+        <input id="klanten-search" type="text" placeholder="Zoek op naam of adres" style="width:100%; min-height:60px; padding:16px 18px; font-size:18px; font-family:inherit; background:var(--white); border:2px solid transparent; border-radius:var(--radius-md); box-shadow:var(--shadow-card); appearance:none; -webkit-appearance:none;">
+      </div>
+      <div class="field">
+        <select id="klanten-filter">
+          <option value="all">Filter</option>
+          <option value="no_active">Geen actieve bestelling</option>
+          <option value="active">Actieve bestelling</option>
+          <option value="top">Top klant</option>
+          <option value="pot_home">Pot in huis</option>
+          <option value="no_pot_home">Geen pot in huis</option>
+        </select>
+      </div>
+      <div id="klanten-list"></div>
+    </div>
   </section>
 </main>
 
@@ -208,7 +280,7 @@
   const $ = sel => document.querySelector(sel);
   const STORAGE_KEY = 'ellemelle_admin_session_v1';
   const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
-  const STATE = { password: null, orders: [] };
+  const STATE = { password: null, orders: [], klanten: [], klantenLoaded: false };
 
   function loadSession() {
     try {
@@ -288,8 +360,66 @@
     const res = await api('bestellingen-list');
     if (!res.ok) { showToast(res.data.error || 'Laden mislukt', 'error'); return; }
     STATE.orders = res.data.orders || [];
-    $('#orders-count').textContent = `${STATE.orders.length} BESTELLING${STATE.orders.length === 1 ? '' : 'EN'} TOTAAL`;
     renderOrders();
+  }
+  async function loadKlanten() {
+    if (STATE.klantenLoaded) return;
+    const res = await api('klanten-list');
+    if (!res.ok) { showToast(res.data.error || 'Klanten laden mislukt', 'error'); return; }
+    STATE.klanten = res.data.customers || [];
+    STATE.klantenLoaded = true;
+    renderKlanten();
+  }
+
+  function renderKlanten() {
+    const wrap = $('#klanten-list'); wrap.innerHTML = '';
+    const f = $('#klanten-filter').value;
+    const q = ($('#klanten-search').value || '').toLowerCase().trim();
+    let list = STATE.klanten.slice();
+    if (q) list = list.filter(c => (c.voornaam||'').toLowerCase().includes(q) || (c.adres||'').toLowerCase().includes(q));
+    if (f === 'no_active')    list = list.filter(c => c.active_orders === 0);
+    else if (f === 'active')  list = list.filter(c => c.active_orders > 0);
+    else if (f === 'top')     list = list.filter(c => c.is_top_10_customer);
+    else if (f === 'pot_home') list = list.filter(c => c.pots_at_home > 0);
+    else if (f === 'no_pot_home') list = list.filter(c => c.pots_at_home === 0);
+    if (list.length === 0) {
+      wrap.innerHTML = '<div class="empty">Geen klanten in deze filter.</div>';
+      return;
+    }
+    list.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'klant-card';
+      const tags = [];
+      if (c.active_orders > 0) tags.push('<span class="klant-tag active">Actief</span>');
+      else tags.push('<span class="klant-tag inactive">Inactief</span>');
+      if (c.is_top_10_customer) tags.push('<span class="klant-tag top">Top klant</span>');
+      if (c.pots_at_home > 0) tags.push('<span class="klant-tag pot-home">' + c.pots_at_home + ' pot in huis</span>');
+      if (c.statiegeld_credit > 0) tags.push('<span class="klant-tag statiegeld">€' + c.statiegeld_credit.toFixed(2).replace('.', ',') + ' tegoed</span>');
+      card.innerHTML = `
+        <div class="head">
+          <span class="name">${c.voornaam || '(geen naam)'}</span>
+          <span class="count">${c.total_orders} ${c.total_orders === 1 ? 'bestelling' : 'bestellingen'}</span>
+        </div>
+        <div class="addr">${c.adres || ''}${c.plaats ? ' — ' + c.plaats : ''}</div>
+        <div class="tags">${tags.join('')}</div>
+      `;
+      wrap.appendChild(card);
+    });
+  }
+
+  // Tabs
+  function activateTab(name) {
+    const isBest = name !== 'klanten';
+    $('#tab-bestellingen').classList.toggle('active', isBest);
+    $('#tab-klanten').classList.toggle('active', !isBest);
+    $('#tab-content-bestellingen').hidden = !isBest;
+    $('#tab-content-klanten').hidden = isBest;
+    location.hash = isBest ? 'bestellingen' : 'klanten';
+    if (!isBest) loadKlanten();
+  }
+  function syncTabFromHash() {
+    const h = (location.hash || '').replace('#', '');
+    activateTab(h === 'klanten' ? 'klanten' : 'bestellingen');
   }
 
   // Bindings
@@ -303,7 +433,6 @@
       $('#login-view').hidden = true; $('#main-view').hidden = false;
       document.body.classList.remove('on-login');
       STATE.orders = res.data.orders || [];
-      $('#orders-count').textContent = `${STATE.orders.length} BESTELLING${STATE.orders.length === 1 ? '' : 'EN'} TOTAAL`;
       renderOrders();
     } else {
       $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
@@ -311,6 +440,11 @@
   });
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
   $('#filter-select').addEventListener('change', renderOrders);
+  $('#klanten-search').addEventListener('input', renderKlanten);
+  $('#klanten-filter').addEventListener('change', renderKlanten);
+  $('#tab-bestellingen').addEventListener('click', () => activateTab('bestellingen'));
+  $('#tab-klanten').addEventListener('click', () => activateTab('klanten'));
+  window.addEventListener('hashchange', syncTabFromHash);
   $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
   $('#menu-backdrop').addEventListener('click', () => { $('#menu-backdrop').classList.remove('open'); $('#menu-panel').classList.remove('open'); });
   $('#menu-logout').addEventListener('click', () => { clearSession(); location.reload(); });
@@ -324,14 +458,18 @@
         $('#login-view').hidden = true; $('#main-view').hidden = false;
         document.body.classList.remove('on-login');
         STATE.orders = res.data.orders || [];
-        $('#orders-count').textContent = `${STATE.orders.length} BESTELLING${STATE.orders.length === 1 ? '' : 'EN'} TOTAAL`;
         renderOrders();
       } else {
         clearSession(); STATE.password = null;
       }
     });
   }
+  syncTabFromHash();
 })();
 </script>
+<a class="fab" id="fab-add" href="https://ellemelle.netlify.app/" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</a>
+
 </body>
 </html>

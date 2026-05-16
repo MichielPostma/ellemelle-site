@@ -166,3 +166,8 @@
   from = "/bestelling/*"
   to = "/bestelling.html"
   status = 200
+
+[[redirects]]
+  from = "/api/klanten/list"
+  to = "/.netlify/functions/klanten-list"
+  status = 200
