@@ -615,6 +615,14 @@
     border-radius: 2px;
     will-change: transform, opacity;
   }
+
+  /* Levering indicator on step 6 */
+  .delivery-info { display: flex; align-items: center; gap: 8px; color: #555; font-size: 14px; line-height: 1.4; padding-top: 4px; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: #999; }
+  .status-dot.green  { background: #1f9d55; }
+  .status-dot.amber  { background: #f0ad00; }
+  .order-meta .levering-block { margin-bottom: 16px; }
+
 </style>
 </head>
 <body>
@@ -1055,21 +1063,52 @@
   }
 
   // --- Order summary -----------------------------------------------------
-  function renderOrderSummary() {
+  function fmtDeliveryDate(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return d + '-' + m + '-' + y;
+  }
+  function leveringHtml(info) {
+    if (!info) return '';
+    const stock = info.in_stock;
+    const dot = stock ? 'green' : 'amber';
+    const date = fmtDeliveryDate(info.delivery_date);
+    const text = stock
+      ? 'Op voorraad, thuisgebracht in weekend van ' + date
+      : 'Wordt vers gemaakt, thuisgebracht ' + date;
+    return '<div class="levering-block">' +
+      '<strong>Levering</strong>' +
+      '<div class="delivery-info"><span class="status-dot ' + dot + '"></span><span>' + text + '</span></div>' +
+    '</div>';
+  }
+  async function loadLeveringInfo() {
+    try {
+      const r = await fetch('/.netlify/functions/levering-info?ts=' + Date.now());
+      if (r.ok) return await r.json();
+    } catch {}
+    return null;
+  }
+
+  async function renderOrderSummary() {
     const adres = (formData.straat || '(straat)') + ' ' + formData.huisnummer +
       (formData.toevoeging ? '-' + formData.toevoeging : '');
     const stad  = formData.postcode + ' ' + (formData.plaats || 'Haarlem');
     const kIcon = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
     const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
-    $('#order-summary-content').innerHTML =
+    // Render immediately with placeholder, then enrich asynchronously.
+    const baseHtml = (lev) =>
       '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
       '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
       '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
       '<div class="order-meta">' +
+        leveringHtml(lev) +
         '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
         '<strong>Updates via</strong> ' + kIcon + '<br>' + escapeHtml(contact) + '<br><br>' +
         'Binnen 4 weken aan je deur door Ellis & Melle.' +
       '</div>';
+    $('#order-summary-content').innerHTML = baseHtml(null);
+    const lev = await loadLeveringInfo();
+    if (lev) $('#order-summary-content').innerHTML = baseHtml(lev);
   }
 
   // --- Submit ------------------------------------------------------------
