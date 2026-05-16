@@ -262,7 +262,7 @@
         <option value="voorraad">Op voorraad</option>
         <option value="delivered">Bezorgd</option>
         <option value="returned">Retour</option>
-        <option value="available">Beschikbaar (leeg)</option>
+        <option value="available">Leeg</option>
         <option value="uninitialized">Niet geseed</option>
       </select>
     </div>
@@ -302,7 +302,7 @@
 
   const STATUS_LABELS = {
     uninitialized: 'Niet geseed',
-    available:     'Beschikbaar (leeg)',
+    available:     'Leeg',
     voorraad:      'Op voorraad',
     delivered:     'Bezorgd',
     returned:      'Retour',
@@ -414,7 +414,7 @@
     const wrap = $('#status-options'); wrap.innerHTML = '';
     const opts = [
       ['voorraad', 'Op voorraad'],
-      ['available', 'Beschikbaar (leeg)'],
+      ['available', 'Leeg'],
       ['delivered', 'Bezorgd'],
       ['returned', 'Retour'],
     ];
