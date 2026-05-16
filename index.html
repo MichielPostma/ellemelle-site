@@ -1704,8 +1704,11 @@
       });
     }
 
-    // Restore saved state if any
-    const saved = loadState();
+    // ?start=admin always wins — show admin picker regardless of saved state
+    const __bootParams = new URLSearchParams(location.search);
+    const __forceAdmin = __bootParams.get('start') === 'admin';
+    // Restore saved state if any (skipped when admin picker is forced)
+    const saved = __forceAdmin ? null : loadState();
     if (saved && saved.data && saved.step >= 1 && saved.step <= TOTAL_STEPS) {
       // Returning visitor with progress → jump to saved step (not intro)
       Object.assign(formData, saved.data);
