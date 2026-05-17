@@ -1718,6 +1718,10 @@
     // ?start=admin always wins — show admin picker regardless of saved state
     const __bootParams = new URLSearchParams(location.search);
     const __forceAdmin = __bootParams.get('start') === 'admin';
+    // ?fresh=1 → clear saved signup state (admin "Nieuwe klant" flow)
+    if (__bootParams.get('fresh') === '1') {
+      try { localStorage.removeItem('ellemelle_signup_state_v1'); } catch {}
+    }
     // Restore saved state if any (skipped when admin picker is forced)
     const saved = __forceAdmin ? null : loadState();
     if (saved && saved.data && saved.step >= 1 && saved.step <= TOTAL_STEPS) {
