@@ -456,12 +456,14 @@
       const stockClass = inStock ? 'in' : 'out';
       const stockText = inStock ? '· op voorraad' : '· niet op voorraad';
       const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
-      const cd = deliveryCountdown(o.delivery_date);
-      const cdColor = cd.overdue ? 'color:var(--red);font-weight:700;' : 'color:#888;';
+      const cd = deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
+      const isLate = !!o.is_te_laat;
+      const cdLabel = isLate ? `Te laat (geplande > belofte)` : cd.label;
+      const cdColor = isLate ? 'color:var(--red);font-weight:700;' : 'color:#888;';
       card.innerHTML = `
         <div class="head">
           <span class="name">${o.voornaam || '(geen naam)'}</span>
-          <span class="date" style="${cdColor}">${cd.label}</span>
+          <span class="date" style="${cdColor}">${cdLabel}</span>
         </div>
         <div class="addr">${addr}${o.plaats ? ' — ' + o.plaats : ''}</div>
         <div class="row2">
