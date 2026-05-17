@@ -690,6 +690,8 @@
       const badgeText = STATUS_LABELS[status] || 'Todo';
       const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
       const stepHtml = `<span class="step-num">Stop ${idx + 1}</span>`;
+      const mapsAddr = [o.straat, o.huisnummer + (o.toevoeging ? '-' + o.toevoeging : ''), o.postcode, o.plaats].filter(Boolean).join(' ');
+      const mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(mapsAddr) + '&travelmode=walking';
       card.innerHTML = `
         <div class="head">
           ${stepHtml}
@@ -697,12 +699,11 @@
         </div>
         <div class="name">${o.voornaam || '(geen naam)'}</div>
         <div class="addr">${addr} — ${o.plaats || ''}</div>
-        <button class="btn-outline open-detail" type="button">Route</button>
+        <a class="btn-outline open-route" href="${mapsUrl}" target="_blank" rel="noopener">Route</a>
       `;
-      // Whole-card click → open detail (default flow)
+      // Whole-card click → open detail; ignore clicks on the Route link
       card.addEventListener('click', (e) => {
-        // The two buttons handle their own actions; ignore link clicks on the route button
-        if (e.target.closest('a')) return;
+        if (e.target.closest('a, .open-route')) return;
         openDetail(o);
       });
       wrap.appendChild(card);
