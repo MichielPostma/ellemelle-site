@@ -211,7 +211,8 @@
     <div class="info-card">
       <div class="big-date" id="d-deliverydate">—</div>
       <div class="detail-row"><span class="k">Status</span><span class="v"><span class="badge" id="d-statusbadge">—</span></span></div>
-      <div class="detail-row"><span class="k">Uiterlijke bezorgdatum</span><span class="v" id="d-mode" style="font-weight: 500;">—</span></div>
+      <div class="detail-row"><span class="k">Uiterlijke bezorgdatum</span><span class="v" id="d-uiterlijke" style="font-weight: 500;">—</span></div>
+      <div class="detail-row"><span class="k">Geplande bezorgweek</span><span class="v" id="d-geplande" style="font-weight: 500;">—</span></div>
       <button class="btn-outline" id="edit-wijzigen-btn" type="button" style="margin-top: 10px;">Wijzigen</button>
     </div>
 
@@ -248,9 +249,13 @@
   <div class="actions-label" style="margin-top: 12px;">Status</div>
   <div id="status-options" style="display:grid; gap:8px;"></div>
 
-  <div class="actions-label" style="margin-top: 18px;">Bezorgdatum</div>
-  <input type="date" id="date-input">
-  <button class="btn-outline" id="date-clear" type="button" style="margin-top: 6px;">Wissen (auto)</button>
+  <div class="actions-label" style="margin-top: 18px;">Uiterlijke bezorgdatum (belofte aan klant)</div>
+  <input type="date" id="date-uiterlijke">
+  <button class="btn-outline" id="date-uiterlijke-clear" type="button" style="margin-top: 6px;">Wissen (auto)</button>
+
+  <div class="actions-label" style="margin-top: 18px;">Geplande bezorgweek (handmatig forceren)</div>
+  <input type="date" id="date-geplande">
+  <button class="btn-outline" id="date-geplande-clear" type="button" style="margin-top: 6px;">Wissen (auto)</button>
 
   <div class="error" id="wijzigen-err"></div>
   <button class="btn-primary" id="wijzigen-save" type="button">Opslaan</button>
@@ -374,13 +379,17 @@
     const o = STATE.order;
     if (!o) return;
     $('#d-name').textContent = o.voornaam || '(geen naam)';
-    const cd = deliveryCountdown(o.delivery_date);
+    const cd = deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
+    const isLate = !!o.is_te_laat;
     const dEl = $('#d-deliverydate');
-    dEl.textContent = cd.label;
-    dEl.style.color = cd.overdue ? 'var(--red)' : '';
+    dEl.textContent = isLate ? cd.label : (cd.overdue ? 'Bezorgen vandaag' : cd.label);
+    dEl.style.color = isLate ? 'var(--red)' : '';
     const status = o.order_status || 'todo';
     const sb = $('#d-statusbadge'); sb.textContent = STATUS_LABELS[status] || status; sb.className = 'badge ' + status;
-    $('#d-mode').textContent = modeLabel(o);
+    const uiterlijkeText = o.uiterlijke_bezorgdatum ? fmtDate(o.uiterlijke_bezorgdatum) : '—';
+    const geplandeText = modeLabel(o);
+    $('#d-uiterlijke').textContent = uiterlijkeText + (o.uiterlijke_bezorgdatum_override ? ' (handmatig)' : '');
+    $('#d-geplande').textContent = geplandeText
     $('#d-voornaam').textContent = o.voornaam || '—';
     $('#d-adres').textContent = `${o.straat || ''} ${o.huisnummer || ''}${o.toevoeging ? '-' + o.toevoeging : ''}`.trim() || '—';
     $('#d-postcode').textContent = o.postcode || '—';
@@ -423,11 +432,8 @@
     renderDetail();
   }
 
-  // Date clear (within merged drawer): mark for clearing on save
-  function clearDate() {
-    __dateAction = 'clear';
-    $('#date-input').value = '';
-  }
+  function clearUiterlijke() { __uitAction = 'clear'; $('#date-uiterlijke').value = ''; }
+  function clearGeplande()   { __gepAction = 'clear'; $('#date-geplande').value   = ''; }
   // --- Wijzigen drawer (merged Status + Datum) ---
   const STATUS_OPTS = [
     { val: 'todo',      label: 'Todo (reset — ontkoppel pot)' },
@@ -435,7 +441,8 @@
     { val: 'neighbors', label: 'Buren' },
     { val: 'retry',     label: 'Nieuwe poging' },
   ];
-  let __dateAction = 'keep'; // 'keep' | 'save' | 'clear'
+  let __uitAction = 'keep';
+  let __gepAction = 'keep'; // 'keep' | 'save' | 'clear'
   function renderStatusOptions(cur) {
     const wrap = $('#status-options'); wrap.innerHTML = '';
     STATUS_OPTS.forEach(o => {
@@ -451,9 +458,11 @@
   }
   function openWijzigenDrawer() {
     renderStatusOptions(STATE.order?.order_status || 'todo');
-    const cur = STATE.order && (STATE.order.delivery_date_override || STATE.order.delivery_date) || '';
-    $('#date-input').value = cur;
-    __dateAction = 'keep';
+    const o = STATE.order || {};
+    $('#date-uiterlijke').value = o.uiterlijke_bezorgdatum_override || o.uiterlijke_bezorgdatum || '';
+    $('#date-geplande').value = o.delivery_date_override || o.delivery_date || '';
+    __uitAction = 'keep';
+    __gepAction = 'keep';
     $('#wijzigen-err').textContent = '';
     $('#drawer-backdrop').classList.add('open');
     $('#wijzigen-drawer').classList.add('open');
@@ -467,22 +476,28 @@
     if (!sel) { $('#wijzigen-err').textContent = 'Kies een status'; return; }
     const newStatus = sel.dataset.val;
     const curStatus = STATE.order?.order_status || 'todo';
-    let newDate = $('#date-input').value;
-    let dateChanged = false;
-    if (__dateAction === 'clear') {
-      dateChanged = true;
-      newDate = '';
-    } else if (newDate && newDate !== (STATE.order?.delivery_date_override || '')) {
-      dateChanged = true;
-    }
+    // Two independent date pickers
+    const curUit = STATE.order?.uiterlijke_bezorgdatum_override || '';
+    const curGep = STATE.order?.delivery_date_override || '';
+    let valUit = $('#date-uiterlijke').value || '';
+    let valGep = $('#date-geplande').value   || '';
+    const clearUit = (__uitAction === 'clear');
+    const clearGep = (__gepAction === 'clear');
+    if (clearUit) valUit = '';
+    if (clearGep) valGep = '';
+    const uitChanged = clearUit || (valUit && valUit !== curUit);
+    const gepChanged = clearGep || (valGep && valGep !== curGep);
     // Save status if changed
     if (newStatus !== curStatus) {
       const rs = await api('bezorger-set-status', { order_id: STATE.order.id, status: newStatus });
       if (!rs.ok) { $('#wijzigen-err').textContent = rs.data.error || 'Status mislukt'; return; }
     }
-    // Save date if changed
-    if (dateChanged) {
-      const rd = await api('bestellingen-update-delivery-date', { order_id: STATE.order.id, delivery_date: newDate });
+    // Save dates if changed
+    if (uitChanged || gepChanged) {
+      const payload = { order_id: STATE.order.id };
+      if (uitChanged) payload.uiterlijke_bezorgdatum = valUit;
+      if (gepChanged) payload.delivery_date = valGep;
+      const rd = await api('bestellingen-update-delivery-date', payload);
       if (!rd.ok) { $('#wijzigen-err').textContent = rd.data.error || 'Datum mislukt'; return; }
     }
     showToast('Bijgewerkt', 'success');
@@ -520,7 +535,8 @@
   $('#edit-wijzigen-btn').addEventListener('click', openWijzigenDrawer);
   $('#wijzigen-save').addEventListener('click', saveWijzigen);
   $('#drawer-backdrop').addEventListener('click', closeWijzigenDrawer);
-  $('#date-clear').addEventListener('click', clearDate);
+  $('#date-uiterlijke-clear').addEventListener('click', clearUiterlijke);
+  $('#date-geplande-clear').addEventListener('click', clearGeplande);
   $('#delete-btn').addEventListener('click', deleteOrder);
 
   $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
