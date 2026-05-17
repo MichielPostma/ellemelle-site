@@ -456,7 +456,7 @@
   };
   function potImageFor(status) {
     if (status === 'voorraad') return '/Images/pot-voorraad.png';
-    if (status === 'delivered' || status === 'returned') return '/Images/product.png';
+    if (status === 'delivered' || status === 'returned') return '/Images/pot-bezorgd.png';
     // uninitialized + available → empty pot
     return '/Images/pot-leeg.png';
   }
