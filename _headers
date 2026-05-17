@@ -1,0 +1,14 @@
+/Images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.webmanifest
+  Cache-Control: public, max-age=86400
+
+/*.html
+  Cache-Control: public, max-age=300, must-revalidate

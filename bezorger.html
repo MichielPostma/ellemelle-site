@@ -579,14 +579,47 @@
     return 'mailto:' + email + (q.length ? '?' + q.join('&') : '');
   }
 
-  async function api(endpoint, payload) {
-    const r = await fetch('/.netlify/functions/' + endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({ password: STATE.password }, payload || {})),
+  // --- API session cache (30s TTL on hot read endpoints) ---
+  const __CACHED_EPS = new Set(['bezorger-orders','voorraad-list','bestellingen-list','klanten-list','levering-info','admin-list-pots']);
+  const __TTL_MS = 30000;
+  function __cacheKey(ep, body) { return 'cache_' + ep + '_' + JSON.stringify(body||{}); }
+  window.__invalidateApiCache = function() {
+    try {
+      const keys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i); if (k && k.startsWith('cache_')) keys.push(k);
+      }
+      keys.forEach(k => sessionStorage.removeItem(k));
+    } catch {}
+  };
+  async function api(ep, body) {
+    const isRead = __CACHED_EPS.has(ep);
+    const key = __cacheKey(ep, body);
+    if (isRead) {
+      try {
+        const cached = sessionStorage.getItem(key);
+        if (cached) {
+          const c = JSON.parse(cached);
+          if (c && c.ts && (Date.now() - c.ts) < __TTL_MS) {
+            return { ok: c.ok, status: c.status, data: c.data, __cached: true };
+          }
+        }
+      } catch {}
+    }
+    const r = await fetch('/.netlify/functions/' + ep, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
     });
     const j = await r.json().catch(() => ({}));
-    return { ok: r.ok, status: r.status, data: j };
+    const out = { ok: r.ok, status: r.status, data: j };
+    if (isRead && r.ok) {
+      try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), ok: out.ok, status: out.status, data: out.data })); } catch {}
+    }
+    // Auto-invalidate cache on writes
+    if (!isRead && r.ok) {
+      try { window.__invalidateApiCache && window.__invalidateApiCache(); } catch {}
+    }
+    return out;
   }
 
   async function loadOrders() {

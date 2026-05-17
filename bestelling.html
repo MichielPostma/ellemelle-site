@@ -313,12 +313,46 @@
     const cleaned = tel.replace(/[^\d+]/g, '').replace(/^00/, '+').replace(/^0/, '+31');
     return 'https://wa.me/' + cleaned.replace('+','');
   }
+  // --- API session cache (30s TTL on hot read endpoints) ---
+  const __CACHED_EPS = new Set(['bezorger-orders','voorraad-list','bestellingen-list','klanten-list','levering-info','admin-list-pots','bestellingen-get']);
+  const __TTL_MS = 30000;
+  function __cacheKey(ep, body) { return 'cache_' + ep + '_' + JSON.stringify(body||{}); }
+  window.__invalidateApiCache = function() {
+    try {
+      const keys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i); if (k && k.startsWith('cache_')) keys.push(k);
+      }
+      keys.forEach(k => sessionStorage.removeItem(k));
+    } catch {}
+  };
   async function api(ep, body) {
+    const isRead = __CACHED_EPS.has(ep);
+    const key = __cacheKey(ep, body);
+    if (isRead) {
+      try {
+        const cached = sessionStorage.getItem(key);
+        if (cached) {
+          const c = JSON.parse(cached);
+          if (c && c.ts && (Date.now() - c.ts) < __TTL_MS) {
+            return { ok: c.ok, data: c.data, __cached: true };
+          }
+        }
+      } catch {}
+    }
     const r = await fetch('/.netlify/functions/' + ep, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
     });
-    return { ok: r.ok, data: await r.json().catch(()=>({})) };
+    const data = await r.json().catch(() => ({}));
+    const out = { ok: r.ok, data };
+    if (isRead && r.ok) {
+      try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), ok: out.ok, data })); } catch {}
+    }
+    if (!isRead && r.ok) {
+      try { window.__invalidateApiCache && window.__invalidateApiCache(); } catch {}
+    }
+    return out;
   }
   function showToast(msg, type) {
     const t = $('#toast'); t.textContent = msg;
