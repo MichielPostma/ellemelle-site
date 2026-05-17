@@ -426,7 +426,8 @@
   <!-- DETAIL -->
   <section id="detail-view" hidden>
     <button class="back-link" id="back-to-list">← Terug</button>
-    <h1 class="step-question" id="detail-name"></h1>
+    <h1 class="step-question" id="detail-name" style="margin-bottom: 4px;"></h1>
+    <div id="detail-countdown" style="color: #666; font-size: 14px; font-weight: 500; margin-bottom: 18px;">—</div>
 
     <!-- Primary actions: scan + buren + ophalen -->
     <div id="scan-view" hidden>
@@ -714,9 +715,26 @@
     });
   }
 
+  function deliveryCountdown(iso) {
+    if (!iso) return { label: '', overdue: false };
+    const [y, m, d] = iso.split('-').map(Number);
+    const target = new Date(Date.UTC(y, m - 1, d));
+    const today = new Date();
+    const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const diff = Math.round((target - todayUtc) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return { label: `${Math.abs(diff)} ${Math.abs(diff)===1?'dag':'dagen'} te laat`, overdue: true };
+    if (diff === 0) return { label: 'Vandaag bezorgen', overdue: false };
+    if (diff === 1) return { label: 'Morgen bezorgen', overdue: false };
+    return { label: `Over ${diff} dagen bezorgen`, overdue: false };
+  }
   function openDetail(order) {
     STATE.currentOrder = order;
     $('#detail-name').textContent = order.voornaam || '(geen naam)';
+    const cd = deliveryCountdown(order.delivery_date);
+    const cdEl = $('#detail-countdown');
+    cdEl.textContent = cd.label || '';
+    cdEl.style.color = cd.overdue ? 'var(--red)' : '#666';
+    cdEl.style.fontWeight = cd.overdue ? '700' : '500';
     const addrFull = `${order.straat} ${order.huisnummer}${order.toevoeging ? '-' + order.toevoeging : ''}`;
     const cityFull = `${order.postcode || ''} ${order.plaats || ''}`.trim();
     $('#d-addr').textContent = addrFull;
