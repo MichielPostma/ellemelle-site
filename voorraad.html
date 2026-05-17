@@ -335,6 +335,27 @@
   /* Global: [hidden] always wins over component display rules */
   [hidden] { display: none !important; }
   body.scanning-active #scan-btn { display: none; }
+  /* Productiedatum: native date input styled as outline-button with dropdown arrow */
+  .prod-date-wrap { position: relative; }
+  .prod-date-wrap input[type="date"] {
+    display: block; width: 100%; min-height: 56px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: 0.2px;
+    padding: 0 44px 0 18px; box-sizing: border-box;
+    appearance: none; -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    text-align: left;
+  }
+  .prod-date-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute; right: 0; top: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer;
+  }
+  .prod-date-wrap .prod-date-arrow {
+    position: absolute; right: 18px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--red); pointer-events: none;
+  }
 </style>
 <link rel="manifest" href="/admin-manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -425,7 +446,12 @@
 
   <div id="prod-date-field" hidden style="margin-top: 14px;">
     <div class="actions-label">Productiedatum</div>
-    <input type="date" id="prod-date-input" />
+    <div class="prod-date-wrap">
+      <input type="date" id="prod-date-input" />
+      <svg class="prod-date-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 5l4 4 4-4"/>
+      </svg>
+    </div>
   </div>
 
   <a class="btn-outline" id="drawer-customer-link" href="#" hidden style="margin-top: 14px;">Bekijk bestelling</a>
@@ -631,7 +657,7 @@
       $('#pot-img-current').src = potImageFor('available');
       $('#pot-img-target').src = potImageFor('voorraad');
       transition.hidden = false;
-      actionBtn.textContent = 'Pot gevuld';
+      actionBtn.textContent = 'De pot is gevuld →';
       actionBtn.dataset.target = 'voorraad';
       actionBtn.hidden = false;
       ro.hidden = true;
@@ -641,7 +667,7 @@
       $('#pot-img-current').src = potImageFor('voorraad');
       $('#pot-img-target').src = potImageFor('available');
       transition.hidden = false;
-      actionBtn.textContent = 'Pot is leeg';
+      actionBtn.textContent = 'De pot is leeg →';
       actionBtn.dataset.target = 'available';
       actionBtn.hidden = false;
       ro.hidden = true;
