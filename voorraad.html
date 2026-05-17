@@ -456,7 +456,8 @@
   };
   function potImageFor(status) {
     if (status === 'voorraad') return '/Images/pot-voorraad.png';
-    if (status === 'delivered' || status === 'returned') return '/Images/pot-bezorgd.png';
+    if (status === 'delivered') return '/Images/pot-bezorgd.png';
+    if (status === 'returned') return '/Images/pot-leeg.png';
     // uninitialized + available → empty pot
     return '/Images/pot-leeg.png';
   }
@@ -624,7 +625,7 @@
       transition.hidden = true;
       actionBtn.hidden = true;
       ro.hidden = false;
-      if (status === 'delivered' && pot.order_id) {
+      if ((status === 'delivered' || status === 'returned') && pot.order_id) {
         const c = pot.customer || {};
         const name = c.voornaam || 'klant';
         const addr = c.adres ? ' — ' + c.adres : '';
