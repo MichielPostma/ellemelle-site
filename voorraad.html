@@ -388,7 +388,7 @@
     <div class="field" style="margin-top: 14px;">
       <select id="filter-select">
         <option value="all">Filter</option>
-        <option value="voorraad">Voorraad</option>
+        <option value="voorraad">Gevuld</option>
         <option value="delivered">Bezorgd</option>
         <option value="returned">Retour</option>
         <option value="available">Leeg</option>
@@ -452,7 +452,7 @@
   const STATUS_LABELS = {
     uninitialized: 'Niet geseed',
     available:     'Leeg',
-    voorraad:      'Voorraad',
+    voorraad:      'Gevuld',
     delivered:     'Bezorgd',
     returned:      'Retour',
   };
@@ -494,6 +494,23 @@
     if (!iso) return '—';
     const [y, m, d] = iso.split('-');
     return `${d}-${m}-${y.slice(2)}`;
+  }
+  function daysUntil(iso) {
+    if (!iso) return null;
+    const [y, m, d] = iso.split('-').map(n => parseInt(n, 10));
+    const target = new Date(y, m - 1, d);
+    target.setHours(0,0,0,0);
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    return Math.round((target - now) / (24*3600*1000));
+  }
+  function expiryText(expiryISO) {
+    const n = daysUntil(expiryISO);
+    if (n === null) return { text: '', expired: false };
+    if (n < 0)  return { text: 'Verlopen', expired: true };
+    if (n === 0) return { text: 'Vandaag laatste dag', expired: false };
+    if (n === 1) return { text: 'Nog 1 dag houdbaar', expired: false };
+    return { text: `Nog ${n} dagen houdbaar`, expired: false };
   }
   function showToast(msg, type) {
     const t = $('#toast');
@@ -570,8 +587,11 @@
       card.type = 'button';
       card.className = 'pot-card';
       let meta = '';
+      let metaExpired = false;
       if (status === 'voorraad' && p.expiry_date) {
-        meta = `Houdbaar t/m ${fmtDate(p.expiry_date)}`;
+        const e = expiryText(p.expiry_date);
+        meta = e.text;
+        metaExpired = e.expired;
       } else if (status === 'delivered' && p.order_id) {
         meta = `Order #${String(p.order_id).slice(-6)}`;
       }
@@ -580,7 +600,7 @@
         ${imgSrc ? `<img class="pot-img" src="${imgSrc}" alt="">` : ''}
         <div class="pid">${p.id}</div>
         <div class="badge ${status}">${STATUS_LABELS[status] || status}</div>
-        ${meta ? `<div class="meta">${meta}</div>` : ''}
+        ${meta ? `<div class="meta"${metaExpired ? ' style="color: var(--red);"' : ''}>${meta}</div>` : ''}
       `;
       card.addEventListener('click', () => openDrawer(p));
       grid.appendChild(card);
@@ -592,8 +612,13 @@
     STATE.currentPot = pot;
     $('#drawer-pid').textContent = pot.id;
     const status = pot.status || 'uninitialized';
-    $('#drawer-sub').textContent = `Huidig: ${STATUS_LABELS[status] || status}` +
-      (pot.production_date ? ` · Geproduceerd ${fmtDate(pot.production_date)} · Houdbaar t/m ${fmtDate(pot.expiry_date)}` : '');
+    const subParts = [`Huidig: ${STATUS_LABELS[status] || status}`];
+    if (pot.production_date) subParts.push(`Geproduceerd ${fmtDate(pot.production_date)}`);
+    if (pot.expiry_date) {
+      const e = expiryText(pot.expiry_date);
+      if (e.text) subParts.push(e.text);
+    }
+    $('#drawer-sub').textContent = subParts.join(' · ');
     $('#drawer-err').textContent = '';
     const actionBtn = $('#drawer-action');
     const ro = $('#drawer-readonly');
