@@ -335,36 +335,42 @@
   /* Global: [hidden] always wins over component display rules */
   [hidden] { display: none !important; }
   body.scanning-active #scan-btn { display: none; }
-  /* Productiedatum: native date input styled as outline-button with dropdown arrow */
+  /* Filter dropdown — red 2px chevron for prominent affordance */
+  #filter-select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%23D9301E' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  }
+
+  /* Productiedatum: native date input matching filter dropdown style */
   .prod-date-wrap { position: relative; }
   .prod-date-wrap input[type="date"] {
     display: block; width: 100%; height: 56px; min-height: 56px;
-    background: transparent; color: var(--red);
-    border: 2px solid var(--red); border-radius: var(--radius-md);
-    font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: 0.2px;
+    background: var(--white); color: var(--black);
+    border: 2px solid transparent; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    font-family: inherit; font-size: 16px; font-weight: 600; letter-spacing: 0.2px;
     padding: 0 44px 0 18px; box-sizing: border-box;
-    line-height: 52px; /* center single-line text within 56px - 2*2px borders */
+    line-height: 52px;
     appearance: none; -webkit-appearance: none;
     -webkit-tap-highlight-color: transparent;
     text-align: left;
     margin: 0;
   }
-  /* Mobile Safari draws the value via ::-webkit-date-and-time-value — center that too */
   .prod-date-wrap input[type="date"]::-webkit-date-and-time-value {
     text-align: left;
     line-height: 52px;
     height: 52px;
     margin: 0;
   }
+  .prod-date-wrap .prod-date-arrow {
+    position: absolute; right: 18px; top: 50%;
+    transform: translateY(-50%);
+    color: #8B1A0E; pointer-events: none; opacity: 0.55;
+  }
   .prod-date-wrap input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute; right: 0; top: 0; width: 100%; height: 100%;
     opacity: 0; cursor: pointer;
   }
-  .prod-date-wrap .prod-date-arrow {
-    position: absolute; right: 18px; top: 50%;
-    transform: translateY(-50%);
-    color: var(--red); pointer-events: none;
-  }
+
 </style>
 <link rel="manifest" href="/admin-manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -469,6 +475,7 @@
   </div>
   <div class="error" id="drawer-err"></div>
   <button class="btn-primary" id="drawer-action" type="button" hidden>—</button>
+  <button class="btn-outline" id="drawer-delete" type="button" hidden style="margin-top: 24px;">Verwijder pot</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -681,6 +688,9 @@
     const ro = $('#drawer-readonly');
     const transition = $('#pot-transition');
     // Configure single action button + visible fields per status
+    const delBtn = $('#drawer-delete');
+    // Show Verwijder for Leeg/Gevuld/Retour, hide for Bezorgd
+    delBtn.hidden = (status === 'delivered');
     if (status === 'available' || status === 'uninitialized') {
       $('#prod-date-input').value = todayISO();
       togglePD(true);
@@ -807,6 +817,16 @@
   $('#drawer-close')?.addEventListener('click', closeDrawer);
   $('#drawer-backdrop').addEventListener('click', closeDrawer);
   $('#drawer-action').addEventListener('click', doAction);
+  $('#drawer-delete').addEventListener('click', async () => {
+    if (!STATE.currentPot) return;
+    const pid = STATE.currentPot.id;
+    if (!confirm('Weet je het zeker? Dit kan niet ongedaan gemaakt worden.')) return;
+    const res = await api('voorraad-delete-pot', { pot_id: pid });
+    if (!res.ok) { showToast(res.data.error || 'Verwijderen mislukt', 'error'); return; }
+    showToast(`${pid} verwijderd`, 'success');
+    closeDrawer();
+    await refresh();
+  });
 
   // Menu
   $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
