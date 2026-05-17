@@ -403,9 +403,6 @@
   <h2 id="drawer-pid">POT-XXX</h2>
   <div class="sub" id="drawer-sub">—</div>
 
-  <div class="actions-label" style="margin-top: 14px;">Status wijzigen</div>
-  <div class="status-options" id="status-options"></div>
-
   <div id="prod-date-field" hidden style="margin-top: 14px;">
     <div class="actions-label">Productiedatum</div>
     <input type="date" id="prod-date-input" />
@@ -415,7 +412,7 @@
     Status wordt automatisch beheerd via de bezorger-flow.
   </div>
   <div class="error" id="drawer-err"></div>
-  <button class="btn-primary" id="drawer-save" type="button">Opslaan</button>
+  <button class="btn-primary" id="drawer-action" type="button" hidden>—</button>
 
   <div id="drawer-customer" hidden style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--cream-dark);">
     <div class="actions-label">Gekoppeld aan</div>
@@ -570,41 +567,41 @@
     const status = pot.status || 'uninitialized';
     $('#drawer-sub').textContent = `Huidig: ${STATUS_LABELS[status] || status}` +
       (pot.production_date ? ` · Geproduceerd ${fmtDate(pot.production_date)} · Houdbaar t/m ${fmtDate(pot.expiry_date)}` : '');
-    const hasOptions = renderStatusOptions(status);
-    // Production date input — show when we're going to/staying in voorraad
+    $('#drawer-err').textContent = '';
+    const actionBtn = $('#drawer-action');
+    const ro = $('#drawer-readonly');
+    const custBlock = $('#drawer-customer');
+    // Configure single action button + visible fields per status
     if (status === 'available' || status === 'uninitialized') {
       $('#prod-date-input').value = todayISO();
       togglePD(true);
-    } else if (status === 'voorraad') {
-      $('#prod-date-input').value = pot.production_date || todayISO();
-      togglePD(false); // current pot is voorraad; going to Leeg doesn't need a date
-    } else {
-      togglePD(false);
-    }
-    $('#drawer-err').textContent = '';
-    // Action-section label (Status wijzigen) — show only when editable
-    const actionsLabel = document.querySelector('#pot-drawer .actions-label');
-    if (actionsLabel) actionsLabel.hidden = !hasOptions;
-    // Save button — hidden for read-only (delivered/returned)
-    $('#drawer-save').hidden = !hasOptions;
-    // Read-only banner
-    const ro = $('#drawer-readonly');
-    if (status === 'delivered' || status === 'returned') {
-      if (ro) ro.hidden = false;
-    } else {
-      if (ro) ro.hidden = true;
-    }
-    // Customer block — only for delivered pots with a linked order
-    const custBlock = $('#drawer-customer');
-    if (status === 'delivered' && pot.order_id) {
-      const c = pot.customer || {};
-      const name = c.voornaam || 'klant';
-      const addr = c.adres ? ' — ' + c.adres : '';
-      $('#drawer-customer-text').textContent = 'Bij: ' + name + addr;
-      $('#drawer-customer-link').href = '/bestelling/' + pot.order_id;
-      custBlock.hidden = false;
-    } else {
+      actionBtn.textContent = 'Pot gevuld';
+      actionBtn.dataset.target = 'voorraad';
+      actionBtn.hidden = false;
+      ro.hidden = true;
       custBlock.hidden = true;
+    } else if (status === 'voorraad') {
+      togglePD(false);
+      actionBtn.textContent = 'Pot is leeg';
+      actionBtn.dataset.target = 'available';
+      actionBtn.hidden = false;
+      ro.hidden = true;
+      custBlock.hidden = true;
+    } else {
+      // delivered / returned → read-only
+      togglePD(false);
+      actionBtn.hidden = true;
+      ro.hidden = false;
+      if (status === 'delivered' && pot.order_id) {
+        const c = pot.customer || {};
+        const name = c.voornaam || 'klant';
+        const addr = c.adres ? ' — ' + c.adres : '';
+        $('#drawer-customer-text').textContent = 'Bij: ' + name + addr;
+        $('#drawer-customer-link').href = '/bestelling/' + pot.order_id;
+        custBlock.hidden = false;
+      } else {
+        custBlock.hidden = true;
+      }
     }
     $('#drawer-backdrop').classList.add('open');
     $('#pot-drawer').classList.add('open');
@@ -614,42 +611,19 @@
     $('#drawer-backdrop').classList.remove('open');
     $('#pot-drawer').classList.remove('open');
   }
-  function renderStatusOptions(currentStatus) {
-    const wrap = $('#status-options'); wrap.innerHTML = '';
-    // Choose target options based on current status (production flow only)
-    let opts = [];
-    if (currentStatus === 'available' || currentStatus === 'uninitialized') {
-      opts = [['voorraad', 'Naar Voorraad (productiedatum + 8 wk houdbaar)']];
-    } else if (currentStatus === 'voorraad') {
-      opts = [['available', 'Terug naar Leeg (correctie — brak / ongeschikt)']];
-    } else {
-      // delivered / returned — managed by bezorger flow
-      opts = [];
-    }
-    opts.forEach(([val, lbl]) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = lbl;
-      b.dataset.val = val;
-      b.classList.add('sel'); // single option, always pre-selected
-      b.addEventListener('click', () => {
-        wrap.querySelectorAll('button').forEach(x => x.classList.remove('sel'));
-        b.classList.add('sel');
-        togglePD(val === 'voorraad');
-      });
-      wrap.appendChild(b);
-    });
-    return opts.length > 0; // true if there are editable options
-  }
   function togglePD(show) { $('#prod-date-field').hidden = !show; }
-  async function saveDrawer() {
+  async function doAction() {
     if (!STATE.currentPot) return;
-    const sel = document.querySelector('#status-options button.sel');
-    if (!sel) { $('#drawer-err').textContent = 'Kies een status'; return; }
-    const body = { pot_id: STATE.currentPot.id, status: sel.dataset.val };
-    if (sel.dataset.val === 'voorraad') body.production_date = $('#prod-date-input').value || todayISO();
+    const target = $('#drawer-action').dataset.target;
+    if (!target) return;
+    const body = { pot_id: STATE.currentPot.id, status: target };
+    if (target === 'voorraad') {
+      const v = $('#prod-date-input').value || todayISO();
+      if (!v) { $('#drawer-err').textContent = 'Vul productiedatum in'; return; }
+      body.production_date = v;
+    }
     const res = await api('voorraad-set-pot', body);
-    if (!res.ok) { $('#drawer-err').textContent = res.data.error || 'Opslaan mislukt'; return; }
+    if (!res.ok) { $('#drawer-err').textContent = res.data.error || 'Mislukt'; return; }
     showToast(`${body.pot_id} → ${STATUS_LABELS[body.status]}`, 'success');
     closeDrawer();
     refresh();
@@ -708,7 +682,7 @@
   $('#scan-cancel').addEventListener('click', stopScan);
   $('#drawer-close')?.addEventListener('click', closeDrawer);
   $('#drawer-backdrop').addEventListener('click', closeDrawer);
-  $('#drawer-save').addEventListener('click', saveDrawer);
+  $('#drawer-action').addEventListener('click', doAction);
 
   // Menu
   $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
