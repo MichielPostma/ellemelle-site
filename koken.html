@@ -183,6 +183,20 @@
   }
   body.koken-scanning #koken-scan-btn { display: none; }
   
+  .prod-date-row { display: flex; align-items: stretch; gap: 10px; }
+  .prod-date-row #prod-date-btn { flex: 1 1 auto; margin-top: 0; }
+  .btn-gcal {
+    flex: 0 0 56px; width: 56px; height: 56px;
+    background: var(--red); color: white;
+    border: none; border-radius: var(--radius-md);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0;
+    box-shadow: 0 4px 12px rgba(217,48,30,0.25);
+    -webkit-tap-highlight-color: transparent;
+    margin-top: 0;
+  }
+  .btn-gcal:active { transform: scale(0.97); }
+  
   .recipe-section { margin-top: 22px; }
   .recipe-section h3 {
     color: #666; font-size: 12px; font-weight: 700;
@@ -427,7 +441,17 @@
       </button>
     </div>
 
-    <button class="btn-outline" id="prod-date-btn" type="button">Productiedatum: —</button>
+    <div class="prod-date-row">
+      <button class="btn-outline" id="prod-date-btn" type="button">Productiedatum: —</button>
+      <button class="btn-gcal" id="gcal-btn" type="button" hidden aria-label="Naar Google Agenda">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="2"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+          <line x1="8" y1="3" x2="8" y2="7"/>
+          <line x1="16" y1="3" x2="16" y2="7"/>
+        </svg>
+      </button>
+    </div>
 
     <div class="field" style="margin-top: 14px;">
       <select id="potten-select"></select>
@@ -538,6 +562,7 @@
     $('#prod-date-btn').textContent = date
       ? ('Productiedatum: ' + fmtDate(date))
       : 'Nog geen productiedatum';
+    $('#gcal-btn').hidden = !date;
   }
   function showToast(msg, type) {
     const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + (type||'') + ' show';
@@ -733,6 +758,41 @@
   });
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
   $('#prod-date-btn').addEventListener('click', openProdDateDrawer);
+  function buildGCalUrl() {
+    const date = STATE.config && STATE.config.next_production_date;
+    if (!date) return null;
+    const [Y, M, D] = date.split('-');
+    const dateCompact = `${Y}${M}${D}`;
+    const start = `${dateCompact}T110000`;
+    const end   = `${dateCompact}T130000`;
+    const todoCount = STATE.todoCount || 0;
+    const teMaken = STATE.suggestedDefault || todoCount || 0;
+    // +56 days for houdbaarheid
+    const expiry = new Date(Date.UTC(parseInt(Y,10), parseInt(M,10)-1, parseInt(D,10)));
+    expiry.setUTCDate(expiry.getUTCDate() + 56);
+    const eY = expiry.getUTCFullYear();
+    const eM = String(expiry.getUTCMonth()+1).padStart(2,'0');
+    const eD = String(expiry.getUTCDate()).padStart(2,'0');
+    const expiryFmt = `${eD}-${eM}-${eY}`;
+    const notes = [
+      `Productie van ${teMaken} ${teMaken === 1 ? 'pot' : 'potten'} chocopasta.`,
+      ``,
+      `Aantal todo orders: ${todoCount}`,
+      `Te maken: ${teMaken}`,
+      `Houdbaarheid: 8 weken (t/m ${expiryFmt})`,
+    ].join('\n');
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: 'ELLEMELLE productie',
+      dates: `${start}/${end}`,
+      details: notes,
+    });
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  }
+  $('#gcal-btn').addEventListener('click', () => {
+    const url = buildGCalUrl();
+    if (url) window.open(url, '_blank', 'noopener');
+  });
   $('#prod-date-save').addEventListener('click', saveProdDate);
   $('#prod-date-clear').addEventListener('click', clearProdDate);
   $('#drawer-backdrop').addEventListener('click', closeProdDateDrawer);
