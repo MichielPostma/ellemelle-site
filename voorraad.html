@@ -426,17 +426,12 @@
     <input type="date" id="prod-date-input" />
   </div>
 
+  <a class="btn-outline" id="drawer-customer-link" href="#" hidden style="margin-top: 14px;">Bekijk bestelling</a>
   <div id="drawer-readonly" hidden style="margin-top: 12px; padding: 12px 14px; background: rgba(0,0,0,0.04); border-radius: var(--radius-md); color: #555; font-size: 13px; line-height: 1.45;">
     Status wordt automatisch beheerd via de bezorger-flow.
   </div>
   <div class="error" id="drawer-err"></div>
   <button class="btn-primary" id="drawer-action" type="button" hidden>—</button>
-
-  <div id="drawer-customer" hidden style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--cream-dark);">
-    <div class="actions-label">Gekoppeld aan</div>
-    <div id="drawer-customer-text" style="color: var(--black); font-size: 15px; margin-bottom: 10px;">—</div>
-    <a class="btn-outline" id="drawer-customer-link" href="#">Bekijk bestelling</a>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -613,16 +608,17 @@
     $('#drawer-pid').textContent = pot.id;
     const status = pot.status || 'uninitialized';
     const subParts = [`Huidig: ${STATUS_LABELS[status] || status}`];
-    if (pot.production_date) subParts.push(`Geproduceerd ${fmtDate(pot.production_date)}`);
-    if (pot.expiry_date) {
-      const e = expiryText(pot.expiry_date);
-      if (e.text) subParts.push(e.text);
+    if (status !== 'delivered' && status !== 'returned') {
+      if (pot.production_date) subParts.push(`Geproduceerd ${fmtDate(pot.production_date)}`);
+      if (pot.expiry_date) {
+        const e = expiryText(pot.expiry_date);
+        if (e.text) subParts.push(e.text);
+      }
     }
     $('#drawer-sub').textContent = subParts.join(' · ');
     $('#drawer-err').textContent = '';
     const actionBtn = $('#drawer-action');
     const ro = $('#drawer-readonly');
-    const custBlock = $('#drawer-customer');
     const transition = $('#pot-transition');
     // Configure single action button + visible fields per status
     if (status === 'available' || status === 'uninitialized') {
@@ -635,7 +631,7 @@
       actionBtn.dataset.target = 'voorraad';
       actionBtn.hidden = false;
       ro.hidden = true;
-      custBlock.hidden = true;
+      $('#drawer-customer-link').hidden = true;
     } else if (status === 'voorraad') {
       togglePD(false);
       $('#pot-img-current').src = potImageFor('voorraad');
@@ -645,23 +641,29 @@
       actionBtn.dataset.target = 'available';
       actionBtn.hidden = false;
       ro.hidden = true;
-      custBlock.hidden = true;
+      $('#drawer-customer-link').hidden = true;
     } else {
       // delivered / returned → read-only (no transition)
       togglePD(false);
       transition.hidden = true;
       actionBtn.hidden = true;
-      ro.hidden = false;
-      if ((status === 'delivered' || status === 'returned') && pot.order_id) {
-        const c = pot.customer || {};
-        const name = c.voornaam || 'klant';
-        const addr = c.adres ? ' — ' + c.adres : '';
-        $('#drawer-customer-text').textContent = 'Bij: ' + name + addr;
-        $('#drawer-customer-link').href = '/bestelling/' + pot.order_id;
-        custBlock.hidden = false;
+      const link = $('#drawer-customer-link');
+      const c = pot.customer || {};
+      const name = c.voornaam || 'klant';
+      const addr = c.adres || '';
+      // Build natural-sentence banner
+      const verb = (status === 'returned') ? 'teruggegeven door' : 'bezorgd aan';
+      const prep = (status === 'returned') ? 'van' : 'op';
+      let sentence = '';
+      if (pot.order_id && (status === 'delivered' || status === 'returned')) {
+        sentence = `Deze pot is ${verb} ${name}${addr ? ` ${prep} ${addr}` : ''}. `;
+        link.href = '/bestelling/' + pot.order_id;
+        link.hidden = false;
       } else {
-        custBlock.hidden = true;
+        link.hidden = true;
       }
+      ro.textContent = sentence + 'Status wordt automatisch beheerd via de bezorger-flow.';
+      ro.hidden = false;
     }
     $('#drawer-backdrop').classList.add('open');
     $('#pot-drawer').classList.add('open');
