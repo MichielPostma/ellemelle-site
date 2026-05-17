@@ -56,15 +56,6 @@
     appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
     box-shadow: none;
   }
-  .btn-danger {
-    display: block; width: 100%; min-height: 56px; background: transparent; color: var(--red-dark);
-    border: 2px solid var(--red-dark); border-radius: var(--radius-md);
-    font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: 0.2px;
-    cursor: pointer; margin-top: 24px; text-align: center; line-height: 52px;
-    appearance: none; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;
-  }
-  .btn-danger:hover { background: rgba(139,26,14,0.06); }
-
   /* Topbar */
   .menu-btn { width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; padding: 10px; color: var(--black); -webkit-tap-highlight-color: transparent; position: absolute; top: 28px; right: 20px; }
   .menu-btn svg { width: 24px; height: 24px; }
@@ -221,8 +212,14 @@
       <div class="big-date" id="d-deliverydate">—</div>
       <div class="detail-row"><span class="k">Status</span><span class="v"><span class="badge" id="d-statusbadge">—</span></span></div>
       <div class="detail-row"><span class="k">Levering</span><span class="v" id="d-mode" style="font-weight: 500;">—</span></div>
-      <button class="btn-outline" id="edit-status-btn" type="button" style="margin-top: 10px;">Status wijzigen</button>
-      <button class="btn-outline" id="edit-date-btn" type="button" style="margin-top: 10px;">Datum aanpassen</button>
+      <button class="btn-outline" id="edit-wijzigen-btn" type="button" style="margin-top: 10px;">Wijzigen</button>
+    </div>
+
+    <div class="actions-label">Bestelling</div>
+    <div class="info-card">
+      <div class="detail-row"><span class="k">Aantal potten</span><span class="v" id="d-aantal">1</span></div>
+      <div class="detail-row"><span class="k">Prijs</span><span class="v" id="d-prijs">€6,00</span></div>
+      <div class="detail-row"><span class="k">Aangemaakt</span><span class="v" id="d-created">—</span></div>
     </div>
 
     <div class="actions-label">Klant</div>
@@ -235,40 +232,28 @@
       <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact">—</span></div>
     </div>
 
-    <div class="actions-label">Bestelling</div>
-    <div class="info-card">
-      <div class="detail-row"><span class="k">Aantal potten</span><span class="v" id="d-aantal">1</span></div>
-      <div class="detail-row"><span class="k">Prijs</span><span class="v" id="d-prijs">€6,00</span></div>
-      <div class="detail-row"><span class="k">Aangemaakt</span><span class="v" id="d-created">—</span></div>
-    </div>
-
     <div class="actions-label">Bestelhistorie van deze klant</div>
     <div class="info-card" id="d-history"></div>
 
-    <button class="btn-danger" id="delete-btn" type="button">Bestelling verwijderen</button>
+    <button class="btn-outline" id="delete-btn" type="button" style="margin-top: 24px;">Bestelling verwijderen</button>
   </section>
 </main>
 
-<!-- Status drawer -->
-<div class="drawer" id="status-drawer" role="dialog" aria-modal="true">
-  <div class="drawer-handle"></div>
-  <h2>Status wijzigen</h2>
-  <div class="sub">Reset of overschrijf de huidige bezorgstatus.</div>
-  <div id="status-options" style="display:grid; gap:8px; margin-top:12px;"></div>
-  <div class="error" id="status-err"></div>
-  <button class="btn-primary" id="status-save" type="button">Opslaan</button>
-</div>
-
-<!-- Date drawer -->
+<!-- Wijzigen drawer (merged Status + Datum) -->
 <div class="drawer-backdrop" id="drawer-backdrop"></div>
-<div class="drawer" id="date-drawer" role="dialog" aria-modal="true">
+<div class="drawer" id="wijzigen-drawer" role="dialog" aria-modal="true">
   <div class="drawer-handle"></div>
-  <h2>Bezorgdatum aanpassen</h2>
-  <div class="sub">Overschrijft de automatisch berekende datum voor deze bestelling.</div>
+  <h2>Wijzigen</h2>
+
+  <div class="actions-label" style="margin-top: 12px;">Status</div>
+  <div id="status-options" style="display:grid; gap:8px;"></div>
+
+  <div class="actions-label" style="margin-top: 18px;">Bezorgdatum</div>
   <input type="date" id="date-input">
-  <div class="error" id="date-err"></div>
-  <button class="btn-primary" id="date-save" type="button">Opslaan</button>
-  <button class="btn-outline" id="date-clear" type="button">Override wissen (auto)</button>
+  <button class="btn-outline" id="date-clear" type="button" style="margin-top: 6px;">Wissen (auto)</button>
+
+  <div class="error" id="wijzigen-err"></div>
+  <button class="btn-primary" id="wijzigen-save" type="button">Opslaan</button>
 </div>
 
 <div id="toast" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--black); color: white; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 200ms; pointer-events: none;"></div>
@@ -389,37 +374,19 @@
     renderDetail();
   }
 
-  // Date drawer
-  function openDateDrawer() {
-    const cur = STATE.order && (STATE.order.delivery_date_override || STATE.order.delivery_date) || '';
-    $('#date-input').value = cur;
-    $('#date-err').textContent = '';
-    $('#drawer-backdrop').classList.add('open');
-    $('#date-drawer').classList.add('open');
+  // Date clear (within merged drawer): mark for clearing on save
+  function clearDate() {
+    __dateAction = 'clear';
+    $('#date-input').value = '';
   }
-  function closeDateDrawer() {
-    $('#drawer-backdrop').classList.remove('open');
-    $('#date-drawer').classList.remove('open');
-  }
-  async function saveDate() {
-    const v = $('#date-input').value;
-    if (!v) { $('#date-err').textContent = 'Kies een datum'; return; }
-    const res = await api('bestellingen-update-delivery-date', { order_id: STATE.order.id, delivery_date: v });
-    if (res.ok) { showToast('Datum opgeslagen', 'success'); closeDateDrawer(); load(); }
-    else { $('#date-err').textContent = res.data.error || 'Mislukt'; }
-  }
-  async function clearDate() {
-    const res = await api('bestellingen-update-delivery-date', { order_id: STATE.order.id, delivery_date: '' });
-    if (res.ok) { showToast('Override gewist — terug naar auto', 'success'); closeDateDrawer(); load(); }
-    else { $('#date-err').textContent = res.data.error || 'Mislukt'; }
-  }
-  // --- Status changer drawer ---
+  // --- Wijzigen drawer (merged Status + Datum) ---
   const STATUS_OPTS = [
     { val: 'todo',      label: 'Todo (reset — ontkoppel pot)' },
     { val: 'delivered', label: 'Bezorgd' },
     { val: 'neighbors', label: 'Buren' },
     { val: 'retry',     label: 'Nieuwe poging' },
   ];
+  let __dateAction = 'keep'; // 'keep' | 'save' | 'clear'
   function renderStatusOptions(cur) {
     const wrap = $('#status-options'); wrap.innerHTML = '';
     STATUS_OPTS.forEach(o => {
@@ -433,22 +400,45 @@
       wrap.appendChild(b);
     });
   }
-  function openStatusDrawer() {
+  function openWijzigenDrawer() {
     renderStatusOptions(STATE.order?.order_status || 'todo');
-    $('#status-err').textContent = '';
+    const cur = STATE.order && (STATE.order.delivery_date_override || STATE.order.delivery_date) || '';
+    $('#date-input').value = cur;
+    __dateAction = 'keep';
+    $('#wijzigen-err').textContent = '';
     $('#drawer-backdrop').classList.add('open');
-    $('#status-drawer').classList.add('open');
+    $('#wijzigen-drawer').classList.add('open');
   }
-  function closeStatusDrawer() {
+  function closeWijzigenDrawer() {
     $('#drawer-backdrop').classList.remove('open');
-    $('#status-drawer').classList.remove('open');
+    $('#wijzigen-drawer').classList.remove('open');
   }
-  async function saveStatus() {
+  async function saveWijzigen() {
     const sel = document.querySelector('#status-options button.sel');
-    if (!sel) { $('#status-err').textContent = 'Kies een status'; return; }
-    const res = await api('bezorger-set-status', { order_id: STATE.order.id, status: sel.dataset.val });
-    if (res.ok) { showToast('Status bijgewerkt', 'success'); closeStatusDrawer(); load(); }
-    else { $('#status-err').textContent = res.data.error || 'Mislukt'; }
+    if (!sel) { $('#wijzigen-err').textContent = 'Kies een status'; return; }
+    const newStatus = sel.dataset.val;
+    const curStatus = STATE.order?.order_status || 'todo';
+    let newDate = $('#date-input').value;
+    let dateChanged = false;
+    if (__dateAction === 'clear') {
+      dateChanged = true;
+      newDate = '';
+    } else if (newDate && newDate !== (STATE.order?.delivery_date_override || '')) {
+      dateChanged = true;
+    }
+    // Save status if changed
+    if (newStatus !== curStatus) {
+      const rs = await api('bezorger-set-status', { order_id: STATE.order.id, status: newStatus });
+      if (!rs.ok) { $('#wijzigen-err').textContent = rs.data.error || 'Status mislukt'; return; }
+    }
+    // Save date if changed
+    if (dateChanged) {
+      const rd = await api('bestellingen-update-delivery-date', { order_id: STATE.order.id, delivery_date: newDate });
+      if (!rd.ok) { $('#wijzigen-err').textContent = rd.data.error || 'Datum mislukt'; return; }
+    }
+    showToast('Bijgewerkt', 'success');
+    closeWijzigenDrawer();
+    load();
   }
 
   async function deleteOrder() {
@@ -478,11 +468,9 @@
   });
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
 
-  $('#edit-date-btn').addEventListener('click', openDateDrawer);
-  $('#edit-status-btn').addEventListener('click', openStatusDrawer);
-  $('#status-save').addEventListener('click', saveStatus);
-  $('#drawer-backdrop').addEventListener('click', () => { closeDateDrawer(); closeStatusDrawer(); });
-  $('#date-save').addEventListener('click', saveDate);
+  $('#edit-wijzigen-btn').addEventListener('click', openWijzigenDrawer);
+  $('#wijzigen-save').addEventListener('click', saveWijzigen);
+  $('#drawer-backdrop').addEventListener('click', closeWijzigenDrawer);
   $('#date-clear').addEventListener('click', clearDate);
   $('#delete-btn').addEventListener('click', deleteOrder);
 
