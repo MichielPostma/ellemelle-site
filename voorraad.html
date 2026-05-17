@@ -128,7 +128,7 @@
   .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
   .drawer {
     position: fixed; left: 0; right: 0; bottom: 0;
-    background: var(--cream); border-radius: 18px 18px 0 0;
+    background: var(--white); border-radius: 18px 18px 0 0;
     padding: 24px 20px calc(28px + env(safe-area-inset-bottom));
     transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
     z-index: 100; max-height: 86dvh; overflow-y: auto;
@@ -299,6 +299,16 @@
     flex: 1; width: 100%; border: 0; background: var(--cream);
   }
 
+
+  /* Pot images */
+  .pot-card .pot-img { width: 100%; height: 80px; object-fit: contain; display: block; margin-bottom: 6px; mix-blend-mode: multiply; }
+  .pot-card { text-align: center; }
+  .pot-card .pid, .pot-card .badge, .pot-card .meta { text-align: center; }
+  /* Drawer transition (current → target) */
+  .pot-transition { display: grid; grid-template-columns: 1fr 36px 1fr; align-items: center; gap: 10px; margin: 14px 0 6px; }
+  .pot-transition img { width: 100%; max-width: 140px; height: 120px; object-fit: contain; margin: 0 auto; display: block; mix-blend-mode: multiply; }
+  .pot-transition .arrow { color: var(--red); font-size: 22px; font-weight: 700; text-align: center; line-height: 1; }
+
 </style>
 <script>
 (function(){
@@ -403,6 +413,12 @@
   <h2 id="drawer-pid">POT-XXX</h2>
   <div class="sub" id="drawer-sub">—</div>
 
+  <div class="pot-transition" id="pot-transition" hidden>
+    <img id="pot-img-current" src="" alt="">
+    <div class="arrow">→</div>
+    <img id="pot-img-target" src="" alt="">
+  </div>
+
   <div id="prod-date-field" hidden style="margin-top: 14px;">
     <div class="actions-label">Productiedatum</div>
     <input type="date" id="prod-date-input" />
@@ -438,6 +454,12 @@
     delivered:     'Bezorgd',
     returned:      'Retour',
   };
+  function potImageFor(status) {
+    if (status === 'voorraad') return '/Images/pot-voorraad.png';
+    if (status === 'delivered' || status === 'returned') return '/Images/product.png';
+    // uninitialized + available → empty pot
+    return '/Images/pot-leeg.png';
+  }
 
   function loadSession() {
     try {
@@ -550,7 +572,9 @@
       } else if (status === 'delivered' && p.order_id) {
         meta = `Order #${String(p.order_id).slice(-6)}`;
       }
+      const imgSrc = potImageFor(status);
       card.innerHTML = `
+        ${imgSrc ? `<img class="pot-img" src="${imgSrc}" alt="">` : ''}
         <div class="pid">${p.id}</div>
         <div class="badge ${status}">${STATUS_LABELS[status] || status}</div>
         ${meta ? `<div class="meta">${meta}</div>` : ''}
@@ -571,10 +595,14 @@
     const actionBtn = $('#drawer-action');
     const ro = $('#drawer-readonly');
     const custBlock = $('#drawer-customer');
+    const transition = $('#pot-transition');
     // Configure single action button + visible fields per status
     if (status === 'available' || status === 'uninitialized') {
       $('#prod-date-input').value = todayISO();
       togglePD(true);
+      $('#pot-img-current').src = potImageFor('available');
+      $('#pot-img-target').src = potImageFor('voorraad');
+      transition.hidden = false;
       actionBtn.textContent = 'Pot gevuld';
       actionBtn.dataset.target = 'voorraad';
       actionBtn.hidden = false;
@@ -582,14 +610,18 @@
       custBlock.hidden = true;
     } else if (status === 'voorraad') {
       togglePD(false);
+      $('#pot-img-current').src = potImageFor('voorraad');
+      $('#pot-img-target').src = potImageFor('available');
+      transition.hidden = false;
       actionBtn.textContent = 'Pot is leeg';
       actionBtn.dataset.target = 'available';
       actionBtn.hidden = false;
       ro.hidden = true;
       custBlock.hidden = true;
     } else {
-      // delivered / returned → read-only
+      // delivered / returned → read-only (no transition)
       togglePD(false);
+      transition.hidden = true;
       actionBtn.hidden = true;
       ro.hidden = false;
       if (status === 'delivered' && pot.order_id) {
