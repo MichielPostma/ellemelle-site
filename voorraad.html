@@ -334,6 +334,7 @@
   #login-view[hidden], #main-view[hidden], #detail-view[hidden], #list-view[hidden] { display: none !important; }
   /* Global: [hidden] always wins over component display rules */
   [hidden] { display: none !important; }
+  body.scanning-active #scan-btn { display: none; }
 </style>
 <link rel="manifest" href="/admin-manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -395,9 +396,8 @@
       </select>
     </div>
 
-    <div class="pot-grid" id="pot-grid"></div>
+    <button class="btn-outline" id="scan-btn" type="button" style="margin-top: 14px;">Pot in voorraad zetten</button>
 
-    <button class="btn-outline" id="scan-btn" type="button" style="margin-top: 20px;">Pot in voorraad zetten</button>
     <div id="scan-view" hidden>
       <div id="scanner-wrap">
         <video id="scanner-video" playsinline muted></video>
@@ -405,6 +405,8 @@
       </div>
       <button class="btn-outline" id="scan-cancel" type="button">Annuleer</button>
     </div>
+
+    <div class="pot-grid" id="pot-grid"></div>
   </section>
 </main>
 
@@ -697,6 +699,7 @@
   async function startScan() {
     const video = $('#scanner-video');
     $('#scan-view').hidden = false;
+    document.body.classList.add('scanning-active');
     if (STATE.qrScanner) return;
     STATE.qrScanner = new QrScanner(video, async result => {
       const text = result.data || result;
@@ -717,6 +720,7 @@
   }
   function stopScan() {
     $('#scan-view').hidden = true;
+    document.body.classList.remove('scanning-active');
     if (STATE.qrScanner) { STATE.qrScanner.stop(); STATE.qrScanner.destroy(); STATE.qrScanner = null; }
   }
 
