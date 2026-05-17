@@ -119,6 +119,7 @@ async function listEnrichedOrders() {
     enriched.push({
       id: orderId,
       created_at: sub.created_at,
+      aantal:     Math.max(1, parseInt(d.aantal || 1, 10) || 1),
       voornaam:   d.voornaam   || '',
       kanaal:     d.kanaal     || '',
       email:      d.email      || '',
@@ -192,7 +193,16 @@ function customerMatchKey(o) {
   return null;
 }
 
+
+// Sum of aantal across all orders with order_status === 'todo' (active, not yet delivered/neighbors).
+async function sumActiveOrderPots() {
+  const { all } = await listEnrichedOrders();
+  return all
+    .filter(o => o.order_status === 'todo')
+    .reduce((sum, o) => sum + (parseInt(o.aantal, 10) || 1), 0);
+}
+
 module.exports = {
   blobOpts, toISODate, nextSaturdayISO, isoWeekOfDate, fallbackNoScheduleDate, computeUiterlijke,
-  fetchAllSubmissions, deleteSubmission, listEnrichedOrders, customerMatchKey,
+  fetchAllSubmissions, deleteSubmission, listEnrichedOrders, sumActiveOrderPots, customerMatchKey,
 };
