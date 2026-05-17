@@ -41,6 +41,23 @@ function fallbackNoScheduleDate(createdAt) {
   return nextSaturdayISO(toISODate(x));
 }
 
+
+// Compute uiterlijke (fixed promise) from snapshot mode + created_at + snapshot_date
+function computeUiterlijke(createdAt, snapshotMode, snapshotDate) {
+  if (snapshotMode === 'stock') {
+    // 1 week belofte: next saturday at least 7 days after order
+    const base = new Date(createdAt);
+    base.setUTCDate(base.getUTCDate() + 7);
+    return nextSaturdayISO(toISODate(base));
+  }
+  if (snapshotMode === 'production') {
+    // Snapshot already captures next saturday after production_date at submit-time
+    return snapshotDate;
+  }
+  // no_schedule fallback
+  return fallbackNoScheduleDate(createdAt);
+}
+
 async function fetchAllSubmissions() {
   const token  = process.env.NETLIFY_API_TOKEN;
   const siteId = process.env.NETLIFY_SITE_ID;
@@ -91,6 +108,14 @@ async function listEnrichedOrders() {
       if (!snapshotMode) snapshotMode = 'no_schedule';
     }
     if (!snapshotMode) snapshotMode = 'production';
+    // Backfill uiterlijke_bezorgdatum on first read — fixed at original promise
+    if (!state.uiterlijke_bezorgdatum_computed) {
+      state.uiterlijke_bezorgdatum_computed = computeUiterlijke(sub.created_at, snapshotMode, snapshotDate);
+      const histEntry = { at: new Date().toISOString(), action: 'backfill_uiterlijke', value: state.uiterlijke_bezorgdatum_computed };
+      state.history = Array.isArray(state.history) ? state.history.concat([histEntry]) : [histEntry];
+      try { await ordersStore.setJSON(orderId, state); } catch {}
+    }
+    const uiterlijke = state.uiterlijke_bezorgdatum_override || state.uiterlijke_bezorgdatum_computed;
     enriched.push({
       id: orderId,
       created_at: sub.created_at,
@@ -108,9 +133,13 @@ async function listEnrichedOrders() {
       // Snapshot fallback
       snapshot_delivery_date: snapshotDate,
       snapshot_delivery_mode: snapshotMode,
-      // Manual override from /bestellingen detail page (takes priority)
+      // Uiterlijke (fixed promise — never moves with stock changes)
+      uiterlijke_bezorgdatum: uiterlijke,
+      uiterlijke_bezorgdatum_computed: state.uiterlijke_bezorgdatum_computed,
+      uiterlijke_bezorgdatum_override: state.uiterlijke_bezorgdatum_override || null,
+      // Manual override of GEPLANDE bezorgweek
       delivery_date_override: state.delivery_date_override || null,
-      // Delivery progress (from bezorger flow)
+      // Delivery progress
       delivered_pot: state.delivered_pot || null,
       delivered_at:  state.delivered_at  || null,
       order_status:  state.order_status  || (state.delivered_pot ? 'delivered' : 'todo'),
@@ -147,6 +176,11 @@ async function listEnrichedOrders() {
     o.delivery_date = o.delivery_date_override || o.snapshot_delivery_date;
     o.delivery_week = isoWeekOfDate(o.delivery_date);
   }
+  // Compute is_te_laat — geplande > uiterlijke (only "te laat" when ECHT past promise)
+  for (const o of [...open, ...done]) {
+    o.geplande_bezorgweek = o.delivery_date;
+    o.is_te_laat = !!(o.uiterlijke_bezorgdatum && o.delivery_date && o.delivery_date > o.uiterlijke_bezorgdatum);
+  }
   return { all: [...open, ...done], total_stock: totalStock };
 }
 
@@ -159,6 +193,6 @@ function customerMatchKey(o) {
 }
 
 module.exports = {
-  blobOpts, toISODate, nextSaturdayISO, isoWeekOfDate, fallbackNoScheduleDate,
+  blobOpts, toISODate, nextSaturdayISO, isoWeekOfDate, fallbackNoScheduleDate, computeUiterlijke,
   fetchAllSubmissions, deleteSubmission, listEnrichedOrders, customerMatchKey,
 };
