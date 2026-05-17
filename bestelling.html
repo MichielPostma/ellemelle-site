@@ -211,7 +211,7 @@
     <div class="info-card">
       <div class="big-date" id="d-deliverydate">—</div>
       <div class="detail-row"><span class="k">Status</span><span class="v"><span class="badge" id="d-statusbadge">—</span></span></div>
-      <div class="detail-row"><span class="k">Levering</span><span class="v" id="d-mode" style="font-weight: 500;">—</span></div>
+      <div class="detail-row"><span class="k">Uiterlijke bezorgdatum</span><span class="v" id="d-mode" style="font-weight: 500;">—</span></div>
       <button class="btn-outline" id="edit-wijzigen-btn" type="button" style="margin-top: 10px;">Wijzigen</button>
     </div>
 
@@ -219,7 +219,7 @@
     <div class="info-card">
       <div class="detail-row"><span class="k">Aantal potten</span><span class="v" id="d-aantal">1</span></div>
       <div class="detail-row"><span class="k">Prijs</span><span class="v" id="d-prijs">€6,00</span></div>
-      <div class="detail-row"><span class="k">Aangemaakt</span><span class="v" id="d-created">—</span></div>
+      <div class="detail-row"><span class="k">Besteldatum</span><span class="v" id="d-created">—</span></div>
     </div>
 
     <div class="actions-label">Klant</div>
@@ -228,7 +228,7 @@
       <div class="detail-row"><span class="k">Adres</span><span class="v" id="d-adres">—</span></div>
       <div class="detail-row"><span class="k">Postcode</span><span class="v" id="d-postcode">—</span></div>
       <div class="detail-row"><span class="k">Plaats</span><span class="v" id="d-plaats">—</span></div>
-      <div class="detail-row"><span class="k">Kanaal</span><span class="v" id="d-kanaal">—</span></div>
+      <div class="detail-row"><span class="k">Updates</span><span class="v" id="d-kanaal">—</span></div>
       <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact">—</span></div>
     </div>
 
@@ -291,6 +291,18 @@
     if (!iso) return '—';
     const [y, m, d] = iso.split('-'); return `${d}-${m}-${y}`;
   }
+  function deliveryCountdown(deliveryIsoDate) {
+    if (!deliveryIsoDate) return { label: '—', overdue: false };
+    const [y, m, d] = deliveryIsoDate.split('-').map(Number);
+    const target = new Date(Date.UTC(y, m - 1, d));
+    const today = new Date();
+    const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const diff = Math.round((target - todayUtc) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return { label: `${Math.abs(diff)} ${Math.abs(diff)===1?'dag':'dagen'} te laat`, overdue: true };
+    if (diff === 0) return { label: 'Bezorgen vandaag', overdue: false };
+    if (diff === 1) return { label: 'Bezorgen morgen', overdue: false };
+    return { label: `Bezorgen over ${diff} dagen`, overdue: false };
+  }
   function fmtDateTime(iso) {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -328,7 +340,10 @@
     const o = STATE.order;
     if (!o) return;
     $('#d-name').textContent = o.voornaam || '(geen naam)';
-    $('#d-deliverydate').textContent = fmtDate(o.delivery_date);
+    const cd = deliveryCountdown(o.delivery_date);
+    const dEl = $('#d-deliverydate');
+    dEl.textContent = cd.label;
+    dEl.style.color = cd.overdue ? 'var(--red)' : '';
     const status = o.order_status || 'todo';
     const sb = $('#d-statusbadge'); sb.textContent = STATUS_LABELS[status] || status; sb.className = 'badge ' + status;
     $('#d-mode').textContent = modeLabel(o);
