@@ -335,6 +335,26 @@
   /* Global: [hidden] always wins over component display rules */
   [hidden] { display: none !important; }
   body.scanning-active #scan-btn { display: none; }
+  /* Status cards in drawer (Leeg / Gevuld picker) */
+  .status-card {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; padding: 12px 16px;
+    background: var(--white); border-radius: var(--radius-md);
+    border: 2px solid rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-card);
+    cursor: pointer; text-align: left;
+    font-family: inherit; -webkit-tap-highlight-color: transparent;
+    transition: border-color 120ms;
+  }
+  .status-card.selected { border-color: var(--red); }
+  .status-card .sc-img {
+    width: 64px; height: 64px; object-fit: contain;
+    flex-shrink: 0; mix-blend-mode: multiply;
+  }
+  .status-card .sc-text { min-width: 0; flex: 1; }
+  .status-card .sc-title { color: var(--black); font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+  .status-card .sc-sub { color: #666; font-size: 13px; line-height: 1.35; }
+
   /* Filter dropdown — red 2px chevron for prominent affordance */
   #filter-select {
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%23D9301E' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
@@ -453,10 +473,21 @@
   <h2 id="drawer-pid">POT-XXX</h2>
   <div class="sub" id="drawer-sub">—</div>
 
-  <div class="pot-transition" id="pot-transition" hidden>
-    <img id="pot-img-current" src="" alt="">
-    <div class="arrow">→</div>
-    <img id="pot-img-target" src="" alt="">
+  <div id="status-cards" hidden style="margin-top: 16px; display: grid; gap: 10px;">
+    <button class="status-card" type="button" data-status="available">
+      <img class="sc-img" src="/Images/pot-leeg-label.png" alt="">
+      <div class="sc-text">
+        <div class="sc-title">Leeg</div>
+        <div class="sc-sub">Pot is leeg en klaar om gevuld te worden</div>
+      </div>
+    </button>
+    <button class="status-card" type="button" data-status="voorraad">
+      <img class="sc-img" src="/Images/pot-bezorgd.png" alt="">
+      <div class="sc-text">
+        <div class="sc-title">Gevuld</div>
+        <div class="sc-sub">Pot is gevuld en klaar voor bezorging</div>
+      </div>
+    </button>
   </div>
 
   <div id="prod-date-field" hidden style="margin-top: 14px;">
@@ -474,7 +505,7 @@
     Status wordt automatisch beheerd via de bezorger-flow.
   </div>
   <div class="error" id="drawer-err"></div>
-  <button class="btn-primary" id="drawer-action" type="button" hidden>—</button>
+  <button class="btn-primary" id="drawer-save" type="button" hidden style="margin-top: 16px;">Bewaar →</button>
   <button class="btn-outline" id="drawer-delete" type="button" hidden style="margin-top: 24px;">Verwijder pot</button>
 </div>
 
@@ -678,55 +709,39 @@
   }
 
   // --- Drawer ---
+  let __selectedTarget = null;
+  function selectStatusCard(target) {
+    __selectedTarget = target;
+    document.querySelectorAll('#status-cards .status-card').forEach(c => {
+      c.classList.toggle('selected', c.dataset.status === target);
+    });
+    // Toggle production-date input visibility — only when Gevuld selected
+    togglePD(target === 'voorraad');
+  }
   function openDrawer(pot) {
     STATE.currentPot = pot;
     $('#drawer-pid').textContent = pot.id;
     const status = pot.status || 'uninitialized';
     $('#drawer-sub').textContent = drawerSubFor(pot);
     $('#drawer-err').textContent = '';
-    const actionBtn = $('#drawer-action');
+    const cards = $('#status-cards');
+    const saveBtn = $('#drawer-save');
     const ro = $('#drawer-readonly');
-    const transition = $('#pot-transition');
-    // Configure single action button + visible fields per status
     const delBtn = $('#drawer-delete');
+    const link = $('#drawer-customer-link');
     // Show Verwijder for Leeg/Gevuld/Retour, hide for Bezorgd
     delBtn.hidden = (status === 'delivered');
-    if (status === 'available' || status === 'uninitialized') {
-      $('#prod-date-input').value = todayISO();
-      togglePD(true);
-      $('#pot-img-current').src = potImageFor('available');
-      $('#pot-img-target').src = potImageFor('voorraad');
-      transition.hidden = false;
-      actionBtn.textContent = 'De pot is gevuld →';
-      actionBtn.dataset.target = 'voorraad';
-      actionBtn.hidden = false;
-      ro.hidden = true;
-      $('#drawer-customer-link').hidden = true;
-    } else if (status === 'voorraad') {
+    if (status === 'delivered') {
+      // Delivered: read-only banner + customer block, no cards/save/prod-date
+      cards.hidden = true;
+      saveBtn.hidden = true;
       togglePD(false);
-      $('#pot-img-current').src = potImageFor('voorraad');
-      $('#pot-img-target').src = potImageFor('available');
-      transition.hidden = false;
-      actionBtn.textContent = 'De pot is leeg →';
-      actionBtn.dataset.target = 'available';
-      actionBtn.hidden = false;
-      ro.hidden = true;
-      $('#drawer-customer-link').hidden = true;
-    } else {
-      // delivered / returned → read-only (no transition)
-      togglePD(false);
-      transition.hidden = true;
-      actionBtn.hidden = true;
-      const link = $('#drawer-customer-link');
       const c = pot.customer || {};
       const name = c.voornaam || 'klant';
       const addr = c.adres || '';
-      // Build natural-sentence banner
-      const verb = (status === 'returned') ? 'teruggegeven door' : 'bezorgd aan';
-      const prep = (status === 'returned') ? 'van' : 'op';
       let sentence = '';
-      if (pot.order_id && (status === 'delivered' || status === 'returned')) {
-        sentence = `Deze pot is ${verb} ${name}${addr ? ` ${prep} ${addr}` : ''}. `;
+      if (pot.order_id) {
+        sentence = `Deze pot is bezorgd aan ${name}${addr ? ` op ${addr}` : ''}. `;
         link.href = '/bestelling/' + pot.order_id;
         link.hidden = false;
       } else {
@@ -734,6 +749,19 @@
       }
       ro.textContent = sentence + 'Status wordt automatisch beheerd via de bezorger-flow.';
       ro.hidden = false;
+    } else {
+      // Leeg / Gevuld / Retour: status-card picker
+      cards.hidden = false;
+      saveBtn.hidden = false;
+      link.hidden = true;
+      ro.hidden = true;
+      $('#prod-date-input').value = pot.production_date || todayISO();
+      // Pre-selection:
+      // - Leeg / uninit → 'available'
+      // - Gevuld → 'voorraad'
+      // - Retour → 'available' (default returns to leeg-pool)
+      const pre = (status === 'voorraad') ? 'voorraad' : 'available';
+      selectStatusCard(pre);
     }
     $('#drawer-backdrop').classList.add('open');
     $('#pot-drawer').classList.add('open');
@@ -744,10 +772,18 @@
     $('#pot-drawer').classList.remove('open');
   }
   function togglePD(show) { $('#prod-date-field').hidden = !show; }
-  async function doAction() {
+  async function saveStatus() {
     if (!STATE.currentPot) return;
-    const target = $('#drawer-action').dataset.target;
-    if (!target) return;
+    const target = __selectedTarget;
+    if (!target) { $('#drawer-err').textContent = 'Kies een status'; return; }
+    const currentStatus = STATE.currentPot.status || 'uninitialized';
+    // Normalise: uninitialized counts as available for compare
+    const cur = (currentStatus === 'uninitialized') ? 'available' : currentStatus;
+    // For retour: any change is allowed; for leeg/gevuld: only when different
+    if (target === cur && currentStatus !== 'returned') {
+      showToast('Geen wijziging', 'success');
+      return;
+    }
     const body = { pot_id: STATE.currentPot.id, status: target };
     if (target === 'voorraad') {
       const v = $('#prod-date-input').value || todayISO();
@@ -816,7 +852,10 @@
   $('#scan-cancel').addEventListener('click', stopScan);
   $('#drawer-close')?.addEventListener('click', closeDrawer);
   $('#drawer-backdrop').addEventListener('click', closeDrawer);
-  $('#drawer-action').addEventListener('click', doAction);
+  $('#drawer-save').addEventListener('click', saveStatus);
+  document.querySelectorAll('#status-cards .status-card').forEach(c => {
+    c.addEventListener('click', () => selectStatusCard(c.dataset.status));
+  });
   $('#drawer-delete').addEventListener('click', async () => {
     if (!STATE.currentPot) return;
     const pid = STATE.currentPot.id;
