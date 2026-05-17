@@ -529,6 +529,35 @@
     const [y, m, d] = iso.split('-');
     return `${d}-${m}-${y.slice(2)}`;
   }
+  const MONTHS_NL = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  function fmtDateNL(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-').map(n => parseInt(n, 10));
+    return `${d} ${MONTHS_NL[m-1]} ${y}`;
+  }
+  function drawerSubFor(pot) {
+    const status = pot.status || 'uninitialized';
+    if (status === 'voorraad') {
+      const dateText = pot.production_date ? fmtDateNL(pot.production_date) : null;
+      const exp = pot.expiry_date ? expiryText(pot.expiry_date) : null;
+      if (dateText && exp && exp.text) {
+        if (exp.expired) return `Deze pot is gevuld op ${dateText} en is verlopen.`;
+        if (exp.text === 'Vandaag laatste dag') return `Deze pot is gevuld op ${dateText} — vandaag is de laatste dag.`;
+        // exp.text is 'Nog X dag(en) houdbaar' — lowercase to chain naturally
+        return `Deze pot is gevuld op ${dateText} en ${exp.text.charAt(0).toLowerCase()}${exp.text.slice(1)}.`;
+      }
+      if (dateText) return `Deze pot is gevuld op ${dateText}.`;
+      return 'Deze pot is gevuld.';
+    }
+    if (status === 'delivered') {
+      return 'Deze pot is bezorgd bij een klant.';
+    }
+    if (status === 'returned') {
+      return 'Deze pot is teruggegeven en wacht op verwerking.';
+    }
+    // available / uninitialized
+    return 'Deze pot is leeg en klaar om gevuld te worden.';
+  }
   function daysUntil(iso) {
     if (!iso) return null;
     const [y, m, d] = iso.split('-').map(n => parseInt(n, 10));
@@ -646,15 +675,7 @@
     STATE.currentPot = pot;
     $('#drawer-pid').textContent = pot.id;
     const status = pot.status || 'uninitialized';
-    const subParts = [`Huidig: ${STATUS_LABELS[status] || status}`];
-    if (status !== 'delivered' && status !== 'returned') {
-      if (pot.production_date) subParts.push(`Geproduceerd ${fmtDate(pot.production_date)}`);
-      if (pot.expiry_date) {
-        const e = expiryText(pot.expiry_date);
-        if (e.text) subParts.push(e.text);
-      }
-    }
-    $('#drawer-sub').textContent = subParts.join(' · ');
+    $('#drawer-sub').textContent = drawerSubFor(pot);
     $('#drawer-err').textContent = '';
     const actionBtn = $('#drawer-action');
     const ro = $('#drawer-readonly');
