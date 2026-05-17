@@ -1200,9 +1200,10 @@
       '<div class="delivery-info"><span class="status-dot ' + dot + '"></span><span>' + text + '</span></div>' +
     '</div>';
   }
-  async function loadLeveringInfo() {
+  async function loadLeveringInfo(aantal) {
     try {
-      const r = await fetch('/.netlify/functions/levering-info?ts=' + Date.now());
+      const n = Math.max(1, parseInt(aantal, 10) || 1);
+      const r = await fetch(`/.netlify/functions/levering-info?aantal=${n}&ts=${Date.now()}`);
       if (r.ok) return await r.json();
     } catch {}
     return null;
@@ -1232,7 +1233,7 @@
         'We sturen je updates via ' + kLabel + ' op ' + escapeHtml(contact) + '.' +
       '</div>';
     $('#order-summary-content').innerHTML = baseHtml(null);
-    const lev = await loadLeveringInfo();
+    const lev = await loadLeveringInfo(n);
     if (lev) {
       window.__leveringCached = lev;
       $('#order-summary-content').innerHTML = baseHtml(lev);
@@ -1366,10 +1367,13 @@
     hideError();
 
     // Snapshot delivery info from /api/levering-info at submit-time (cached or fresh)
+    const __n = Math.max(1, parseInt(formData.aantal, 10) || 1);
     let __lev = window.__leveringCached || null;
+    // Cached value is for the right aantal — but verify
+    if (__lev && __lev.this_order_qty !== __n) __lev = null;
     if (!__lev) {
       try {
-        const lr = await fetch('/.netlify/functions/levering-info?ts=' + Date.now());
+        const lr = await fetch(`/.netlify/functions/levering-info?aantal=${__n}&ts=${Date.now()}`);
         if (lr.ok) __lev = await lr.json();
       } catch {}
     }
