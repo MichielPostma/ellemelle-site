@@ -332,6 +332,8 @@
   html.sess-no  #login-view { display: block; }
   /* JS may still toggle [hidden] attribute on these sections; it wins via specificity bump */
   #login-view[hidden], #main-view[hidden], #detail-view[hidden], #list-view[hidden] { display: none !important; }
+  /* Global: [hidden] always wins over component display rules */
+  [hidden] { display: none !important; }
 </style>
 <link rel="manifest" href="/admin-manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
