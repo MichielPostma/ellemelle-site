@@ -100,9 +100,19 @@
     border: 2px solid transparent;
     background: var(--white);
     font-size: 14px;
+    font-weight: 400;
+    color: var(--black);
     font-family: inherit;
     min-height: 42px;
     box-shadow: var(--shadow);
+    text-align: left;
+    appearance: none; -webkit-appearance: none;
+  }
+  .toolbar select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%23D9301E' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 14px center;
+    background-size: 14px 14px;
+    padding-right: 36px;
   }
   .toolbar select:focus, .toolbar input[type="search"]:focus { outline: none; border-color: var(--red); }
   .spacer { flex: 1; }
