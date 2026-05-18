@@ -35,10 +35,13 @@
   .back-link { background: transparent; border: none; padding: 6px 0; color: var(--black); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 4px; }
 
   input[type="date"], input[type="password"] {
-    width: 100%; min-height: 60px; padding: 16px 18px; font-size: 18px; font-family: inherit;
+    width: 100%; min-height: 56px; padding: 16px 18px; font-size: 16px; font-family: inherit; font-weight: 400;
     background: var(--white); border: 2px solid transparent; border-radius: var(--radius-md);
     box-shadow: var(--shadow-card); color: var(--black); appearance: none; -webkit-appearance: none;
+    text-align: left;
   }
+  /* Match Safari date picker rendering */
+  input[type="date"]::-webkit-date-and-time-value { text-align: left; }
   input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card); }
 
   .btn-primary {
