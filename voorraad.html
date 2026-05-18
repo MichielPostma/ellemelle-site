@@ -365,7 +365,7 @@
     background: var(--white); color: var(--black);
     border: 2px solid transparent; border-radius: var(--radius-md);
     box-shadow: var(--shadow-card);
-    font-family: inherit; font-size: 16px; font-weight: 600; letter-spacing: 0.2px;
+    font-family: inherit; font-size: 16px; font-weight: 400; letter-spacing: 0.2px;
     padding: 0 44px 0 18px; box-sizing: border-box;
     line-height: 52px;
     appearance: none; -webkit-appearance: none;
@@ -382,7 +382,7 @@
   .prod-date-wrap .prod-date-arrow {
     position: absolute; right: 18px; top: 50%;
     transform: translateY(-50%);
-    color: #8B1A0E; pointer-events: none; opacity: 0.55;
+    color: var(--red); pointer-events: none;
   }
   .prod-date-wrap input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute; right: 0; top: 0; width: 100%; height: 100%;
@@ -492,8 +492,8 @@
     <div class="actions-label">Productiedatum</div>
     <div class="prod-date-wrap">
       <input type="date" id="prod-date-input" />
-      <svg class="prod-date-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 5l4 4 4-4"/>
+      <svg class="prod-date-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 6l4 4 4-4"/>
       </svg>
     </div>
   </div>
