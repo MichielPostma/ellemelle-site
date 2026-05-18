@@ -1431,6 +1431,20 @@
       }).catch(() => {});
     } catch (e) { /* swallow */ }
 
+    // Fire-and-forget web-push to admin subscribers
+    try {
+      fetch('/.netlify/functions/push-send-new-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voornaam: payload.voornaam,
+          aantal: payload.aantal,
+          straat: payload.straat,
+          huisnummer: payload.huisnummer,
+        }),
+      }).catch(() => {});
+    } catch (e) { /* swallow */ }
+
     // Notify parent (admin drawer) on success
     try {
       if (window.__isEmbed && window.parent !== window) {
