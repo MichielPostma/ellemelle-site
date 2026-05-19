@@ -903,20 +903,28 @@
       c.classList.toggle('selected', c.dataset.status === target);
     });
   }
+  function openExternalLink(url) {
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 0);
+  }
   function openConfirmDrawer(order) {
     __confirmOrder = order;
     const cur = order.order_status || 'todo';
-    // For 'todo' status → default to 'confirmed' (user about to confirm + send WA)
-    // For 'confirmed' status → pre-select 'confirmed' (user can switch back)
-    selectConfirmCard(cur === 'confirmed' ? 'confirmed' : 'confirmed');
+    selectConfirmCard('confirmed');
     $('#confirm-name').textContent = order.voornaam || '(geen naam)';
     $('#confirm-err').textContent = '';
     $('#confirm-backdrop').classList.add('open');
     $('#confirm-drawer').classList.add('open');
-    // For todo status: also open WhatsApp in parallel
     if (cur === 'todo') {
       const url = buildConfirmUrl(order);
-      if (url) window.open(url, '_blank', 'noopener');
+      setTimeout(() => openExternalLink(url), 0);
     }
   }
   function closeConfirmDrawer() {
