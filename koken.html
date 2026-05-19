@@ -832,14 +832,20 @@
   let __selectedStatus = 'not_sent';
   function openMsgStatusDrawer(order) {
     __currentOrder = order;
-    const current = order.update_message_status === 'sent' ? 'sent' : 'not_sent';
-    selectMsgCard(current);
+    const wasSent = order.update_message_status === 'sent';
+    // For not_sent cards → admin is about to send → pre-select 'sent' + open WA in parallel
+    // For already-sent cards → keep 'sent' selected, no WA re-open
+    selectMsgCard('sent');
     const dl = deadlineLabel(order.uiterlijke_bezorgdatum || order.delivery_date);
     $('#msg-status-name').textContent = order.voornaam || '(geen naam)';
     $('#msg-status-sub').textContent = dl.text || '';
     $('#msg-status-err').textContent = '';
     $('#msg-status-backdrop').classList.add('open');
     $('#msg-status-drawer').classList.add('open');
+    if (!wasSent) {
+      const url = buildUpdateUrl(order);
+      if (url) window.open(url, '_blank', 'noopener');
+    }
   }
   function closeMsgStatusDrawer() {
     $('#msg-status-backdrop').classList.remove('open');
@@ -854,16 +860,12 @@
   async function saveMsgStatus() {
     if (!__currentOrder) return;
     const target = __selectedStatus;
-    const wasSent = __currentOrder.update_message_status === 'sent';
+    const cur = __currentOrder.update_message_status === 'sent' ? 'sent' : 'not_sent';
+    if (target === cur) { closeMsgStatusDrawer(); return; }
     const res = await api('koken-set-message-status', { order_id: __currentOrder.id, status: target });
     if (!res.ok) { $('#msg-status-err').textContent = res.data.error || 'Opslaan mislukt'; return; }
     __currentOrder.update_message_status = target;
     closeMsgStatusDrawer();
-    // If user marked as sent → open WhatsApp/email
-    if (target === 'sent' && !wasSent) {
-      const url = buildUpdateUrl(__currentOrder);
-      if (url) window.open(url, '_blank', 'noopener');
-    }
     // Re-render with updated state
     renderDeelUpdate(STATE.todoOrders || []);
   }
