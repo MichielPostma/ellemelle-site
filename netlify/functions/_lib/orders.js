@@ -140,6 +140,9 @@ async function listEnrichedOrders() {
       uiterlijke_bezorgdatum_override: state.uiterlijke_bezorgdatum_override || null,
       // Manual override of GEPLANDE bezorgweek
       delivery_date_override: state.delivery_date_override || null,
+      // Update-message tracker (for koken batch flow)
+      update_message_status: state.update_message_status || 'not_sent',
+      update_message_status_at: state.update_message_status_at || null,
       // Delivery progress
       delivered_pot: state.delivered_pot || null,
       delivered_at:  state.delivered_at  || null,
