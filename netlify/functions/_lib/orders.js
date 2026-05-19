@@ -148,6 +148,7 @@ async function listEnrichedOrders() {
       delivered_at:  state.delivered_at  || null,
       order_status:  state.order_status  || (state.delivered_pot ? 'delivered' : 'todo'),
       deleted: !!state.deleted,
+      history: Array.isArray(state.history) ? state.history : [],
     });
   }
 
