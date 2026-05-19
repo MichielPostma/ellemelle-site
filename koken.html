@@ -183,14 +183,13 @@
   .order-card .deadline.late { color: var(--red); font-weight: 700; }
   .order-card .send-btn {
     flex: 0 0 56px; width: 56px; height: 56px;
-    background: var(--white); color: var(--red);
-    border: 2px solid var(--red); border-radius: var(--radius-md);
+    background: var(--red); color: white;
+    border: none; border-radius: var(--radius-md);
     display: inline-flex; align-items: center; justify-content: center;
     cursor: pointer; padding: 0; text-decoration: none;
+    box-shadow: 0 4px 12px rgba(217,48,30,0.25);
     -webkit-tap-highlight-color: transparent;
-    transition: background-color 120ms;
   }
-  .order-card .send-btn:hover { background: rgba(217,48,30,0.06); }
   .order-card .send-btn:active { transform: scale(0.97); }
   #deel-update-empty { color: #666; font-size: 14px; padding: 12px 0; }
 
@@ -532,17 +531,10 @@
       <div class="steps" id="steps"></div>
     </div>
 
-    <!-- Deel update -->
-    <div id="deel-update-wrap" hidden>
-      <div class="section-eyebrow">Deel update</div>
-      <div id="deel-update-list"></div>
-      <div id="deel-update-empty" hidden>Geen openstaande bestellingen om te updaten.</div>
-    </div>
-
     <!-- Zet pot op voorraad -->
     <div id="scan-section-wrap">
       <div class="section-eyebrow">Zet pot op voorraad</div>
-      <button class="btn-primary" id="koken-scan-btn" type="button">Pot in voorraad zetten →</button>
+      <button class="btn-outline" id="koken-scan-btn" type="button">Pot in voorraad zetten →</button>
       <div id="koken-scan-view" hidden>
         <div id="koken-scanner-wrap">
           <video id="koken-scanner-video" playsinline muted></video>
@@ -550,6 +542,13 @@
         </div>
         <button class="btn-outline" id="koken-scan-cancel" type="button">Annuleer</button>
       </div>
+    </div>
+
+    <!-- Deel update -->
+    <div id="deel-update-wrap" hidden>
+      <div class="section-eyebrow">Deel update</div>
+      <div id="deel-update-list"></div>
+      <div id="deel-update-empty" hidden>Geen openstaande bestellingen om te updaten.</div>
     </div>
   </section>
 </main>
