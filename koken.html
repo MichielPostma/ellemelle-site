@@ -1047,6 +1047,17 @@
       btn.hidden = true;
       return;
     }
+    if (Notification.permission === 'denied') {
+      btn.textContent = '🔕 Meldingen geblokkeerd';
+      btn.dataset.state = 'denied';
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+      return;
+    }
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
     const subbed = await isSubscribed();
     btn.textContent = subbed
       ? '🔔 Meldingen aan'
