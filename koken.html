@@ -830,6 +830,18 @@
   // --- Update status drawer ---
   let __currentOrder = null;
   let __selectedStatus = 'not_sent';
+  function openExternalLink(url) {
+    if (!url) return;
+    // Programmatic anchor click — more reliable than window.open across iOS Safari + PWA
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 0);
+  }
   function openMsgStatusDrawer(order) {
     __currentOrder = order;
     const wasSent = order.update_message_status === 'sent';
@@ -844,7 +856,9 @@
     $('#msg-status-drawer').classList.add('open');
     if (!wasSent) {
       const url = buildUpdateUrl(order);
-      if (url) window.open(url, '_blank', 'noopener');
+      // Defer one tick so drawer renders before WA-open — prevents iOS Safari
+      // from reusing the current tab when wa.me triggers the app handover
+      setTimeout(() => openExternalLink(url), 0);
     }
   }
   function closeMsgStatusDrawer() {
