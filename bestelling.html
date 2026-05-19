@@ -117,6 +117,7 @@
   .badge.stock-in  { background: rgba(31,157,85,0.12); color: #1f9d55; }
   .badge.stock-out { background: rgba(184,92,0,0.12); color: #b85c00; }
   .badge.todo      { background: rgba(0,0,0,0.06); color: #555; }
+  .badge.confirmed { background: rgba(33,118,255,0.10); color: #2176ff; }
   .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .badge.neighbors { background: rgba(255,210,74,0.25); color: #b85c00; }
   .badge.retry     { background: rgba(139,26,14,0.08); color: var(--red-dark); }
@@ -148,6 +149,17 @@
     -webkit-tap-highlight-color: transparent;
   }
   #status-options button.sel { border-color: var(--red); background: rgba(217,48,30,0.04); font-weight: 700; }
+  /* Activity log */
+  #d-activity { padding: 0; }
+  #d-activity .log-entry {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--cream-dark);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  #d-activity .log-entry:last-child { border-bottom: none; }
+  #d-activity .log-time { color: #888; font-size: 12px; }
+  #d-activity .log-desc { color: var(--black); font-size: 14px; line-height: 1.4; }
+  #d-activity .empty { padding: 14px 16px; color: #888; font-size: 13px; }
 
 </style>
 <script>
@@ -238,6 +250,9 @@
 
     <div class="actions-label">Bestelhistorie van deze klant</div>
     <div class="info-card" id="d-history"></div>
+
+    <div class="actions-label">Activiteit</div>
+    <div class="info-card" id="d-activity"></div>
 
     <button class="btn-outline" id="delete-btn" type="button" style="margin-top: 24px;">Bestelling verwijderen</button>
   </section>
@@ -368,7 +383,7 @@
     clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
   }
 
-  const STATUS_LABELS = { todo: 'Todo', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
   function modeLabel(o) {
     const d = fmtDate(o.delivery_date);
     if (o.delivery_mode === 'stock') return 'Op voorraad — ' + d;
@@ -378,7 +393,67 @@
     return o.delivery_mode || '—';
   }
 
-  function renderDetail() {
+
+  const ACTIVITY_LABELS = {
+    todo: 'Nieuw',
+    confirmed: 'Bevestigd',
+    delivered: 'Bezorgd',
+    neighbors: 'Buren',
+    retry: 'Nieuwe poging',
+  };
+  function fmtActivityTime(iso) {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      const months = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+      const day = d.getDate();
+      const month = months[d.getMonth()];
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      return `${day} ${month} ${hh}:${mm}`;
+    } catch { return ''; }
+  }
+  function describeAction(entry) {
+    const a = entry.action || '';
+    if (a === 'status_changed') {
+      return `Status gewijzigd: ${ACTIVITY_LABELS[entry.from] || entry.from} → ${ACTIVITY_LABELS[entry.to] || entry.to}`;
+    }
+    if (a === 'set_update_message_status') {
+      return entry.to === 'sent' ? 'Update bericht verzonden' : 'Update bericht ongedaan gemaakt';
+    }
+    if (a === 'override_uiterlijke_bezorgdatum') {
+      return entry.to ? `Uiterlijke bezorgdatum gewijzigd naar ${entry.to}` : `Uiterlijke datum-override gewist`;
+    }
+    if (a === 'override_geplande_bezorgweek') {
+      return entry.to ? `Geplande bezorgweek gewijzigd naar ${entry.to}` : `Geplande datum-override gewist`;
+    }
+    if (a === 'backfill_uiterlijke') {
+      return `Uiterlijke bezorgdatum vastgezet op ${entry.value}`;
+    }
+    return a;
+  }
+  function renderActivity() {
+    const wrap = $('#d-activity');
+    if (!wrap) return;
+    const hist = (STATE.order && Array.isArray(STATE.order.history)) ? STATE.order.history.slice() : [];
+    if (hist.length === 0) {
+      wrap.innerHTML = '<div class="empty">Nog geen activiteit.</div>';
+      return;
+    }
+    // Newest first
+    hist.sort((a,b) => String(b.at || '').localeCompare(String(a.at || '')));
+    wrap.innerHTML = hist.map(e => `
+      <div class="log-entry">
+        <span class="log-time">${escapeHtml(fmtActivityTime(e.at))}</span>
+        <span class="log-desc">${escapeHtml(describeAction(e))}</span>
+      </div>
+    `).join('');
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+    function renderDetail() {
     const o = STATE.order;
     if (!o) return;
     $('#d-name').textContent = o.voornaam || '(geen naam)';
@@ -409,7 +484,8 @@
     $('#d-created').textContent = fmtDateTime(o.created_at);
 
     // History
-    const h = $('#d-history'); h.innerHTML = '';
+    renderActivity();
+        const h = $('#d-history'); h.innerHTML = '';
     if (!STATE.history || STATE.history.length === 0) {
       h.innerHTML = '<div style="color:#666; font-size:13px;">Eerste bestelling van deze klant.</div>';
     } else {
@@ -439,7 +515,8 @@
   function clearGeplande()   { __gepAction = 'clear'; $('#date-geplande').value   = ''; }
   // --- Wijzigen drawer (merged Status + Datum) ---
   const STATUS_OPTS = [
-    { val: 'todo',      label: 'Todo (reset — ontkoppel pot)' },
+    { val: 'todo',      label: 'Nieuw (reset — ontkoppel pot)' },
+    { val: 'confirmed', label: 'Bevestigd' },
     { val: 'delivered', label: 'Bezorgd' },
     { val: 'neighbors', label: 'Buren' },
     { val: 'retry',     label: 'Nieuwe poging' },
