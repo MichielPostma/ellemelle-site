@@ -595,6 +595,11 @@
     const [y,m,d] = iso.split('-');
     return `${d}-${m}-${y.slice(2)}`;
   }
+  function fmtDayMonthBest(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-').map(n => parseInt(n, 10));
+    return `${d}/${m}`;
+  }
   function renderProdPrompt() {
     const wrap = document.querySelector('#prod-prompt-wrap');
     const planBtn = document.querySelector('#prod-plan-btn');
@@ -611,7 +616,7 @@
       wrap.hidden = false;
       planBtn.hidden = true;
       setRow.hidden = false;
-      dateBtn.textContent = 'Productiedatum: ' + fmtShortDate(date);
+      dateBtn.textContent = 'Volgende kooksessie ' + fmtDayMonthBest(date);
     } else if (needsProd) {
       // State 1 — needs prod, no date
       wrap.hidden = false;
@@ -643,7 +648,7 @@
       STATE.config = res.data.config || { next_production_date: v };
       closeProdDateDrawer();
       renderProdPrompt();
-      showToast(`Productiedatum: ${fmtShortDate(v)}`, 'success');
+      showToast(`Volgende kooksessie ${fmtDayMonthBest(v)}`, 'success');
     } else {
       document.querySelector('#prod-date-drawer-err').textContent = res.data.error || 'Opslaan mislukt';
     }
