@@ -643,9 +643,9 @@
     const n = daysUntil(iso);
     if (n === null) return { text: '', late: false };
     if (n < 0)  return { text: `${Math.abs(n)} ${Math.abs(n)===1?'dag':'dagen'} te laat`, late: true };
-    if (n === 0) return { text: 'Uiterlijk vandaag', late: false };
-    if (n === 1) return { text: 'Uiterlijk morgen', late: false };
-    return { text: `Uiterlijk over ${n} dagen`, late: false };
+    if (n === 0) return { text: 'Bezorgen vandaag', late: false };
+    if (n === 1) return { text: 'Bezorgen morgen', late: false };
+    return { text: `Bezorgen over ${n} dagen of eerder`, late: false };
   }
   function buildUpdateMessage(o) {
     const planned = fmtNLDate(o.delivery_date);
