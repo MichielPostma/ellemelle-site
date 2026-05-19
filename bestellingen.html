@@ -723,6 +723,11 @@
       $('#login-view').hidden = true; $('#main-view').hidden = false;
       document.body.classList.remove('on-login');
       STATE.orders = res.data.orders || [];
+      (async () => {
+        const cfg = await api('voorraad-list');
+        if (cfg.ok && cfg.data && cfg.data.config) STATE.config = cfg.data.config;
+        renderProdPrompt();
+      })();
       renderOrders();
     } else {
       $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
@@ -751,16 +756,17 @@
   document.body.classList.add('on-login');
   STATE.password = loadSession();
   if (STATE.password) {
-    api('bestellingen-list').then(res => {
-      if (res.ok) {
-        $('#login-view').hidden = true; $('#main-view').hidden = false;
-        document.body.classList.remove('on-login');
-        STATE.orders = res.data.orders || [];
-        renderOrders();
-      } else {
-        clearSession(); STATE.password = null;
-      }
-    });
+    (async () => {
+      const res = await api('bestellingen-list');
+      if (!res.ok) { clearSession(); STATE.password = null; return; }
+      $('#login-view').hidden = true; $('#main-view').hidden = false;
+      document.body.classList.remove('on-login');
+      STATE.orders = res.data.orders || [];
+      const cfg = await api('voorraad-list');
+      if (cfg.ok && cfg.data && cfg.data.config) STATE.config = cfg.data.config;
+      renderProdPrompt();
+      renderOrders();
+    })();
   }
   syncTabFromHash();
 })();
