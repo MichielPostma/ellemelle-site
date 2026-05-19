@@ -163,6 +163,37 @@
   }
 
   /* Scanner (reused from /voorraad) */
+  /* Update status drawer cards */
+  .msg-status-card {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; padding: 14px 16px;
+    background: var(--white); border-radius: var(--radius-md);
+    border: 2px solid rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-card);
+    cursor: pointer; text-align: left;
+    font-family: inherit; -webkit-tap-highlight-color: transparent;
+    transition: border-color 120ms;
+  }
+  .msg-status-card.selected { border-color: var(--red); }
+  .msg-status-card .ms-icon {
+    flex: 0 0 44px; width: 44px; height: 44px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .msg-status-card .ms-icon-check { background: rgba(28,125,63,0.12); color: #1c7d3f; }
+  .msg-status-card .ms-icon-x { background: rgba(0,0,0,0.06); color: #666; }
+  .msg-status-card .ms-text { min-width: 0; flex: 1; }
+  .msg-status-card .ms-title { color: var(--black); font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+  .msg-status-card .ms-sub { color: #666; font-size: 13px; }
+
+  /* Send button - sent state: outline + checkmark */
+  .order-card .send-btn.sent {
+    background: var(--white);
+    color: var(--red);
+    border: 2px solid var(--red);
+    box-shadow: none;
+  }
+  
   /* Deel update — compact card with square message btn */
   #deel-update-wrap { margin-top: 22px; }
   #deel-update-wrap .section-eyebrow {
@@ -553,6 +584,36 @@
   </section>
 </main>
 
+<!-- Update status drawer -->
+<div class="drawer-backdrop" id="msg-status-backdrop"></div>
+<div class="drawer" id="msg-status-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2 id="msg-status-name">—</h2>
+  <div class="sub" id="msg-status-sub">—</div>
+  <div id="msg-status-cards" style="display: grid; gap: 10px; margin-top: 8px;">
+    <button class="msg-status-card" type="button" data-status="sent">
+      <div class="ms-icon ms-icon-check">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="ms-text">
+        <div class="ms-title">Bericht verzonden</div>
+        <div class="ms-sub">Klant is op de hoogte</div>
+      </div>
+    </button>
+    <button class="msg-status-card" type="button" data-status="not_sent">
+      <div class="ms-icon ms-icon-x">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div class="ms-text">
+        <div class="ms-title">Bericht niet verzonden</div>
+        <div class="ms-sub">Nog te doen</div>
+      </div>
+    </button>
+  </div>
+  <div class="error" id="msg-status-err" style="margin-top: 10px;"></div>
+  <button class="btn-primary" id="msg-status-save" type="button" style="margin-top: 16px;">Opslaan →</button>
+</div>
+
 <!-- Productiedatum drawer -->
 <div class="drawer-backdrop" id="drawer-backdrop"></div>
 <div class="drawer" id="prod-date-drawer" role="dialog" aria-modal="true">
@@ -682,19 +743,23 @@
     for (const o of sorted) {
       const card = document.createElement('div');
       card.className = 'order-card';
+      card.style.cursor = 'pointer';
       const dl = deadlineLabel(o.uiterlijke_bezorgdatum || o.delivery_date);
-      const url = buildUpdateUrl(o);
+      const sent = (o.update_message_status === 'sent');
+      const iconSent = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
+      const iconChat = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
       card.innerHTML = `
         <div class="info">
           <div class="name">${escapeHtml(o.voornaam || '(geen naam)')}</div>
           <div class="deadline${dl.late ? ' late' : ''}">${escapeHtml(dl.text)}</div>
         </div>
-        ${url ? `<a class="send-btn" href="${url}" target="_blank" rel="noopener" aria-label="Stuur update aan ${escapeHtml(o.voornaam || '')}">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </a>` : ''}
+        <button type="button" class="send-btn${sent ? ' sent' : ''}" aria-label="Update status voor ${escapeHtml(o.voornaam || '')}">
+          ${sent ? iconSent : iconChat}
+        </button>
       `;
+      const openHandler = (e) => { e.stopPropagation(); openMsgStatusDrawer(o); };
+      card.querySelector('.send-btn')?.addEventListener('click', openHandler);
+      card.addEventListener('click', openHandler);
       list.appendChild(card);
     }
   }
@@ -762,7 +827,48 @@
   }
 
   // --- Productiedatum drawer ---
-  function openProdDateDrawer() {
+  // --- Update status drawer ---
+  let __currentOrder = null;
+  let __selectedStatus = 'not_sent';
+  function openMsgStatusDrawer(order) {
+    __currentOrder = order;
+    const current = order.update_message_status === 'sent' ? 'sent' : 'not_sent';
+    selectMsgCard(current);
+    const dl = deadlineLabel(order.uiterlijke_bezorgdatum || order.delivery_date);
+    $('#msg-status-name').textContent = order.voornaam || '(geen naam)';
+    $('#msg-status-sub').textContent = dl.text || '';
+    $('#msg-status-err').textContent = '';
+    $('#msg-status-backdrop').classList.add('open');
+    $('#msg-status-drawer').classList.add('open');
+  }
+  function closeMsgStatusDrawer() {
+    $('#msg-status-backdrop').classList.remove('open');
+    $('#msg-status-drawer').classList.remove('open');
+  }
+  function selectMsgCard(target) {
+    __selectedStatus = target;
+    document.querySelectorAll('#msg-status-cards .msg-status-card').forEach(c => {
+      c.classList.toggle('selected', c.dataset.status === target);
+    });
+  }
+  async function saveMsgStatus() {
+    if (!__currentOrder) return;
+    const target = __selectedStatus;
+    const wasSent = __currentOrder.update_message_status === 'sent';
+    const res = await api('koken-set-message-status', { order_id: __currentOrder.id, status: target });
+    if (!res.ok) { $('#msg-status-err').textContent = res.data.error || 'Opslaan mislukt'; return; }
+    __currentOrder.update_message_status = target;
+    closeMsgStatusDrawer();
+    // If user marked as sent → open WhatsApp/email
+    if (target === 'sent' && !wasSent) {
+      const url = buildUpdateUrl(__currentOrder);
+      if (url) window.open(url, '_blank', 'noopener');
+    }
+    // Re-render with updated state
+    renderDeelUpdate(STATE.todoOrders || []);
+  }
+
+    function openProdDateDrawer() {
     $('#prod-date-drawer-input').value = STATE.config.next_production_date || todayISO();
     $('#prod-date-drawer-err').textContent = '';
     $('#drawer-backdrop').classList.add('open');
@@ -884,6 +990,7 @@
       todoOrders = all.filter(o => !o.order_status || o.order_status === 'todo');
       todoCount = todoOrders.length;
     }
+    STATE.todoOrders = todoOrders;
     renderDeelUpdate(todoOrders);
     STATE.todoCount = todoCount;
     // To-make = open orders minus stock already produced
@@ -911,6 +1018,11 @@
   });
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
   $('#prod-date-btn').addEventListener('click', openProdDateDrawer);
+  $('#msg-status-backdrop').addEventListener('click', closeMsgStatusDrawer);
+  $('#msg-status-save').addEventListener('click', saveMsgStatus);
+  document.querySelectorAll('#msg-status-cards .msg-status-card').forEach(c => {
+    c.addEventListener('click', () => selectMsgCard(c.dataset.status));
+  });
   function buildGCalUrl() {
     const date = STATE.config && STATE.config.next_production_date;
     if (!date) return null;
