@@ -1,6 +1,6 @@
 // Update an order's status manually (admin override).
 // POST { password, order_id, status }
-// Allowed status values: 'todo' | 'delivered' | 'neighbors' | 'retry'
+// Allowed status values: 'todo' | 'confirmed' | 'delivered' | 'neighbors' | 'retry'
 // Special: when resetting to 'todo' and a pot was previously delivered, unlink the pot
 // (return it to 'available' stock) so it can be re-used.
 
@@ -15,7 +15,7 @@ function blobOpts(name) {
   return opts;
 }
 
-const ALLOWED = new Set(['todo', 'delivered', 'neighbors', 'retry']);
+const ALLOWED = new Set(['todo', 'confirmed', 'delivered', 'neighbors', 'retry']);
 
 exports.handler = async (event) => {
   const headers = { 'Content-Type': 'application/json' };
@@ -49,6 +49,9 @@ exports.handler = async (event) => {
         });
       }
     } catch {}
+    const prev = existing.order_status || 'todo';
+    const histR = Array.isArray(existing.history) ? existing.history.slice() : [];
+    histR.push({ at: now, action: 'status_changed', from: prev, to: 'todo' });
     await ordersStore.setJSON(orderId, {
       ...existing,
       order_status: 'todo',
@@ -56,10 +59,14 @@ exports.handler = async (event) => {
       delivered_pot: null,
       delivered_at: null,
       pot_returned_at: null,
+      history: histR,
     });
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true, order_id: orderId, order_status: 'todo', unlinked_pot: potId }) };
   }
 
-  await ordersStore.setJSON(orderId, { ...existing, order_status: status, status_updated_at: now });
+  const prevStatus = existing.order_status || 'todo';
+  const hist = Array.isArray(existing.history) ? existing.history.slice() : [];
+  if (prevStatus !== status) hist.push({ at: now, action: 'status_changed', from: prevStatus, to: status });
+  await ordersStore.setJSON(orderId, { ...existing, order_status: status, status_updated_at: now, history: hist });
   return { statusCode: 200, headers, body: JSON.stringify({ ok: true, order_id: orderId, order_status: status }) };
 };
