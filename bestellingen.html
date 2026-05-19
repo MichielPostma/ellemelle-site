@@ -352,10 +352,19 @@
 
     <!-- Bestellingen tab content -->
     <div id="tab-content-bestellingen">
+      <div class="field" style="margin-top: 14px;">
+        <select id="filter-select">
+          <option value="all">Filter</option>
+          <option value="stock">Op voorraad</option>
+          <option value="not_stock">Niet op voorraad</option>
+          <option value="delivered">Bezorgd</option>
+          <option value="todo">Open (todo)</option>
+        </select>
+      </div>
       <!-- Productiedatum prompt -->
       <div id="prod-prompt-wrap" hidden>
         <!-- State 1: no production date set -->
-        <button class="btn-outline" id="prod-plan-btn" type="button" hidden>Je voorraad is op, plan productie</button>
+        <button class="btn-outline" id="prod-plan-btn" type="button" hidden>⚠️ Plan je kooksessie</button>
         <!-- State 2: production date set -->
         <div class="prod-date-row" id="prod-date-set" hidden>
           <button class="btn-outline" id="prod-date-btn" type="button">Productiedatum: —</button>
@@ -368,15 +377,6 @@
             </svg>
           </button>
         </div>
-      </div>
-      <div class="field" style="margin-top: 14px;">
-        <select id="filter-select">
-          <option value="all">Filter</option>
-          <option value="stock">Op voorraad</option>
-          <option value="not_stock">Niet op voorraad</option>
-          <option value="delivered">Bezorgd</option>
-          <option value="todo">Open (todo)</option>
-        </select>
       </div>
       <div id="orders-list"></div>
     </div>
