@@ -163,34 +163,35 @@
   }
 
   /* Scanner (reused from /voorraad) */
-  /* Deel update section */
+  /* Deel update — order-card UI hergebruikt van /bestellingen */
   #deel-update-wrap { margin-top: 22px; }
   #deel-update-wrap .section-eyebrow {
     color: #666; font-size: 12px; font-weight: 700;
     letter-spacing: 0.5px; text-transform: uppercase;
     margin-bottom: 10px;
   }
-  .update-card {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    background: var(--white); border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card);
-    padding: 14px 16px;
-    margin-bottom: 10px;
+  .order-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 14px 16px;
+    margin-bottom: 10px; line-height: 1.45;
+    -webkit-tap-highlight-color: transparent;
   }
-  .update-card .info { min-width: 0; flex: 1; }
-  .update-card .nm { color: var(--black); font-size: 17px; font-weight: 700; margin-bottom: 4px; }
-  .update-card .meta { color: #666; font-size: 13px; line-height: 1.45; }
-  .update-card .meta .planned { color: var(--black); font-weight: 600; }
-  .update-card .send-btn {
-    flex: 0 0 auto;
+  .order-card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .order-card .name { font-weight: 700; font-size: 17px; color: var(--black); }
+  .order-card .date { color: #888; font-size: 12px; }
+  .order-card .addr { color: #666; font-size: 14px; }
+  .order-card .row2 { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 8px; }
+  .order-card .planned { color: #666; font-size: 13px; }
+  .order-card .planned strong { color: var(--black); font-weight: 600; }
+  .order-card .send-btn {
     background: var(--red); color: white;
     border: none; border-radius: var(--radius-md);
-    padding: 10px 14px; font-family: inherit; font-size: 14px; font-weight: 700;
+    padding: 8px 14px; font-family: inherit; font-size: 13px; font-weight: 700;
     cursor: pointer; text-decoration: none;
     white-space: nowrap;
     -webkit-tap-highlight-color: transparent;
   }
-  .update-card .send-btn:active { transform: scale(0.97); }
+  .order-card .send-btn:active { transform: scale(0.97); }
   #deel-update-empty { color: #666; font-size: 14px; padding: 12px 0; }
 
   #scan-section-wrap { margin-top: 22px; }
@@ -681,19 +682,21 @@
     const sorted = orders.slice().sort((a,b) => String(a.uiterlijke_bezorgdatum || a.delivery_date || '').localeCompare(String(b.uiterlijke_bezorgdatum || b.delivery_date || '')));
     for (const o of sorted) {
       const card = document.createElement('div');
-      card.className = 'update-card';
+      card.className = 'order-card';
       const deadline = deadlineLabel(o.uiterlijke_bezorgdatum || o.delivery_date);
       const planned = fmtNLDate(o.delivery_date);
+      const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
       const url = buildUpdateUrl(o);
       card.innerHTML = `
-        <div class="info">
-          <div class="nm">${escapeHtml(o.voornaam || '(geen naam)')}</div>
-          <div class="meta">
-            ${deadline ? `<div>${escapeHtml(deadline)}</div>` : ''}
-            ${planned ? `<div>Bezorgen op <span class="planned">${escapeHtml(planned)}</span></div>` : ''}
-          </div>
+        <div class="head">
+          <span class="name">${escapeHtml(o.voornaam || '(geen naam)')}</span>
+          <span class="date">${escapeHtml(deadline)}</span>
         </div>
-        ${url ? `<a class="send-btn" href="${url}" target="_blank" rel="noopener">Stuur update →</a>` : ''}
+        <div class="addr">${escapeHtml(addr)}${o.plaats ? ' — ' + escapeHtml(o.plaats) : ''}</div>
+        <div class="row2">
+          <span class="planned">Bezorgen op <strong>${escapeHtml(planned)}</strong></span>
+          ${url ? `<a class="send-btn" href="${url}" target="_blank" rel="noopener">Stuur update →</a>` : ''}
+        </div>
       `;
       list.appendChild(card);
     }
