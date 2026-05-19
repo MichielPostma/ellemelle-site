@@ -566,7 +566,7 @@
     const date = STATE.config && STATE.config.next_production_date;
     $('#prod-date-btn').textContent = date
       ? ('Productiedatum: ' + fmtDate(date))
-      : 'Nog geen productiedatum';
+      : '⚠️ Plan je kooksessie';
     $('#gcal-btn').hidden = !date;
   }
   function showToast(msg, type) {
