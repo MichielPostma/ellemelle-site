@@ -520,7 +520,7 @@
 <div class="drawer-backdrop" id="drawer-backdrop"></div>
 <div class="drawer" id="prod-date-drawer" role="dialog" aria-modal="true">
   <div class="drawer-handle"></div>
-  <h2>Datum kooksessie</h2>
+  <h2>Datum volgende kooksessie</h2>
   <div class="sub">De datum dat de volgende batch chocopasta gemaakt wordt.</div>
   <input type="date" id="prod-date-drawer-input">
   <div class="error" id="prod-date-drawer-err"></div>
@@ -589,7 +589,7 @@
     const date = STATE.config && STATE.config.next_production_date;
     $('#prod-date-btn').textContent = date
       ? ('Productiedatum: ' + fmtDate(date))
-      : '⚠️ Plan je kooksessie';
+      : '⚠️ Plan je volgende kooksessie';
     $('#gcal-btn').hidden = !date;
   }
   function showToast(msg, type) {
