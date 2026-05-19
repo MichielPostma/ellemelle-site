@@ -163,6 +163,36 @@
   }
 
   /* Scanner (reused from /voorraad) */
+  /* Deel update section */
+  #deel-update-wrap { margin-top: 22px; }
+  #deel-update-wrap .section-eyebrow {
+    color: #666; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .update-card {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--white); border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .update-card .info { min-width: 0; flex: 1; }
+  .update-card .nm { color: var(--black); font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .update-card .meta { color: #666; font-size: 13px; line-height: 1.45; }
+  .update-card .meta .planned { color: var(--black); font-weight: 600; }
+  .update-card .send-btn {
+    flex: 0 0 auto;
+    background: var(--red); color: white;
+    border: none; border-radius: var(--radius-md);
+    padding: 10px 14px; font-family: inherit; font-size: 14px; font-weight: 700;
+    cursor: pointer; text-decoration: none;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .update-card .send-btn:active { transform: scale(0.97); }
+  #deel-update-empty { color: #666; font-size: 14px; padding: 12px 0; }
+
   #scan-section-wrap { margin-top: 22px; }
   #scan-section-wrap .section-eyebrow {
     color: #666; font-size: 12px; font-weight: 700;
@@ -501,6 +531,13 @@
       <div class="steps" id="steps"></div>
     </div>
 
+    <!-- Deel update -->
+    <div id="deel-update-wrap" hidden>
+      <div class="section-eyebrow">Deel update</div>
+      <div id="deel-update-list"></div>
+      <div id="deel-update-empty" hidden>Geen openstaande bestellingen om te updaten.</div>
+    </div>
+
     <!-- Zet pot op voorraad -->
     <div id="scan-section-wrap">
       <div class="section-eyebrow">Zet pot op voorraad</div>
@@ -585,7 +622,87 @@
     const [y, m, d] = iso.split('-');
     return `${d}-${m}-${y.slice(2)}`;
   }
-  function renderProdDateBtn() {
+
+  // --- Deel update ---
+  const NL_DAYS = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+  const NL_MONTHS_SHORT = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  function fmtNLDate(iso) {
+    if (!iso) return '';
+    const [y,m,d] = iso.split('-').map(n => parseInt(n,10));
+    const dt = new Date(y, m-1, d);
+    return `${NL_DAYS[dt.getDay()]} ${d} ${NL_MONTHS_SHORT[m-1]}`;
+  }
+  function daysUntil(iso) {
+    if (!iso) return null;
+    const [y,m,d] = iso.split('-').map(n => parseInt(n,10));
+    const t = new Date(y, m-1, d); t.setHours(0,0,0,0);
+    const n = new Date(); n.setHours(0,0,0,0);
+    return Math.round((t - n) / (24*3600*1000));
+  }
+  function deadlineLabel(iso) {
+    const n = daysUntil(iso);
+    if (n === null) return '';
+    if (n < 0)  return `${Math.abs(n)} ${Math.abs(n)===1?'dag':'dagen'} te laat`;
+    if (n === 0) return 'Vandaag uiterlijk bezorgd';
+    if (n === 1) return 'Morgen uiterlijk bezorgd';
+    return `Nog ${n} dagen uiterlijk bezorgd`;
+  }
+  function buildUpdateMessage(o) {
+    const planned = fmtNLDate(o.delivery_date);
+    return `Goed nieuws ${o.voornaam}! We hebben net een verse batch Ellemelle chocopasta gemaakt. Jouw bezorging staat nu gepland op ${planned}. Mocht je niet thuis zijn geven we je pot af bij de buren en ontvang je een bericht.\n\nTot snel!\nEllis en Melle`;
+  }
+  function buildUpdateUrl(o) {
+    const msg = buildUpdateMessage(o);
+    if (o.kanaal === 'whatsapp' && o.telefoon) {
+      const tel = String(o.telefoon).replace(/[^\d]/g, '');
+      // NL fallback: leading 0 → 31
+      const intl = tel.startsWith('0') ? '31' + tel.slice(1) : tel;
+      return `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
+    }
+    if (o.email) {
+      const subject = 'Je ELLEMELLE bestelling staat klaar';
+      return `mailto:${encodeURIComponent(o.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msg)}`;
+    }
+    return null;
+  }
+  function renderDeelUpdate(orders) {
+    const wrap = $('#deel-update-wrap');
+    const list = $('#deel-update-list');
+    const empty = $('#deel-update-empty');
+    if (!wrap || !list) return;
+    wrap.hidden = false;
+    list.innerHTML = '';
+    if (!orders || orders.length === 0) {
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    // Sort: shortest deadline first (uiterlijke_bezorgdatum asc)
+    const sorted = orders.slice().sort((a,b) => String(a.uiterlijke_bezorgdatum || a.delivery_date || '').localeCompare(String(b.uiterlijke_bezorgdatum || b.delivery_date || '')));
+    for (const o of sorted) {
+      const card = document.createElement('div');
+      card.className = 'update-card';
+      const deadline = deadlineLabel(o.uiterlijke_bezorgdatum || o.delivery_date);
+      const planned = fmtNLDate(o.delivery_date);
+      const url = buildUpdateUrl(o);
+      card.innerHTML = `
+        <div class="info">
+          <div class="nm">${escapeHtml(o.voornaam || '(geen naam)')}</div>
+          <div class="meta">
+            ${deadline ? `<div>${escapeHtml(deadline)}</div>` : ''}
+            ${planned ? `<div>Bezorgen op <span class="planned">${escapeHtml(planned)}</span></div>` : ''}
+          </div>
+        </div>
+        ${url ? `<a class="send-btn" href="${url}" target="_blank" rel="noopener">Stuur update →</a>` : ''}
+      `;
+      list.appendChild(card);
+    }
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+    function renderProdDateBtn() {
     const date = STATE.config && STATE.config.next_production_date;
     $('#prod-date-btn').textContent = date
       ? ('Productiedatum: ' + fmtDate(date))
@@ -753,13 +870,16 @@
       STATE.stock_count = res.data.stock_count || 0;
       renderProdDateBtn();
     }
-    // Get suggested default from open todos
+    // Get suggested default from open todos + render Deel update cards
     const bz = await api('bezorger-orders');
     let todoCount = 0;
+    let todoOrders = [];
     if (bz.ok) {
       const all = (bz.data.weeks || []).flatMap(w => w.orders || []);
-      todoCount = all.filter(o => !o.order_status || o.order_status === 'todo').length;
+      todoOrders = all.filter(o => !o.order_status || o.order_status === 'todo');
+      todoCount = todoOrders.length;
     }
+    renderDeelUpdate(todoOrders);
     STATE.todoCount = todoCount;
     // To-make = open orders minus stock already produced
     const teMaken = Math.max(0, todoCount - (STATE.stock_count || 0));
