@@ -166,6 +166,29 @@
   .btn-gcal:active { transform: scale(0.97); }
   #prod-prompt-wrap { margin-top: 14px; }
   #prod-prompt-wrap[hidden] { display: none !important; }
+  /* Productiedatum drawer date input — unified dropdown style */
+  #prod-date-drawer input[type="date"] {
+    width: 100%; height: 56px; min-height: 56px;
+    padding: 0 44px 0 18px; box-sizing: border-box;
+    font-family: inherit; font-size: 16px; font-weight: 400; letter-spacing: 0.2px;
+    background: var(--white); color: var(--black);
+    border: 2px solid transparent; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    line-height: 52px;
+    appearance: none; -webkit-appearance: none;
+    text-align: left;
+    margin: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%23D9301E' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 18px center;
+    background-size: 16px 16px;
+  }
+  #prod-date-drawer input[type="date"]::-webkit-date-and-time-value {
+    text-align: left; line-height: 52px; height: 52px; margin: 0;
+  }
+  #prod-date-drawer input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute; opacity: 0; cursor: pointer;
+  }
+
 
   .drawer-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.4);
@@ -297,6 +320,8 @@
   html.sess-no  #login-view { display: block; }
   /* JS may still toggle [hidden] attribute on these sections; it wins via specificity bump */
   #login-view[hidden], #main-view[hidden], #detail-view[hidden], #list-view[hidden] { display: none !important; }
+  /* Global: [hidden] always wins over display rules */
+  [hidden] { display: none !important; }
 </style>
 <link rel="manifest" href="/admin-manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
