@@ -576,7 +576,11 @@
     const [res, cfg] = await Promise.all([api('bestellingen-list'), api('voorraad-list')]);
     if (!res.ok) { showToast(res.data.error || 'Laden mislukt', 'error'); return; }
     STATE.orders = res.data.orders || [];
-    if (cfg.ok && cfg.data && cfg.data.config) STATE.config = cfg.data.config;
+    if (cfg.ok && cfg.data && cfg.data.config) {
+      STATE.config = cfg.data.config;
+      const pots = cfg.data.pots || [];
+      STATE.config.stock_count = pots.filter(p => p.status === 'voorraad').length;
+    }
     renderProdPrompt();
     renderOrders();
   }
@@ -598,7 +602,10 @@
     const dateBtn = document.querySelector('#prod-date-btn');
     const date = STATE.config && STATE.config.next_production_date;
     const open = STATE.orders.filter(o => !['delivered','neighbors'].includes(o.order_status));
-    const needsProd = open.some(o => o.delivery_mode === 'no_schedule' || o.delivery_mode === 'production');
+    // Voorraad is "op" als totaal open potten > totaal stock — geldt ook voor override-orders
+    const totalOpenPots = open.reduce((sum, o) => sum + (parseInt(o.aantal, 10) || 1), 0);
+    const stockCount = (STATE.config && STATE.config.stock_count) || 0;
+    const needsProd = totalOpenPots > stockCount;
     if (date) {
       // State 2 — date set
       wrap.hidden = false;
@@ -752,7 +759,11 @@
       STATE.orders = res.data.orders || [];
       (async () => {
         const cfg = await api('voorraad-list');
-        if (cfg.ok && cfg.data && cfg.data.config) STATE.config = cfg.data.config;
+        if (cfg.ok && cfg.data && cfg.data.config) {
+          STATE.config = cfg.data.config;
+          const pots = cfg.data.pots || [];
+          STATE.config.stock_count = pots.filter(p => p.status === 'voorraad').length;
+        }
         renderProdPrompt();
       })();
       renderOrders();
@@ -790,7 +801,11 @@
       document.body.classList.remove('on-login');
       STATE.orders = res.data.orders || [];
       const cfg = await api('voorraad-list');
-      if (cfg.ok && cfg.data && cfg.data.config) STATE.config = cfg.data.config;
+      if (cfg.ok && cfg.data && cfg.data.config) {
+        STATE.config = cfg.data.config;
+        const pots = cfg.data.pots || [];
+        STATE.config.stock_count = pots.filter(p => p.status === 'voorraad').length;
+      }
       renderProdPrompt();
       renderOrders();
     })();
