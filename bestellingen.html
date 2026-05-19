@@ -116,12 +116,53 @@
   .order-card .row2 { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px; }
   .order-card .badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
   .badge.todo       { background: rgba(0,0,0,0.06); color: #555; }
+  .badge.confirmed  { background: rgba(33,118,255,0.10); color: #2176ff; }
   .badge.delivered  { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .badge.neighbors  { background: rgba(255,210,74,0.25); color: #b85c00; }
   .badge.retry      { background: rgba(139,26,14,0.08); color: var(--red-dark); }
   .order-card .stock-tag { color: #666; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
   .order-card .stock-tag.in { color: #1f9d55; }
   .order-card .stock-tag.out { color: #b85c00; }
+  /* Message-icon button on cards (todo / confirmed) */
+  .order-card .msg-btn {
+    flex: 0 0 44px; width: 44px; height: 44px;
+    border-radius: var(--radius-md);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0; text-decoration: none;
+    background: var(--red); color: white; border: none;
+    box-shadow: 0 4px 12px rgba(217,48,30,0.25);
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 120ms;
+  }
+  .order-card .msg-btn:active { transform: scale(0.95); }
+  .order-card .msg-btn.confirmed {
+    background: var(--white); color: var(--red);
+    border: 2px solid var(--red); box-shadow: none;
+  }
+  .order-card .row2 { gap: 10px; }
+
+  /* Bevestig drawer cards */
+  .confirm-card {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; padding: 14px 16px;
+    background: var(--white); border-radius: var(--radius-md);
+    border: 2px solid rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-card);
+    cursor: pointer; text-align: left;
+    font-family: inherit; -webkit-tap-highlight-color: transparent;
+    transition: border-color 120ms;
+  }
+  .confirm-card.selected { border-color: var(--red); }
+  .confirm-card .cf-icon {
+    flex: 0 0 44px; width: 44px; height: 44px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .confirm-card .cf-icon-new { background: rgba(0,0,0,0.06); color: #555; }
+  .confirm-card .cf-icon-ok  { background: rgba(33,118,255,0.10); color: #2176ff; }
+  .confirm-card .cf-text { min-width: 0; flex: 1; }
+  .confirm-card .cf-title { color: var(--black); font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+  .confirm-card .cf-sub { color: #666; font-size: 13px; }
 
   /* Login design */
   body.on-login { display: flex; flex-direction: column; align-items: center; }
@@ -425,6 +466,36 @@
   </section>
 </main>
 
+<!-- Bevestig bestelling drawer -->
+<div class="drawer-backdrop" id="confirm-backdrop"></div>
+<div class="drawer" id="confirm-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2 id="confirm-name">—</h2>
+  <div class="sub" id="confirm-sub">Welke status heeft deze bestelling?</div>
+  <div id="confirm-cards" style="display: grid; gap: 10px; margin-top: 8px;">
+    <button class="confirm-card" type="button" data-status="todo">
+      <div class="cf-icon cf-icon-new">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+      </div>
+      <div class="cf-text">
+        <div class="cf-title">Nieuw</div>
+        <div class="cf-sub">Nog niet bevestigd bij klant</div>
+      </div>
+    </button>
+    <button class="confirm-card" type="button" data-status="confirmed">
+      <div class="cf-icon cf-icon-ok">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="cf-text">
+        <div class="cf-title">Bevestigd</div>
+        <div class="cf-sub">Klant is op de hoogte</div>
+      </div>
+    </button>
+  </div>
+  <div class="error" id="confirm-err" style="margin-top: 10px;"></div>
+  <button class="btn-primary" id="confirm-save" type="button" style="margin-top: 16px;">Opslaan →</button>
+</div>
+
 <!-- Productiedatum drawer -->
 <div class="drawer-backdrop" id="prod-date-backdrop"></div>
 <div class="drawer" id="prod-date-drawer" role="dialog" aria-modal="true">
@@ -530,7 +601,7 @@
     clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
   }
 
-  const STATUS_LABELS = { todo: 'Todo', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
 
   function renderOrders() {
     const wrap = $('#orders-list'); wrap.innerHTML = '';
@@ -556,6 +627,10 @@
       const isLate = !!o.is_te_laat;
       const cdLabel = isLate ? `Te laat (geplande > belofte)` : cd.label;
       const cdColor = isLate ? 'color:var(--red);font-weight:700;' : 'color:#888;';
+      const showMsgBtn = (status === 'todo' || status === 'confirmed');
+      const confirmedCls = (status === 'confirmed') ? ' confirmed' : '';
+      const iconChat = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+      const iconCheck = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
       card.innerHTML = `
         <div class="head">
           <span class="name">${o.voornaam || '(geen naam)'}</span>
@@ -565,8 +640,13 @@
         <div class="row2">
           <span class="badge ${status}">${STATUS_LABELS[status] || status}</span>
           <span class="stock-tag ${stockClass}">${stockText}</span>
+          ${showMsgBtn ? `<button type="button" class="msg-btn${confirmedCls}" data-order-id="${o.id}" aria-label="Bevestig bestelling">${status==='confirmed' ? iconCheck : iconChat}</button>` : ''}
         </div>
       `;
+      const msgBtn = card.querySelector('.msg-btn');
+      if (msgBtn) {
+        msgBtn.addEventListener('click', (e) => { e.stopPropagation(); openConfirmDrawer(o); });
+      }
       card.addEventListener('click', () => { location.href = '/bestelling/' + o.id; });
       wrap.appendChild(card);
     });
@@ -782,7 +862,86 @@
   $('#prod-date-btn').addEventListener('click', openProdDateDrawer);
   $('#prod-date-save').addEventListener('click', saveProdDate);
   $('#prod-date-clear').addEventListener('click', clearProdDate);
-  $('#prod-date-backdrop').addEventListener('click', closeProdDateDrawer);
+  // --- Bevestig bestelling drawer ---
+  let __confirmOrder = null;
+  let __confirmStatus = 'confirmed';
+  const NL_DAYS = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+  const NL_MONTHS = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  function fmtNL(iso) {
+    if (!iso) return '';
+    const [y,m,d] = iso.split('-').map(n=>parseInt(n,10));
+    const dt = new Date(y, m-1, d);
+    return `${NL_DAYS[dt.getDay()]} ${d} ${NL_MONTHS[m-1]}`;
+  }
+  function buildConfirmMessage(o) {
+    const v = o.voornaam || 'klant';
+    const mode = o.delivery_mode || o.snapshot_delivery_mode;
+    if (mode === 'stock' || mode === 'override') {
+      return `Leuk ${v}, we hebben je bestelling ontvangen! Goed nieuws: jouw pot is al op voorraad, we komen 'm zaterdag bezorgen.\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
+    }
+    if (mode === 'production') {
+      const date = fmtNL(STATE.config?.next_production_date || o.delivery_date);
+      return `Leuk ${v}, we hebben je bestelling ontvangen! We maken een verse batch op ${date}, daarna komen we 'm bezorgen.\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
+    }
+    return `Leuk ${v}, we hebben je bestelling ontvangen! We zorgen dat je 'm binnen 4 weken thuis hebt — lukt het ons niet, dan krijg je je geld terug.\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
+  }
+  function buildConfirmUrl(o) {
+    const msg = buildConfirmMessage(o);
+    if (o.kanaal === 'whatsapp' && o.telefoon) {
+      const tel = String(o.telefoon).replace(/[^\d]/g, '');
+      const intl = tel.startsWith('0') ? '31' + tel.slice(1) : tel;
+      return `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
+    }
+    if (o.email) {
+      return `mailto:${encodeURIComponent(o.email)}?subject=${encodeURIComponent('Je ELLEMELLE bestelling staat genoteerd')}&body=${encodeURIComponent(msg)}`;
+    }
+    return null;
+  }
+  function selectConfirmCard(target) {
+    __confirmStatus = target;
+    document.querySelectorAll('#confirm-cards .confirm-card').forEach(c => {
+      c.classList.toggle('selected', c.dataset.status === target);
+    });
+  }
+  function openConfirmDrawer(order) {
+    __confirmOrder = order;
+    const cur = order.order_status || 'todo';
+    // For 'todo' status → default to 'confirmed' (user about to confirm + send WA)
+    // For 'confirmed' status → pre-select 'confirmed' (user can switch back)
+    selectConfirmCard(cur === 'confirmed' ? 'confirmed' : 'confirmed');
+    $('#confirm-name').textContent = order.voornaam || '(geen naam)';
+    $('#confirm-err').textContent = '';
+    $('#confirm-backdrop').classList.add('open');
+    $('#confirm-drawer').classList.add('open');
+    // For todo status: also open WhatsApp in parallel
+    if (cur === 'todo') {
+      const url = buildConfirmUrl(order);
+      if (url) window.open(url, '_blank', 'noopener');
+    }
+  }
+  function closeConfirmDrawer() {
+    $('#confirm-backdrop').classList.remove('open');
+    $('#confirm-drawer').classList.remove('open');
+  }
+  async function saveConfirm() {
+    if (!__confirmOrder) return;
+    const target = __confirmStatus;
+    const cur = __confirmOrder.order_status || 'todo';
+    if (target === cur) { closeConfirmDrawer(); return; }
+    const res = await api('bezorger-set-status', { order_id: __confirmOrder.id, status: target });
+    if (!res.ok) { $('#confirm-err').textContent = res.data.error || 'Opslaan mislukt'; return; }
+    __confirmOrder.order_status = target;
+    showToast(`Status bijgewerkt`, 'success');
+    closeConfirmDrawer();
+    await load();
+  }
+
+    $('#prod-date-backdrop').addEventListener('click', closeProdDateDrawer);
+  $('#confirm-backdrop').addEventListener('click', closeConfirmDrawer);
+  $('#confirm-save').addEventListener('click', saveConfirm);
+  document.querySelectorAll('#confirm-cards .confirm-card').forEach(c => {
+    c.addEventListener('click', () => selectConfirmCard(c.dataset.status));
+  });
   $('#gcal-btn').addEventListener('click', () => {
     const url = buildGCalUrl();
     if (url) window.open(url, '_blank', 'noopener');
