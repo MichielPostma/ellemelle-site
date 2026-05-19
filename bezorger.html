@@ -203,6 +203,24 @@
     line-height: 60px;
   }
   #route-btn[hidden] { display: none; }
+  /* Map preview (Google Maps embed) — non-interactive overview */
+  .map-preview {
+    position: relative; width: 100%; aspect-ratio: 1 / 1;
+    margin: 16px 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--cream-dark);
+    box-shadow: var(--shadow-card);
+  }
+  .map-preview iframe {
+    pointer-events: none;
+    width: 100%; height: 100%; border: 0; display: block;
+  }
+  .map-preview .click-overlay {
+    position: absolute; inset: 0; z-index: 1;
+  }
+  .map-preview[hidden] { display: none !important; }
   /* Toast */
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
@@ -419,6 +437,10 @@
     </div>
     <div class="field">
       <select id="week-select"></select>
+    </div>
+    <div class="map-preview" id="map-preview" hidden>
+      <iframe id="map-preview-iframe" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Bezorgroute overzicht"></iframe>
+      <a class="click-overlay" id="map-preview-link" target="_blank" rel="noopener" aria-label="Open volledige route in Google Maps"></a>
     </div>
     <a id="route-btn" class="btn-primary" target="_blank" rel="noopener" hidden>Bekijk bezorgroute →</a>
     <div class="stats" id="stats"></div>
@@ -708,6 +730,16 @@
     renderOrders();
   }
 
+
+  function googleMapsEmbedUrl(orders) {
+    if (!orders || orders.length === 0) return null;
+    const addrs = orders.map(o => [o.straat, o.huisnummer, o.postcode, o.plaats].filter(Boolean).join(' '));
+    const origin = BASE_LABEL;
+    // saddr = base, daddr = waypoint1+to:waypoint2+...+to:base (round trip)
+    const dest = addrs.concat([origin]).map(encodeURIComponent).join('+to:');
+    return `https://maps.google.com/maps?saddr=${encodeURIComponent(origin)}&daddr=${dest}&output=embed`;
+  }
+
   function googleMapsRouteUrl(orders) {
     // Loop route: origin = base, all stops as waypoints, destination = base.
     const origin = encodeURIComponent(BASE_LABEL);
@@ -731,7 +763,11 @@
     const w = STATE.currentWeek;
     $('#stats').textContent = `${w.delivered}/${w.total} bezorgd`;
     const routeUrl = googleMapsRouteUrl(w.orders);
+    const embedUrl = googleMapsEmbedUrl(w.orders);
     const routeBtn = document.getElementById('route-btn');
+    const mapPreview = document.getElementById('map-preview');
+    const mapIframe = document.getElementById('map-preview-iframe');
+    const mapLink = document.getElementById('map-preview-link');
     if (routeBtn) {
       if (routeUrl && w.orders.length > 0) {
         routeBtn.href = routeUrl;
@@ -739,6 +775,17 @@
       } else {
         routeBtn.removeAttribute('href');
         routeBtn.hidden = true;
+      }
+    }
+    if (mapPreview && mapIframe && mapLink) {
+      if (embedUrl && routeUrl && w.orders.length > 0) {
+        mapIframe.src = embedUrl;
+        mapLink.href = routeUrl;
+        mapPreview.hidden = false;
+      } else {
+        mapIframe.removeAttribute('src');
+        mapLink.removeAttribute('href');
+        mapPreview.hidden = true;
       }
     }
 
