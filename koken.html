@@ -184,6 +184,29 @@
     border: 3px solid rgba(255,255,255,0.6); border-radius: 14px;
   }
   body.koken-scanning #koken-scan-btn { display: none; }
+  /* Productiedatum drawer date input — unified dropdown style */
+  #prod-date-drawer input[type="date"] {
+    width: 100%; height: 56px; min-height: 56px;
+    padding: 0 44px 0 18px; box-sizing: border-box;
+    font-family: inherit; font-size: 16px; font-weight: 400; letter-spacing: 0.2px;
+    background: var(--white); color: var(--black);
+    border: 2px solid transparent; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    line-height: 52px;
+    appearance: none; -webkit-appearance: none;
+    text-align: left;
+    margin: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%23D9301E' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 18px center;
+    background-size: 16px 16px;
+  }
+  #prod-date-drawer input[type="date"]::-webkit-date-and-time-value {
+    text-align: left; line-height: 52px; height: 52px; margin: 0;
+  }
+  #prod-date-drawer input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute; opacity: 0; cursor: pointer;
+  }
+
   
   .prod-date-row { display: flex; align-items: stretch; gap: 10px; }
   .prod-date-row #prod-date-btn { flex: 1 1 auto; margin-top: 0; }
