@@ -166,6 +166,20 @@
   .confirm-card .cf-text { min-width: 0; flex: 1; }
   .confirm-card .cf-title { color: var(--black); font-size: 17px; font-weight: 700; margin-bottom: 2px; }
   .confirm-card .cf-sub { color: #666; font-size: 13px; }
+  /* Batch confirm — inline expand zone */
+  #batch-confirm-list .order-card.expanded { border-color: var(--red); }
+  #batch-confirm-list .expand-zone {
+    margin-top: 10px;
+    border-top: 1px solid var(--cream-dark);
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #batch-confirm-list .expand-zone .confirm-card { padding: 10px 12px; }
+  #batch-confirm-list .expand-zone .confirm-card .cf-icon { width: 36px; height: 36px; flex-basis: 36px; }
+  #batch-confirm-list .expand-zone .confirm-card .cf-title { font-size: 15px; }
+  #batch-confirm-list .expand-zone .confirm-card .cf-sub { font-size: 12px; }
 
   /* Login design */
   body.on-login { display: flex; flex-direction: column; align-items: center; }
@@ -396,8 +410,8 @@
       </div>
       <div id="orders-section-new" style="margin-top: 18px;">
         <div class="section-eyebrow">Nieuw</div>
+        <button class="btn-primary" id="batch-confirm-cta" type="button" hidden style="margin-bottom: 12px;">Bevestig bestellingen →</button>
         <div id="orders-list-new"></div>
-        <button class="btn-primary" id="batch-confirm-cta" type="button" hidden style="margin-top: 14px;">Bevestig bestellingen →</button>
       </div>
       <div id="orders-section-other" style="margin-top: 22px;">
         <div class="section-eyebrow">Bestellingen</div>
@@ -813,7 +827,71 @@
     setTimeout(() => a.remove(), 0);
   }
 
-  // --- Bevestig bestellingen (batch) ---
+  // --- Bevestig bestellingen (batch with inline expand) ---
+  let __batchExpandedId = null;
+  let __batchSelectedStatus = 'confirmed';
+  function buildBatchItem(o) {
+    const card = buildOrderCard(o, { allowMsgBtn: true });
+    if (__batchExpandedId === o.id) {
+      card.classList.add('expanded');
+      const zone = document.createElement('div');
+      zone.className = 'expand-zone';
+      zone.innerHTML = `
+        <button class="confirm-card" type="button" data-status="confirmed">
+          <div class="cf-icon cf-icon-ok">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="cf-text">
+            <div class="cf-title">Bevestigd</div>
+            <div class="cf-sub">Klant is op de hoogte</div>
+          </div>
+        </button>
+        <button class="confirm-card" type="button" data-status="todo">
+          <div class="cf-icon cf-icon-new">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div class="cf-text">
+            <div class="cf-title">Nieuw</div>
+            <div class="cf-sub">Nog niet bevestigd</div>
+          </div>
+        </button>
+        <div class="error batch-err" style="color: var(--red); font-size: 14px; font-weight: 600; display: none;"></div>
+        <button class="btn-primary batch-save" type="button">Opslaan →</button>
+      `;
+      // Apply selection styling
+      const apply = () => {
+        zone.querySelectorAll('.confirm-card').forEach(c => {
+          c.classList.toggle('selected', c.dataset.status === __batchSelectedStatus);
+        });
+      };
+      apply();
+      zone.querySelectorAll('.confirm-card').forEach(c => {
+        c.addEventListener('click', (e) => {
+          e.stopPropagation();
+          __batchSelectedStatus = c.dataset.status;
+          apply();
+        });
+      });
+      zone.querySelector('.batch-save').addEventListener('click', (e) => {
+        e.stopPropagation();
+        saveBatchExpand(o, zone);
+      });
+      card.appendChild(zone);
+    }
+    // Override msg-btn click to open WA + expand inline (no second drawer)
+    const msgBtn = card.querySelector('.msg-btn');
+    if (msgBtn) {
+      msgBtn.replaceWith(msgBtn.cloneNode(true));
+      const fresh = card.querySelector('.msg-btn');
+      fresh.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onBatchMsgClick(o);
+      });
+    }
+    // Also override card body click — keep nav to /bestelling on click outside zone+button
+    // (default click handler from buildOrderCard navigates → keep)
+    return card;
+  }
   function renderBatchConfirmList() {
     const list = $('#batch-confirm-list');
     const empty = $('#batch-confirm-empty');
@@ -821,12 +899,50 @@
     const orders = (STATE.newOrders || []).filter(o => (o.order_status || 'todo') === 'todo');
     if (orders.length === 0) {
       empty.hidden = false;
+      __batchExpandedId = null;
       return;
     }
     empty.hidden = true;
-    orders.forEach(o => list.appendChild(buildOrderCard(o, { allowMsgBtn: true })));
+    orders.forEach(o => list.appendChild(buildBatchItem(o)));
+  }
+  function onBatchMsgClick(order) {
+    // Open WA in new tab (anchor click pattern for iOS reliability)
+    const url = buildConfirmUrl(order);
+    if (url) setTimeout(() => openExternalLink(url), 0);
+    // Toggle: collapse if same item, expand otherwise
+    if (__batchExpandedId === order.id) {
+      __batchExpandedId = null;
+    } else {
+      __batchExpandedId = order.id;
+      __batchSelectedStatus = 'confirmed';
+    }
+    renderBatchConfirmList();
+  }
+  async function saveBatchExpand(order, zone) {
+    const target = __batchSelectedStatus;
+    const cur = order.order_status || 'todo';
+    if (target === cur) {
+      __batchExpandedId = null;
+      renderBatchConfirmList();
+      return;
+    }
+    const res = await api('bezorger-set-status', { order_id: order.id, status: target });
+    if (!res.ok) {
+      const err = zone.querySelector('.batch-err');
+      err.textContent = res.data.error || 'Opslaan mislukt';
+      err.style.display = 'block';
+      return;
+    }
+    order.order_status = target;
+    showToast('Status bijgewerkt', 'success');
+    __batchExpandedId = null;
+    await load();
+    if ($('#batch-confirm-drawer').classList.contains('open')) {
+      renderBatchConfirmList();
+    }
   }
   function openBatchConfirmDrawer() {
+    __batchExpandedId = null;
     renderBatchConfirmList();
     $('#batch-confirm-backdrop').classList.add('open');
     $('#batch-confirm-drawer').classList.add('open');
@@ -834,6 +950,7 @@
   function closeBatchConfirmDrawer() {
     $('#batch-confirm-backdrop').classList.remove('open');
     $('#batch-confirm-drawer').classList.remove('open');
+    __batchExpandedId = null;
   }
 
     function openConfirmDrawer(order) {
