@@ -208,16 +208,18 @@
     margin-bottom: 10px; line-height: 1.35;
     -webkit-tap-highlight-color: transparent;
   }
-  .order-card .info { min-width: 0; flex: 1; }
-  .order-card .name { font-weight: 700; font-size: 17px; color: var(--black); margin-bottom: 2px; }
-  .order-card .meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .order-card .info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .order-card .name { font-weight: 700; font-size: 17px; color: var(--black); }
   .order-card .deadline { color: #666; font-size: 13px; }
   .order-card .deadline.late { color: var(--red); font-weight: 700; }
+  .order-card .tags-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+  .order-card .tags-row .right-tag { margin-left: auto; }
   .order-card .badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
   .order-card .badge.todo      { background: rgba(0,0,0,0.06); color: #666; }
   .order-card .badge.confirmed { background: rgba(33,118,255,0.10); color: #2176ff; }
   .order-card .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .order-card .badge.no-stock  { background: rgba(255,193,7,0.12); color: #b75d00; }
+  .order-card .badge.has-stock { background: rgba(34,197,94,0.12); color: #15803d; }
   .order-card .send-btn {
     flex: 0 0 56px; width: 56px; height: 56px;
     background: var(--red); color: white;
@@ -711,9 +713,9 @@
     const n = daysUntil(iso);
     if (n === null) return { text: '', late: false };
     if (n < 0)  return { text: `${Math.abs(n)} ${Math.abs(n)===1?'dag':'dagen'} te laat`, late: true };
-    if (n === 0) return { text: 'Bezorgen vandaag', late: false };
-    if (n === 1) return { text: 'Bezorgen morgen', late: false };
-    return { text: `Bezorgen over ${n} dagen`, late: false };
+    if (n === 0) return { text: 'Vandaag uiterlijk bezorgen', late: false };
+    if (n === 1) return { text: 'Morgen uiterlijk bezorgen', late: false };
+    return { text: `Over uiterlijk ${n} dagen bezorgen`, late: false };
   }
   function buildUpdateMessage(o) {
     const planned = fmtNLDate(o.delivery_date);
@@ -745,8 +747,14 @@
       return;
     }
     empty.hidden = true;
-    // Sort: shortest deadline first (uiterlijke_bezorgdatum asc)
-    const sorted = orders.slice().sort((a,b) => String(a.uiterlijke_bezorgdatum || a.delivery_date || '').localeCompare(String(b.uiterlijke_bezorgdatum || b.delivery_date || '')));
+    // Sort: stock first, then by uiterlijke bezorgdatum asc
+    const sorted = orders.slice().sort((a, b) => {
+      const aStock = (a.delivery_mode === 'stock') ? 0 : 1;
+      const bStock = (b.delivery_mode === 'stock') ? 0 : 1;
+      if (aStock !== bStock) return aStock - bStock;
+      return String(a.uiterlijke_bezorgdatum || a.delivery_date || '')
+        .localeCompare(String(b.uiterlijke_bezorgdatum || b.delivery_date || ''));
+    });
     for (const o of sorted) {
       const card = document.createElement('div');
       card.className = 'order-card';
@@ -757,14 +765,17 @@
       const iconChat = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
       const orderStatus = o.order_status || 'todo';
       const statusLabel = STATUS_LABELS_KOKEN[orderStatus] || orderStatus;
-      const noStock = !(o.delivery_mode === 'stock');
+      const hasStock = (o.delivery_mode === 'stock');
+      const stockTag = hasStock
+        ? `<span class="badge has-stock right-tag">Voorraad</span>`
+        : `<span class="badge no-stock right-tag">Geen voorraad</span>`;
       card.innerHTML = `
         <div class="info">
           <div class="name">Bericht ${escapeHtml(o.voornaam || '(geen naam)')}</div>
-          <div class="meta-row">
+          <div class="deadline${dl.late ? ' late' : ''}">${escapeHtml(dl.text)}</div>
+          <div class="tags-row">
             <span class="badge ${orderStatus}">${escapeHtml(statusLabel)}</span>
-            ${noStock ? `<span class="badge no-stock">Geen voorraad</span>` : ''}
-            <span class="deadline${dl.late ? ' late' : ''}">${escapeHtml(dl.text)}</span>
+            ${stockTag}
           </div>
         </div>
         <button type="button" class="send-btn${sent ? ' sent' : ''}" aria-label="Update status voor ${escapeHtml(o.voornaam || '')}">
