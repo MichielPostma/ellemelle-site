@@ -214,9 +214,10 @@
   .order-card .deadline { color: #666; font-size: 13px; }
   .order-card .deadline.late { color: var(--red); font-weight: 700; }
   .order-card .badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
-  .order-card .badge.todo      { background: rgba(217,48,30,0.10); color: var(--red); }
+  .order-card .badge.todo      { background: rgba(0,0,0,0.06); color: #666; }
   .order-card .badge.confirmed { background: rgba(33,118,255,0.10); color: #2176ff; }
   .order-card .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
+  .order-card .badge.no-stock  { background: rgba(255,193,7,0.12); color: #b75d00; }
   .order-card .send-btn {
     flex: 0 0 56px; width: 56px; height: 56px;
     background: var(--red); color: white;
@@ -756,11 +757,13 @@
       const iconChat = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
       const orderStatus = o.order_status || 'todo';
       const statusLabel = STATUS_LABELS_KOKEN[orderStatus] || orderStatus;
+      const noStock = !(o.delivery_mode === 'stock');
       card.innerHTML = `
         <div class="info">
           <div class="name">Bericht ${escapeHtml(o.voornaam || '(geen naam)')}</div>
           <div class="meta-row">
             <span class="badge ${orderStatus}">${escapeHtml(statusLabel)}</span>
+            ${noStock ? `<span class="badge no-stock">Geen voorraad</span>` : ''}
             <span class="deadline${dl.late ? ' late' : ''}">${escapeHtml(dl.text)}</span>
           </div>
         </div>
