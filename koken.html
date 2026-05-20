@@ -718,8 +718,18 @@
     return { text: `Over uiterlijk ${n} dagen bezorgen`, late: false };
   }
   function buildUpdateMessage(o) {
-    const planned = fmtNLDate(o.delivery_date);
-    return `Goed nieuws ${o.voornaam}! We hebben net een verse batch Ellemelle chocopasta gemaakt. Jouw bezorging staat nu gepland op ${planned}. Mocht je niet thuis zijn geven we je pot af bij de buren en ontvang je een bericht.\n\nTot snel!\nEllis en Melle`;
+    const v = o.voornaam || 'klant';
+    const mode = o.delivery_mode || 'no_schedule';
+    const prodDate = STATE.config && STATE.config.next_production_date;
+    if (mode === 'stock') {
+      // A: pot is in stock — confirm zaterdag delivery
+      return `Leuk ${v}, we hebben je bestelling ontvangen! Goed nieuws: jouw pot is al op voorraad, we komen 'm zaterdag bezorgen.\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
+    }
+    if (mode === 'production' || prodDate) {
+      const date = fmtNLDate(prodDate || o.delivery_date);
+      return `Leuk ${v}, we hebben je bestelling ontvangen! We maken een verse batch op ${date}, daarna komen we 'm bezorgen.\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
+    }
+    return `Leuk ${v}, we hebben je bestelling ontvangen! Het zal eerder zijn dat we bezorgen, maar houd voor nu 4 weken aan. We updaten je zodra de voorraad is aangevuld!\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
   }
   function buildUpdateUrl(o) {
     const msg = buildUpdateMessage(o);
