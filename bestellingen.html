@@ -167,8 +167,14 @@
   .confirm-card .cf-title { color: var(--black); font-size: 17px; font-weight: 700; margin-bottom: 2px; }
   .confirm-card .cf-sub { color: #666; font-size: 13px; }
   /* Batch confirm — inline expand zone */
-  #batch-confirm-list .order-card.expanded { border-color: var(--red); }
+  #batch-confirm-list .order-card.expanded {
+    border-color: var(--red);
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
   #batch-confirm-list .expand-zone {
+    flex-basis: 100%;
+    width: 100%;
     margin-top: 10px;
     border-top: 1px solid var(--cream-dark);
     padding-top: 12px;
