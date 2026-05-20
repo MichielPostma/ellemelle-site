@@ -107,16 +107,17 @@
     .order-card {
     display: flex; align-items: center; gap: 12px;
     background: var(--white); border: 1px solid rgba(0,0,0,0.08);
-    border-radius: var(--radius-md); padding: 12px 12px 12px 16px;
+    border-radius: var(--radius-md); padding: 14px 14px 14px 16px;
     margin-bottom: 10px; line-height: 1.35;
     cursor: pointer; -webkit-tap-highlight-color: transparent;
   }
   .order-card:active { transform: scale(0.99); }
-  .order-card .info { min-width: 0; flex: 1; }
-  .order-card .name { font-weight: 700; font-size: 17px; color: var(--black); margin-bottom: 2px; }
-  .order-card .meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .order-card .info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .order-card .name { font-weight: 700; font-size: 17px; color: var(--black); }
   .order-card .deadline { color: #666; font-size: 13px; }
   .order-card .deadline.late { color: var(--red); font-weight: 700; }
+  .order-card .tags-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+  .order-card .tags-row .right-tag { margin-left: auto; }
   .order-card .badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
   .badge.todo       { background: rgba(0,0,0,0.06); color: #666; }
   .badge.confirmed  { background: rgba(33,118,255,0.10); color: #2176ff; }
@@ -124,10 +125,11 @@
   .badge.neighbors  { background: rgba(255,210,74,0.25); color: #b85c00; }
   .badge.retry      { background: rgba(139,26,14,0.08); color: var(--red-dark); }
   .badge.no-stock   { background: rgba(255,193,7,0.12); color: #b75d00; }
+  .badge.has-stock  { background: rgba(34,197,94,0.12); color: #15803d; }
   .empty { color: #888; font-size: 13px; padding: 12px 0; }
   /* Message-icon button on cards (todo / confirmed) */
   .order-card .msg-btn {
-    flex: 0 0 44px; width: 44px; height: 44px;
+    flex: 0 0 56px; width: 56px; height: 56px;
     border-radius: var(--radius-md);
     display: inline-flex; align-items: center; justify-content: center;
     cursor: pointer; padding: 0; text-decoration: none;
@@ -141,7 +143,6 @@
     background: var(--white); color: var(--red);
     border: 2px solid var(--red); box-shadow: none;
   }
-  .order-card .row2 { gap: 10px; }
 
   /* Bevestig drawer cards */
   .confirm-card {
@@ -394,7 +395,7 @@
         </select>
       </div>
       <div id="orders-section-new" style="margin-top: 18px;">
-        <div class="section-eyebrow">Nieuwe bestellingen</div>
+        <div class="section-eyebrow">Nieuw</div>
         <div id="orders-list-new"></div>
       </div>
       <div id="orders-section-other" style="margin-top: 22px;">
@@ -549,30 +550,32 @@
   function shortDeadline(o) {
     const cd = deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
     const isLate = !!o.is_te_laat;
-    // Use the existing deliveryCountdown but trim "of eerder"
     let txt = cd.label || '';
-    txt = txt.replace(/Nog (\d+) dagen uiterlijk bezorgd/, 'Bezorgen over $1 dagen');
-    txt = txt.replace(/Vandaag uiterlijk bezorgd/, 'Bezorgen vandaag');
-    txt = txt.replace(/Morgen uiterlijk bezorgd/, 'Bezorgen morgen');
+    txt = txt.replace(/Nog (\d+) dagen uiterlijk bezorgd/, 'Over uiterlijk $1 dagen bezorgen');
+    txt = txt.replace(/Vandaag uiterlijk bezorgd/, 'Vandaag uiterlijk bezorgen');
+    txt = txt.replace(/Morgen uiterlijk bezorgd/, 'Morgen uiterlijk bezorgen');
     return { text: isLate ? 'Te laat' : txt, late: isLate || cd.overdue };
   }
   function buildOrderCard(o) {
     const card = document.createElement('div');
     card.className = 'order-card';
     const status = o.order_status || 'todo';
-    const noStock = !(o.delivery_mode === 'stock');
+    const hasStock = (o.delivery_mode === 'stock');
     const showMsgBtn = (status === 'todo' || status === 'confirmed');
     const confirmedCls = (status === 'confirmed') ? ' confirmed' : '';
-    const iconChat  = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
-    const iconCheck = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const iconChat  = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+    const iconCheck = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     const dl = shortDeadline(o);
+    const stockTag = hasStock
+      ? `<span class="badge has-stock right-tag">Voorraad</span>`
+      : `<span class="badge no-stock right-tag">Geen voorraad</span>`;
     card.innerHTML = `
       <div class="info">
         <div class="name">${o.voornaam || '(geen naam)'}</div>
-        <div class="meta-row">
+        <div class="deadline${dl.late ? ' late' : ''}">${dl.text}</div>
+        <div class="tags-row">
           <span class="badge ${status}">${STATUS_LABELS[status] || status}</span>
-          ${noStock ? `<span class="badge no-stock">Geen voorraad</span>` : ''}
-          <span class="deadline${dl.late ? ' late' : ''}">${dl.text}</span>
+          ${stockTag}
         </div>
       </div>
       ${showMsgBtn ? `<button type="button" class="msg-btn${confirmedCls}" data-order-id="${o.id}" aria-label="Bevestig bestelling">${status==='confirmed' ? iconCheck : iconChat}</button>` : ''}
@@ -584,9 +587,20 @@
     card.addEventListener('click', () => { location.href = '/bestelling/' + o.id; });
     return card;
   }
+  function sortStockFirst(arr) {
+    return arr.slice().sort((a, b) => {
+      const aStock = (a.delivery_mode === 'stock') ? 0 : 1;
+      const bStock = (b.delivery_mode === 'stock') ? 0 : 1;
+      if (aStock !== bStock) return aStock - bStock;
+      return String(a.uiterlijke_bezorgdatum || a.delivery_date || '')
+        .localeCompare(String(b.uiterlijke_bezorgdatum || b.delivery_date || ''));
+    });
+  }
   function renderOrders() {
     const wrapNew   = $('#orders-list-new');
     const wrapOther = $('#orders-list-other');
+    const secNew    = $('#orders-section-new');
+    const secOther  = $('#orders-section-other');
     wrapNew.innerHTML = '';
     wrapOther.innerHTML = '';
     const f = $('#filter-select').value;
@@ -595,18 +609,20 @@
     else if (f === 'not_stock') list = list.filter(o => o.delivery_mode !== 'stock');
     else if (f === 'delivered') list = list.filter(o => ['delivered','neighbors'].includes(o.order_status));
     else if (f === 'todo')      list = list.filter(o => o.order_status === 'todo');
-    // Sort by uiterlijke bezorgdatum (shortest deadline first)
-    list.sort((a,b) => String(a.uiterlijke_bezorgdatum || a.delivery_date || '').localeCompare(String(b.uiterlijke_bezorgdatum || b.delivery_date || '')));
-    const newOrders   = list.filter(o => (o.order_status || 'todo') === 'todo');
-    const otherOrders = list.filter(o => (o.order_status || 'todo') !== 'todo');
+    const newOrders   = sortStockFirst(list.filter(o => (o.order_status || 'todo') === 'todo'));
+    const otherOrders = sortStockFirst(list.filter(o => (o.order_status || 'todo') !== 'todo'));
+    // New section: always visible — show empty state if needed
+    secNew.hidden = false;
     if (newOrders.length === 0) {
       wrapNew.innerHTML = '<div class="empty">Geen nieuwe bestellingen.</div>';
     } else {
       newOrders.forEach(o => wrapNew.appendChild(buildOrderCard(o)));
     }
+    // Other section: hidden entirely when empty
     if (otherOrders.length === 0) {
-      wrapOther.innerHTML = '<div class="empty">Geen overige bestellingen.</div>';
+      secOther.hidden = true;
     } else {
+      secOther.hidden = false;
       otherOrders.forEach(o => wrapOther.appendChild(buildOrderCard(o)));
     }
   }
