@@ -936,10 +936,15 @@
     order.order_status = target;
     showToast('Status bijgewerkt', 'success');
     __batchExpandedId = null;
+    // Aggressively invalidate cache before re-fetching
+    try { window.__invalidateApiCache && window.__invalidateApiCache(); } catch {}
     await load();
-    if ($('#batch-confirm-drawer').classList.contains('open')) {
-      renderBatchConfirmList();
-    }
+    // Defer render one tick so STATE.newOrders is committed
+    setTimeout(() => {
+      if ($('#batch-confirm-drawer').classList.contains('open')) {
+        renderBatchConfirmList();
+      }
+    }, 0);
   }
   function openBatchConfirmDrawer() {
     __batchExpandedId = null;
