@@ -908,6 +908,15 @@
         renderGrid();
         $('#login-view').hidden = true; document.body.classList.remove('on-login');
         $('#main-view').hidden = false;
+        // Auto-open pot drawer if ?pot=POT-XXX is present (from scan-fab)
+        try {
+          const params = new URLSearchParams(location.search);
+          const potParam = params.get('pot');
+          if (potParam && /^POT-\d{3}$/.test(potParam.toUpperCase())) {
+            const pot = STATE.pots.find(p => p.id === potParam.toUpperCase());
+            if (pot) setTimeout(() => openDrawer(pot), 100);
+          }
+        } catch {}
       } else {
         clearSession(); STATE.password = null;
       }
@@ -1081,6 +1090,20 @@
   });
 })();
 </script>
+
+<button class="fab fab-scan" id="fab-scan" type="button" aria-label="Scan een POT-QR" style="bottom: calc(94px + env(safe-area-inset-bottom));">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <line x1="14" y1="14" x2="14" y2="18"/>
+    <line x1="14" y1="21" x2="14" y2="21"/>
+    <line x1="17" y1="14" x2="21" y2="14"/>
+    <line x1="17" y1="17" x2="17" y2="21"/>
+    <line x1="21" y1="17" x2="21" y2="21"/>
+  </svg>
+</button>
+<script type="module" src="/assets/scan-fab.js"></script>
 
 </body>
 </html>
