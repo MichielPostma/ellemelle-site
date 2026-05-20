@@ -397,6 +397,7 @@
       <div id="orders-section-new" style="margin-top: 18px;">
         <div class="section-eyebrow">Nieuw</div>
         <div id="orders-list-new"></div>
+        <button class="btn-primary" id="batch-confirm-cta" type="button" hidden style="margin-top: 14px;">Bevestig bestellingen →</button>
       </div>
       <div id="orders-section-other" style="margin-top: 22px;">
         <div class="section-eyebrow">Bestellingen</div>
@@ -420,6 +421,16 @@
     </div>
   </section>
 </main>
+
+<!-- Bevestig bestellingen batch drawer -->
+<div class="drawer-backdrop" id="batch-confirm-backdrop"></div>
+<div class="drawer" id="batch-confirm-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2>Bevestig bestellingen</h2>
+  <div class="sub">Tik op de knop naast een klant om de bevestiging te versturen.</div>
+  <div id="batch-confirm-list" style="display: grid; gap: 10px;"></div>
+  <div id="batch-confirm-empty" hidden style="color:#888;font-size:14px;padding:18px 0;text-align:center;">Alle bestellingen bevestigd</div>
+</div>
 
 <!-- Bevestig bestelling drawer -->
 <div class="drawer-backdrop" id="confirm-backdrop"></div>
@@ -556,12 +567,13 @@
     txt = txt.replace(/Morgen uiterlijk bezorgd/, 'Morgen uiterlijk bezorgen');
     return { text: isLate ? 'Te laat' : txt, late: isLate || cd.overdue };
   }
-  function buildOrderCard(o) {
+  function buildOrderCard(o, opts) {
+    opts = opts || {};
     const card = document.createElement('div');
     card.className = 'order-card';
     const status = o.order_status || 'todo';
     const hasStock = (o.delivery_mode === 'stock');
-    const showMsgBtn = (status === 'todo' || status === 'confirmed');
+    const showMsgBtn = opts.allowMsgBtn !== false && (status === 'todo' || status === 'confirmed');
     const confirmedCls = (status === 'confirmed') ? ' confirmed' : '';
     const iconChat  = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
     const iconCheck = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -615,9 +627,12 @@
     secNew.hidden = false;
     if (newOrders.length === 0) {
       wrapNew.innerHTML = '<div class="empty">Geen nieuwe bestellingen.</div>';
+      $('#batch-confirm-cta').hidden = true;
     } else {
-      newOrders.forEach(o => wrapNew.appendChild(buildOrderCard(o)));
+      newOrders.forEach(o => wrapNew.appendChild(buildOrderCard(o, { allowMsgBtn: false })));
+      $('#batch-confirm-cta').hidden = false;
     }
+    STATE.newOrders = newOrders;
     // Other section: hidden entirely when empty
     if (otherOrders.length === 0) {
       secOther.hidden = true;
@@ -797,7 +812,31 @@
     a.click();
     setTimeout(() => a.remove(), 0);
   }
-  function openConfirmDrawer(order) {
+
+  // --- Bevestig bestellingen (batch) ---
+  function renderBatchConfirmList() {
+    const list = $('#batch-confirm-list');
+    const empty = $('#batch-confirm-empty');
+    list.innerHTML = '';
+    const orders = (STATE.newOrders || []).filter(o => (o.order_status || 'todo') === 'todo');
+    if (orders.length === 0) {
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    orders.forEach(o => list.appendChild(buildOrderCard(o, { allowMsgBtn: true })));
+  }
+  function openBatchConfirmDrawer() {
+    renderBatchConfirmList();
+    $('#batch-confirm-backdrop').classList.add('open');
+    $('#batch-confirm-drawer').classList.add('open');
+  }
+  function closeBatchConfirmDrawer() {
+    $('#batch-confirm-backdrop').classList.remove('open');
+    $('#batch-confirm-drawer').classList.remove('open');
+  }
+
+    function openConfirmDrawer(order) {
     __confirmOrder = order;
     const cur = order.order_status || 'todo';
     selectConfirmCard('confirmed');
@@ -825,10 +864,16 @@
     showToast(`Status bijgewerkt`, 'success');
     closeConfirmDrawer();
     await load();
+    // If the batch-confirm-drawer is still open, refresh its list (order moved out of Nieuw)
+    if ($('#batch-confirm-drawer').classList.contains('open')) {
+      renderBatchConfirmList();
+    }
   }
 
   
   $('#confirm-backdrop').addEventListener('click', closeConfirmDrawer);
+  $('#batch-confirm-cta').addEventListener('click', openBatchConfirmDrawer);
+  $('#batch-confirm-backdrop').addEventListener('click', closeBatchConfirmDrawer);
   $('#confirm-save').addEventListener('click', saveConfirm);
   document.querySelectorAll('#confirm-cards .confirm-card').forEach(c => {
     c.addEventListener('click', () => selectConfirmCard(c.dataset.status));
