@@ -753,15 +753,20 @@
   }
   function buildConfirmMessage(o) {
     const v = o.voornaam || 'klant';
-    const mode = o.delivery_mode || o.snapshot_delivery_mode;
-    if (mode === 'stock' || mode === 'override') {
+    // Use allocator-output delivery_mode (current snapshot of stock allocation)
+    const mode = o.delivery_mode || 'no_schedule';
+    const prodDate = STATE.config && STATE.config.next_production_date;
+    // A: pot is actually allocated from stock
+    if (mode === 'stock') {
       return `Leuk ${v}, we hebben je bestelling ontvangen! Goed nieuws: jouw pot is al op voorraad, we komen 'm zaterdag bezorgen.\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
     }
-    if (mode === 'production') {
-      const date = fmtNL(STATE.config?.next_production_date || o.delivery_date);
+    // B: no stock for this order, but a production date is planned
+    if (mode === 'production' || prodDate) {
+      const date = fmtNL(prodDate || o.delivery_date);
       return `Leuk ${v}, we hebben je bestelling ontvangen! We maken een verse batch op ${date}, daarna komen we 'm bezorgen.\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
     }
-    return `Leuk ${v}, we hebben je bestelling ontvangen! We zorgen dat je 'm binnen 4 weken thuis hebt — lukt het ons niet, dan krijg je je geld terug.\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
+    // C: no stock + no production date
+    return `Leuk ${v}, we hebben je bestelling ontvangen! Het zal eerder zijn dat we bezorgen, maar houd voor nu 4 weken aan. We updaten je zodra de voorraad is aangevuld!\n\nHelemaal zin in!\nLiefs, Ellis en Melle`;
   }
   function buildConfirmUrl(o) {
     const msg = buildConfirmMessage(o);
