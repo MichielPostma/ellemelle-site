@@ -102,27 +102,29 @@
   .menu-panel a:hover { background: rgba(217,48,30,0.06); }
 
   /* Order cards */
-  .order-card {
+  .section-eyebrow { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 10px; }
+
+    .order-card {
+    display: flex; align-items: center; gap: 12px;
     background: var(--white); border: 1px solid rgba(0,0,0,0.08);
-    border-radius: var(--radius-md); padding: 14px 16px;
-    margin-bottom: 10px; line-height: 1.45;
+    border-radius: var(--radius-md); padding: 12px 12px 12px 16px;
+    margin-bottom: 10px; line-height: 1.35;
     cursor: pointer; -webkit-tap-highlight-color: transparent;
   }
   .order-card:active { transform: scale(0.99); }
-  .order-card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; }
-  .order-card .name { font-weight: 700; font-size: 17px; color: var(--black); }
-  .order-card .date { color: #888; font-size: 12px; }
-  .order-card .addr { color: #666; font-size: 14px; }
-  .order-card .row2 { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px; }
+  .order-card .info { min-width: 0; flex: 1; }
+  .order-card .name { font-weight: 700; font-size: 17px; color: var(--black); margin-bottom: 2px; }
+  .order-card .meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .order-card .deadline { color: #666; font-size: 13px; }
+  .order-card .deadline.late { color: var(--red); font-weight: 700; }
   .order-card .badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
-  .badge.todo       { background: rgba(0,0,0,0.06); color: #555; }
+  .badge.todo       { background: rgba(0,0,0,0.06); color: #666; }
   .badge.confirmed  { background: rgba(33,118,255,0.10); color: #2176ff; }
   .badge.delivered  { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .badge.neighbors  { background: rgba(255,210,74,0.25); color: #b85c00; }
   .badge.retry      { background: rgba(139,26,14,0.08); color: var(--red-dark); }
-  .order-card .stock-tag { color: #666; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
-  .order-card .stock-tag.in { color: #1f9d55; }
-  .order-card .stock-tag.out { color: #b85c00; }
+  .badge.no-stock   { background: rgba(255,193,7,0.12); color: #b75d00; }
+  .empty { color: #888; font-size: 13px; padding: 12px 0; }
   /* Message-icon button on cards (todo / confirmed) */
   .order-card .msg-btn {
     flex: 0 0 44px; width: 44px; height: 44px;
@@ -191,46 +193,8 @@
   }
 
   /* Tabs */
-  /* Productiedatum prompt (Bestellingen tab) */
-  .prod-date-row { display: flex; align-items: stretch; gap: 10px; }
-  .prod-date-row #prod-date-btn { flex: 1 1 auto; margin-top: 0; min-height: 56px; line-height: 52px; padding: 0 18px; text-align: left; }
-  .btn-gcal {
-    flex: 0 0 56px; width: 56px; height: 56px;
-    background: var(--red); color: white;
-    border: none; border-radius: var(--radius-md);
-    display: inline-flex; align-items: center; justify-content: center;
-    cursor: pointer; padding: 0;
-    box-shadow: 0 4px 12px rgba(217,48,30,0.25);
-    -webkit-tap-highlight-color: transparent;
-    margin-top: 0;
-  }
-  .btn-gcal:active { transform: scale(0.97); }
-  #prod-prompt-wrap { margin-top: 14px; margin-bottom: 18px; }
-  #prod-prompt-wrap[hidden] { display: none !important; }
   .drawer h2 { font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 8px; }
   .drawer .sub { color: #666; font-size: 14px; line-height: 1.4; margin-bottom: 18px; }
-  /* Productiedatum drawer date input — unified dropdown style */
-  #prod-date-drawer input[type="date"] {
-    width: 100%; height: 56px; min-height: 56px;
-    padding: 0 44px 0 18px; box-sizing: border-box;
-    font-family: inherit; font-size: 16px; font-weight: 400; letter-spacing: 0.2px;
-    background: var(--white); color: var(--black);
-    border: 2px solid transparent; border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card);
-    line-height: 52px;
-    appearance: none; -webkit-appearance: none;
-    text-align: left;
-    margin: 0;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%23D9301E' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat: no-repeat; background-position: right 18px center;
-    background-size: 16px 16px;
-  }
-  #prod-date-drawer input[type="date"]::-webkit-date-and-time-value {
-    text-align: left; line-height: 52px; height: 52px; margin: 0;
-  }
-  #prod-date-drawer input[type="date"]::-webkit-calendar-picker-indicator {
-    position: absolute; opacity: 0; cursor: pointer;
-  }
 
 
   .drawer-backdrop {
@@ -429,24 +393,14 @@
           <option value="todo">Open (todo)</option>
         </select>
       </div>
-      <!-- Productiedatum prompt -->
-      <div id="prod-prompt-wrap" hidden>
-        <!-- State 1: no production date set -->
-        <button class="btn-outline" id="prod-plan-btn" type="button" hidden>⚠️ Plan je volgende kooksessie</button>
-        <!-- State 2: production date set -->
-        <div class="prod-date-row" id="prod-date-set" hidden>
-          <button class="btn-outline" id="prod-date-btn" type="button">Productiedatum: —</button>
-          <button class="btn-gcal" id="gcal-btn" type="button" aria-label="Naar Google Agenda">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="16" rx="2"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-              <line x1="8" y1="3" x2="8" y2="7"/>
-              <line x1="16" y1="3" x2="16" y2="7"/>
-            </svg>
-          </button>
-        </div>
+      <div id="orders-section-new" style="margin-top: 18px;">
+        <div class="section-eyebrow">Nieuwe bestellingen</div>
+        <div id="orders-list-new"></div>
       </div>
-      <div id="orders-list"></div>
+      <div id="orders-section-other" style="margin-top: 22px;">
+        <div class="section-eyebrow">Bestellingen</div>
+        <div id="orders-list-other"></div>
+      </div>
     </div>
 
     <!-- Klanten tab content -->
@@ -496,17 +450,6 @@
   <button class="btn-primary" id="confirm-save" type="button" style="margin-top: 16px;">Opslaan →</button>
 </div>
 
-<!-- Productiedatum drawer -->
-<div class="drawer-backdrop" id="prod-date-backdrop"></div>
-<div class="drawer" id="prod-date-drawer" role="dialog" aria-modal="true">
-  <div class="drawer-handle"></div>
-  <h2>Datum volgende kooksessie</h2>
-  <div class="sub">De datum dat de volgende batch chocopasta gemaakt wordt.</div>
-  <input type="date" id="prod-date-drawer-input">
-  <div class="error" id="prod-date-drawer-err"></div>
-  <button class="btn-primary" id="prod-date-save" type="button">Opslaan</button>
-  <button class="btn-outline" id="prod-date-clear" type="button">Wissen</button>
-</div>
 
 <div class="toast" id="toast" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--black); color: white; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 200ms; pointer-events: none;"></div>
 
@@ -603,53 +546,69 @@
 
   const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
 
+  function shortDeadline(o) {
+    const cd = deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
+    const isLate = !!o.is_te_laat;
+    // Use the existing deliveryCountdown but trim "of eerder"
+    let txt = cd.label || '';
+    txt = txt.replace(/Nog (\d+) dagen uiterlijk bezorgd/, 'Bezorgen over $1 dagen');
+    txt = txt.replace(/Vandaag uiterlijk bezorgd/, 'Bezorgen vandaag');
+    txt = txt.replace(/Morgen uiterlijk bezorgd/, 'Bezorgen morgen');
+    return { text: isLate ? 'Te laat' : txt, late: isLate || cd.overdue };
+  }
+  function buildOrderCard(o) {
+    const card = document.createElement('div');
+    card.className = 'order-card';
+    const status = o.order_status || 'todo';
+    const noStock = !(o.delivery_mode === 'stock');
+    const showMsgBtn = (status === 'todo' || status === 'confirmed');
+    const confirmedCls = (status === 'confirmed') ? ' confirmed' : '';
+    const iconChat  = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+    const iconCheck = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const dl = shortDeadline(o);
+    card.innerHTML = `
+      <div class="info">
+        <div class="name">${o.voornaam || '(geen naam)'}</div>
+        <div class="meta-row">
+          <span class="badge ${status}">${STATUS_LABELS[status] || status}</span>
+          ${noStock ? `<span class="badge no-stock">Geen voorraad</span>` : ''}
+          <span class="deadline${dl.late ? ' late' : ''}">${dl.text}</span>
+        </div>
+      </div>
+      ${showMsgBtn ? `<button type="button" class="msg-btn${confirmedCls}" data-order-id="${o.id}" aria-label="Bevestig bestelling">${status==='confirmed' ? iconCheck : iconChat}</button>` : ''}
+    `;
+    const msgBtn = card.querySelector('.msg-btn');
+    if (msgBtn) {
+      msgBtn.addEventListener('click', (e) => { e.stopPropagation(); openConfirmDrawer(o); });
+    }
+    card.addEventListener('click', () => { location.href = '/bestelling/' + o.id; });
+    return card;
+  }
   function renderOrders() {
-    const wrap = $('#orders-list'); wrap.innerHTML = '';
+    const wrapNew   = $('#orders-list-new');
+    const wrapOther = $('#orders-list-other');
+    wrapNew.innerHTML = '';
+    wrapOther.innerHTML = '';
     const f = $('#filter-select').value;
     let list = STATE.orders.slice();
     if (f === 'stock')      list = list.filter(o => o.delivery_mode === 'stock');
     else if (f === 'not_stock') list = list.filter(o => o.delivery_mode !== 'stock');
     else if (f === 'delivered') list = list.filter(o => ['delivered','neighbors'].includes(o.order_status));
     else if (f === 'todo')      list = list.filter(o => o.order_status === 'todo');
-    if (list.length === 0) {
-      wrap.innerHTML = '<div class="empty">Geen bestellingen in deze filter.</div>';
-      return;
+    // Sort by uiterlijke bezorgdatum (shortest deadline first)
+    list.sort((a,b) => String(a.uiterlijke_bezorgdatum || a.delivery_date || '').localeCompare(String(b.uiterlijke_bezorgdatum || b.delivery_date || '')));
+    const newOrders   = list.filter(o => (o.order_status || 'todo') === 'todo');
+    const otherOrders = list.filter(o => (o.order_status || 'todo') !== 'todo');
+    if (newOrders.length === 0) {
+      wrapNew.innerHTML = '<div class="empty">Geen nieuwe bestellingen.</div>';
+    } else {
+      newOrders.forEach(o => wrapNew.appendChild(buildOrderCard(o)));
     }
-    list.forEach(o => {
-      const card = document.createElement('div');
-      card.className = 'order-card';
-      const status = o.order_status || 'todo';
-      const inStock = (o.delivery_mode === 'stock');
-      const stockClass = inStock ? 'in' : 'out';
-      const stockText = inStock ? '· op voorraad' : '· niet op voorraad';
-      const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
-      const cd = deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
-      const isLate = !!o.is_te_laat;
-      const cdLabel = isLate ? `Te laat (geplande > belofte)` : cd.label;
-      const cdColor = isLate ? 'color:var(--red);font-weight:700;' : 'color:#888;';
-      const showMsgBtn = (status === 'todo' || status === 'confirmed');
-      const confirmedCls = (status === 'confirmed') ? ' confirmed' : '';
-      const iconChat = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
-      const iconCheck = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-      card.innerHTML = `
-        <div class="head">
-          <span class="name">${o.voornaam || '(geen naam)'}</span>
-          <span class="date" style="${cdColor}">${cdLabel}</span>
-        </div>
-        <div class="addr">${addr}${o.plaats ? ' — ' + o.plaats : ''}</div>
-        <div class="row2">
-          <span class="badge ${status}">${STATUS_LABELS[status] || status}</span>
-          <span class="stock-tag ${stockClass}">${stockText}</span>
-          ${showMsgBtn ? `<button type="button" class="msg-btn${confirmedCls}" data-order-id="${o.id}" aria-label="Bevestig bestelling">${status==='confirmed' ? iconCheck : iconChat}</button>` : ''}
-        </div>
-      `;
-      const msgBtn = card.querySelector('.msg-btn');
-      if (msgBtn) {
-        msgBtn.addEventListener('click', (e) => { e.stopPropagation(); openConfirmDrawer(o); });
-      }
-      card.addEventListener('click', () => { location.href = '/bestelling/' + o.id; });
-      wrap.appendChild(card);
-    });
+    if (otherOrders.length === 0) {
+      wrapOther.innerHTML = '<div class="empty">Geen overige bestellingen.</div>';
+    } else {
+      otherOrders.forEach(o => wrapOther.appendChild(buildOrderCard(o)));
+    }
   }
 
   async function load() {
@@ -661,7 +620,6 @@
       const pots = cfg.data.pots || [];
       STATE.config.stock_count = pots.filter(p => p.status === 'voorraad').length;
     }
-    renderProdPrompt();
     renderOrders();
   }
   function fmtDateNL(iso) {
@@ -675,103 +633,8 @@
     const [y,m,d] = iso.split('-');
     return `${d}-${m}-${y.slice(2)}`;
   }
-  function fmtDayMonthBest(iso) {
-    if (!iso) return '';
-    const [y, m, d] = iso.split('-').map(n => parseInt(n, 10));
-    return `${d}/${m}`;
-  }
-  function renderProdPrompt() {
-    const wrap = document.querySelector('#prod-prompt-wrap');
-    const planBtn = document.querySelector('#prod-plan-btn');
-    const setRow  = document.querySelector('#prod-date-set');
-    const dateBtn = document.querySelector('#prod-date-btn');
-    const date = STATE.config && STATE.config.next_production_date;
-    const open = STATE.orders.filter(o => !['delivered','neighbors'].includes(o.order_status));
-    // Voorraad is "op" als totaal open potten > totaal stock — geldt ook voor override-orders
-    const totalOpenPots = open.reduce((sum, o) => sum + (parseInt(o.aantal, 10) || 1), 0);
-    const stockCount = (STATE.config && STATE.config.stock_count) || 0;
-    const needsProd = totalOpenPots > stockCount;
-    if (date) {
-      // State 2 — date set
-      wrap.hidden = false;
-      planBtn.hidden = true;
-      setRow.hidden = false;
-      dateBtn.textContent = 'Volgende kooksessie ' + fmtDayMonthBest(date);
-    } else if (needsProd) {
-      // State 1 — needs prod, no date
-      wrap.hidden = false;
-      planBtn.hidden = false;
-      setRow.hidden = true;
-    } else {
-      // State 3 — all stock + no date → hide
-      wrap.hidden = true;
-    }
-  }
   function todayISO() {
     const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-  function openProdDateDrawer() {
-    document.querySelector('#prod-date-drawer-input').value = (STATE.config && STATE.config.next_production_date) || todayISO();
-    document.querySelector('#prod-date-drawer-err').textContent = '';
-    document.querySelector('#prod-date-backdrop').classList.add('open');
-    document.querySelector('#prod-date-drawer').classList.add('open');
-  }
-  function closeProdDateDrawer() {
-    document.querySelector('#prod-date-backdrop').classList.remove('open');
-    document.querySelector('#prod-date-drawer').classList.remove('open');
-  }
-  async function saveProdDate() {
-    const v = document.querySelector('#prod-date-drawer-input').value;
-    if (!v) { document.querySelector('#prod-date-drawer-err').textContent = 'Kies een datum'; return; }
-    const res = await api('voorraad-set-config', { next_production_date: v });
-    if (res.ok) {
-      STATE.config = res.data.config || { next_production_date: v };
-      closeProdDateDrawer();
-      renderProdPrompt();
-      showToast(`Volgende kooksessie ${fmtDayMonthBest(v)}`, 'success');
-    } else {
-      document.querySelector('#prod-date-drawer-err').textContent = res.data.error || 'Opslaan mislukt';
-    }
-  }
-  async function clearProdDate() {
-    const res = await api('voorraad-set-config', { next_production_date: '' });
-    if (res.ok) {
-      STATE.config = res.data.config || { next_production_date: null };
-      closeProdDateDrawer();
-      renderProdPrompt();
-      showToast('Productiedatum gewist', 'success');
-    } else {
-      document.querySelector('#prod-date-drawer-err').textContent = res.data.error || 'Wissen mislukt';
-    }
-  }
-  function buildGCalUrl() {
-    const date = STATE.config && STATE.config.next_production_date;
-    if (!date) return null;
-    const [Y, M, D] = date.split('-');
-    const dateCompact = `${Y}${M}${D}`;
-    const start = `${dateCompact}T110000`;
-    const end   = `${dateCompact}T130000`;
-    const open = STATE.orders.filter(o => o.order_status === 'todo');
-    const todoCount = open.length;
-    const stockCount = (STATE.config && STATE.config.stock_count) || 0;
-    const teMaken = Math.max(0, todoCount - stockCount);
-    const expiry = new Date(Date.UTC(+Y, +M-1, +D));
-    expiry.setUTCDate(expiry.getUTCDate() + 56);
-    const expiryFmt = `${String(expiry.getUTCDate()).padStart(2,'0')}-${String(expiry.getUTCMonth()+1).padStart(2,'0')}-${expiry.getUTCFullYear()}`;
-    const notes = [
-      `Productie van ${teMaken} ${teMaken === 1 ? 'pot' : 'potten'} chocopasta.`,
-      ``,
-      `Aantal todo orders: ${todoCount}`,
-      `Te maken: ${teMaken}`,
-      `Houdbaarheid: 8 weken (t/m ${expiryFmt})`,
-    ].join('\n');
-    const params = new URLSearchParams({
-      action: 'TEMPLATE',
-      text: 'ELLEMELLE productie',
-      dates: `${start}/${end}`,
-      details: notes,
-    });
-    return `https://calendar.google.com/calendar/render?${params.toString()}`;
   }
   async function loadKlanten() {
     if (STATE.klantenLoaded) return;
@@ -849,8 +712,7 @@
           const pots = cfg.data.pots || [];
           STATE.config.stock_count = pots.filter(p => p.status === 'voorraad').length;
         }
-        renderProdPrompt();
-      })();
+          })();
       renderOrders();
     } else {
       $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
@@ -858,10 +720,10 @@
   });
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
   $('#filter-select').addEventListener('change', renderOrders);
-  $('#prod-plan-btn').addEventListener('click', openProdDateDrawer);
-  $('#prod-date-btn').addEventListener('click', openProdDateDrawer);
-  $('#prod-date-save').addEventListener('click', saveProdDate);
-  $('#prod-date-clear').addEventListener('click', clearProdDate);
+
+
+
+
   // --- Bevestig bestelling drawer ---
   let __confirmOrder = null;
   let __confirmStatus = 'confirmed';
@@ -944,16 +806,13 @@
     await load();
   }
 
-    $('#prod-date-backdrop').addEventListener('click', closeProdDateDrawer);
+  
   $('#confirm-backdrop').addEventListener('click', closeConfirmDrawer);
   $('#confirm-save').addEventListener('click', saveConfirm);
   document.querySelectorAll('#confirm-cards .confirm-card').forEach(c => {
     c.addEventListener('click', () => selectConfirmCard(c.dataset.status));
   });
-  $('#gcal-btn').addEventListener('click', () => {
-    const url = buildGCalUrl();
-    if (url) window.open(url, '_blank', 'noopener');
-  });
+
   $('#klanten-filter').addEventListener('change', renderKlanten);
   $('#tab-bestellingen').addEventListener('click', () => activateTab('bestellingen'));
   $('#tab-klanten').addEventListener('click', () => activateTab('klanten'));
@@ -978,8 +837,7 @@
         const pots = cfg.data.pots || [];
         STATE.config.stock_count = pots.filter(p => p.status === 'voorraad').length;
       }
-      renderProdPrompt();
-      renderOrders();
+        renderOrders();
     })();
   }
   syncTabFromHash();
