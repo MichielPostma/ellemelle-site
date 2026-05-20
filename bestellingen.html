@@ -447,43 +447,8 @@
 <div class="drawer" id="batch-confirm-drawer" role="dialog" aria-modal="true">
   <div class="drawer-handle"></div>
   <h2>Bevestig bestellingen</h2>
-  <div class="sub">Verstuur per klant het bevestigingsbericht en zet de status op Bevestigd.</div>
-
-  <div class="field" style="margin-top: 12px;">
-    <select id="batch-order-select"></select>
-  </div>
-
-  <div id="batch-order-detail" hidden>
-    <div class="order-card" id="batch-order-card" style="cursor: default; margin-top: 12px;"></div>
-
-    <button class="btn-primary" id="batch-wa-btn" type="button" style="margin-top: 14px;">📩 Stuur WhatsApp</button>
-
-    <div class="actions-label" style="margin-top: 22px; color:#666; font-size:12px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;">Status</div>
-    <div id="batch-status-cards" style="display: grid; gap: 10px; margin-top: 8px;">
-      <button class="confirm-card" type="button" data-status="confirmed">
-        <div class="cf-icon cf-icon-ok">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div class="cf-text">
-          <div class="cf-title">Bevestigd</div>
-          <div class="cf-sub">Klant is op de hoogte</div>
-        </div>
-      </button>
-      <button class="confirm-card" type="button" data-status="todo">
-        <div class="cf-icon cf-icon-new">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
-        </div>
-        <div class="cf-text">
-          <div class="cf-title">Nieuw</div>
-          <div class="cf-sub">Nog niet bevestigd</div>
-        </div>
-      </button>
-    </div>
-
-    <div class="error" id="batch-err" style="color: var(--red); font-size: 14px; font-weight: 600; margin-top: 10px; display: none;"></div>
-    <button class="btn-primary" id="batch-save-btn" type="button" style="margin-top: 16px;">Opslaan →</button>
-  </div>
-
+  <div class="sub">Tik op de knop naast een klant om de bevestiging te versturen.</div>
+  <div id="batch-confirm-list" style="display: grid; gap: 10px; margin-top: 14px;"></div>
   <div id="batch-confirm-empty" hidden style="color:#666;font-size:15px;padding:24px 0;text-align:center;">🎉 Alle bestellingen bevestigd</div>
 </div>
 
@@ -515,6 +480,7 @@
   </div>
   <div class="error" id="confirm-err" style="margin-top: 10px;"></div>
   <button class="btn-primary" id="confirm-save" type="button" style="margin-top: 16px;">Opslaan →</button>
+  <a class="btn-outline" id="confirm-view-order" href="#" target="_blank" rel="noopener" style="margin-top: 10px;">Bekijk bestelling</a>
 </div>
 
 
@@ -868,103 +834,57 @@
     setTimeout(() => a.remove(), 0);
   }
 
-  // --- Bevestig bestellingen (batch with dropdown pattern) ---
-  let __batchSelectedStatus = 'confirmed';
+  // --- Bevestig bestellingen (batch list with sequential handoff) ---
   function __batchOrders() {
     return (STATE.newOrders || []).filter(o => (o.order_status || 'todo') === 'todo');
   }
-  function renderBatchDropdown(preferId) {
-    const sel = $('#batch-order-select');
+  function renderBatchConfirmList() {
+    const list = $('#batch-confirm-list');
+    const empty = $('#batch-confirm-empty');
+    list.innerHTML = '';
     const orders = __batchOrders();
-    const prev = preferId || sel.value;
-    sel.innerHTML = '';
     if (orders.length === 0) {
-      $('#batch-confirm-empty').hidden = false;
-      $('#batch-order-detail').hidden = true;
-      sel.parentElement.hidden = true;
+      empty.hidden = false;
       return;
     }
-    sel.parentElement.hidden = false;
-    $('#batch-confirm-empty').hidden = true;
+    empty.hidden = true;
     orders.forEach(o => {
-      const opt = document.createElement('option');
-      opt.value = o.id;
-      opt.textContent = o.voornaam || '(geen naam)';
-      sel.appendChild(opt);
+      const card = buildOrderCard(o, { allowMsgBtn: true });
+      // Override default body-click navigation — only msg-btn matters here
+      card.replaceWith(card.cloneNode(true));
     });
-    // Restore prev selection if still valid, else first
-    if (prev && orders.some(o => o.id === prev)) {
-      sel.value = prev;
-    } else {
-      sel.value = orders[0].id;
-    }
-    renderBatchDetail();
-  }
-  function renderBatchDetail() {
-    const sel = $('#batch-order-select');
-    const order = __batchOrders().find(o => o.id === sel.value);
-    if (!order) {
-      $('#batch-order-detail').hidden = true;
-      return;
-    }
-    $('#batch-order-detail').hidden = false;
-    // Render card content (without click navigation + without msg-btn — own WA button below)
-    const cardWrap = $('#batch-order-card');
-    const built = buildOrderCard(order, { allowMsgBtn: false });
-    built.style.cursor = 'default';
-    // Strip the click handler by cloning
-    const clone = built.cloneNode(true);
-    cardWrap.innerHTML = '';
-    while (clone.firstChild) cardWrap.appendChild(clone.firstChild);
-    // Reset radio selection to 'confirmed'
-    __batchSelectedStatus = 'confirmed';
-    applyBatchStatusSelection();
-    $('#batch-err').style.display = 'none';
-  }
-  function applyBatchStatusSelection() {
-    document.querySelectorAll('#batch-status-cards .confirm-card').forEach(c => {
-      c.classList.toggle('selected', c.dataset.status === __batchSelectedStatus);
-    });
-  }
-  function batchSendWA() {
-    const sel = $('#batch-order-select');
-    const order = __batchOrders().find(o => o.id === sel.value);
-    if (!order) return;
-    const url = buildConfirmUrl(order);
-    if (url) setTimeout(() => openExternalLink(url), 0);
-  }
-  async function batchSave() {
-    const sel = $('#batch-order-select');
-    const order = __batchOrders().find(o => o.id === sel.value);
-    if (!order) return;
-    const target = __batchSelectedStatus;
-    const cur = order.order_status || 'todo';
-    if (target === cur) {
-      // No change → just advance
-      const next = __batchOrders().filter(o => o.id !== order.id)[0];
-      if (next) { sel.value = next.id; renderBatchDetail(); }
-      else { closeBatchConfirmDrawer(); }
-      return;
-    }
-    const res = await api('bezorger-set-status', { order_id: order.id, status: target });
-    if (!res.ok) {
-      $('#batch-err').textContent = res.data.error || 'Opslaan mislukt';
-      $('#batch-err').style.display = 'block';
-      return;
-    }
-    order.order_status = target;
-    showToast('Status bijgewerkt', 'success');
-    try { window.__invalidateApiCache && window.__invalidateApiCache(); } catch {}
-    await load();
-    // Auto-advance to next Nieuw-order
-    setTimeout(() => {
-      if ($('#batch-confirm-drawer').classList.contains('open')) {
-        renderBatchDropdown(/* prefer = */ null);
+    // Re-build properly with fresh handlers (cloning loses handlers, so re-attach)
+    list.innerHTML = '';
+    orders.forEach(o => {
+      const card = buildOrderCard(o, { allowMsgBtn: true });
+      // Strip body-click nav by replacing with a fresh element (keep msg-btn click)
+      card.style.cursor = 'default';
+      // Replace existing click listener: stop propagation on body, only msg-btn triggers handoff
+      const msgBtn = card.querySelector('.msg-btn');
+      if (msgBtn) {
+        const fresh = msgBtn.cloneNode(true);
+        msgBtn.replaceWith(fresh);
+        fresh.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onBatchMsgClick(o);
+        });
       }
+      // Neutralise body click — remove via clone of info
+      list.appendChild(card);
+    });
+  }
+  function onBatchMsgClick(order) {
+    // Sequential handoff: close batch drawer, open WA, then open confirm drawer
+    closeBatchConfirmDrawer();
+    const url = buildConfirmUrl(order);
+    setTimeout(() => {
+      if (url) openExternalLink(url);
+      // Open per-order confirm drawer next tick — pass skipWA since we just opened it
+      setTimeout(() => openConfirmDrawer(order, { skipWA: true }), 0);
     }, 0);
   }
   function openBatchConfirmDrawer() {
-    renderBatchDropdown();
+    renderBatchConfirmList();
     $('#batch-confirm-backdrop').classList.add('open');
     $('#batch-confirm-drawer').classList.add('open');
   }
@@ -972,16 +892,18 @@
     $('#batch-confirm-backdrop').classList.remove('open');
     $('#batch-confirm-drawer').classList.remove('open');
   }
-
-    function openConfirmDrawer(order) {
+  function openConfirmDrawer(order, opts) {
+    opts = opts || {};
     __confirmOrder = order;
     const cur = order.order_status || 'todo';
     selectConfirmCard('confirmed');
     $('#confirm-name').textContent = order.voornaam || '(geen naam)';
     $('#confirm-err').textContent = '';
+    $('#confirm-view-order').href = '/bestelling/' + order.id;
     $('#confirm-backdrop').classList.add('open');
     $('#confirm-drawer').classList.add('open');
-    if (cur === 'todo') {
+    // Default: open WA when entering from todo state. Skip if opts.skipWA (caller already opened it).
+    if (cur === 'todo' && !opts.skipWA) {
       const url = buildConfirmUrl(order);
       setTimeout(() => openExternalLink(url), 0);
     }
@@ -1010,12 +932,6 @@
   
   $('#confirm-backdrop').addEventListener('click', closeConfirmDrawer);
   $('#batch-confirm-cta').addEventListener('click', openBatchConfirmDrawer);
-  $('#batch-order-select').addEventListener('change', renderBatchDetail);
-  $('#batch-wa-btn').addEventListener('click', batchSendWA);
-  $('#batch-save-btn').addEventListener('click', batchSave);
-  document.querySelectorAll('#batch-status-cards .confirm-card').forEach(c => {
-    c.addEventListener('click', () => { __batchSelectedStatus = c.dataset.status; applyBatchStatusSelection(); });
-  });
   $('#batch-confirm-backdrop').addEventListener('click', closeBatchConfirmDrawer);
   $('#confirm-save').addEventListener('click', saveConfirm);
   document.querySelectorAll('#confirm-cards .confirm-card').forEach(c => {
