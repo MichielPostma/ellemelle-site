@@ -66,19 +66,9 @@
     position: relative;
   }
 
-  /* Counter — full-width top banner */
+  /* Counter banner — kept in DOM as fallback target, hidden across all flows */
   .top-banner {
-    width: 100%;
-    background: #f1e7d4;
-    color: var(--red-dark);
-    font-size: 12.5px;
-    font-weight: 600;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    text-align: center;
-    padding: 11px 16px;
-    line-height: 1.2;
-    border-bottom: 1px solid rgba(139,26,14,0.07);
+    display: none;
   }
   .top-banner #counter-text { display: inline; }
   .banner-dot {
@@ -523,6 +513,7 @@
     width: 100vw;
     margin: 0;
     padding: 0 0 40px;       /* 40px breathing room below the photo */
+    position: relative;
     line-height: 0;          /* kill inline image bottom-gap */
   }
   .product-img {
@@ -547,11 +538,9 @@
     flex-direction: column;
     min-height: 100dvh;
   }
-  body.on-success .top-banner { order: 1; }
   body.on-success .product-hero { order: 2; padding-top: 28px; padding-bottom: 0; }
   body.on-success #app { order: 3; padding-top: 28px; }
 
-  body.on-intro .top-banner { flex: 0 0 auto; }
   body.on-intro #app .topbar,
   body.on-intro #app .steps,
   body.on-intro #app { flex: 0 0 auto; height: 0; padding: 0; min-height: 0; overflow: hidden; }
@@ -572,10 +561,41 @@
 
   /* Intro CTA button (only visible on step 0) — absolute, so scaled pot can't push it off */
   .intro-cta { display: none; }
+
+  /* Levering status subtle subtitle under the intro CTA — only on step 0 */
+  .intro-levering { display: none; }
+  body.on-intro .intro-levering {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 8px;
+    color: #666;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.3;
+    letter-spacing: 0;
+    text-align: center;
+    text-transform: none;
+    z-index: 2;
+  }
+  .intro-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #999;
+    flex-shrink: 0;
+  }
+  .intro-dot.green     { background: #1f9d55; }
+  .intro-dot.amber     { background: #f0ad00; }
+  .intro-dot.lightblue { background: #66b3ff; }
   body.on-intro .intro-cta {
     display: block;
     position: absolute;
-    bottom: 24px;
+    bottom: 48px;
     left: 0;
     right: 0;
     margin-left: auto;
@@ -861,6 +881,10 @@
 <section class="product-hero">
   <img class="product-img" src="Images/koken-pot.jpg" alt="ELLEMELLE chocopasta pot" loading="eager" fetchpriority="high">
   <a href="#" class="btn-primary intro-cta" id="intro-cta" data-next role="button">Ja, ik wil 'em! →</a>
+  <div class="intro-levering" id="intro-levering" aria-live="polite">
+    <span class="intro-dot" id="intro-dot" aria-hidden="true"></span>
+    <span id="intro-levering-text">Even kijken...</span>
+  </div>
 </section>
 
 <!-- QR code library (vanilla, ~3KB gzip) -->
@@ -1563,27 +1587,29 @@
     updateBanner(info);
   }
   function updateBanner(info) {
-    const dotEl = document.getElementById('banner-dot');
-    const txtEl = document.getElementById('counter-text');
-    if (!dotEl || !txtEl) return;
-    dotEl.classList.remove('green', 'amber', 'lightblue');
+    const dots = [document.getElementById('banner-dot'), document.getElementById('intro-dot')].filter(Boolean);
+    const texts = [document.getElementById('counter-text'), document.getElementById('intro-levering-text')].filter(Boolean);
+    if (dots.length === 0 || texts.length === 0) return;
+    dots.forEach(d => d.classList.remove('green', 'amber', 'lightblue'));
     if (!info) {
-      txtEl.textContent = 'Even kijken...';
+      texts.forEach(t => t.textContent = 'Even kijken...');
       return;
     }
     const mode = info.mode || (info.in_stock ? 'stock' : (info.next_production_date ? 'production' : 'no_schedule'));
+    let cls, text;
     if (mode === 'stock') {
       const stock = parseInt(info.stock_count, 10) || 0;
-      dotEl.classList.add('green');
-      txtEl.textContent = stock + ' pot' + (stock === 1 ? '' : 'ten') + ' op voorraad, komend weekend gebracht';
+      cls = 'green';
+      text = stock + ' pot' + (stock === 1 ? '' : 'ten') + ' op voorraad, komend weekend gebracht';
     } else if (mode === 'production') {
-      dotEl.classList.add('amber');
-      const dateText = fmtDayDateLong(info.next_production_date);
-      txtEl.textContent = 'Verse batch ' + dateText + ', bezorging binnen 2 weken';
+      cls = 'amber';
+      text = 'Verse batch ' + fmtDayDateLong(info.next_production_date) + ', bezorging binnen 2 weken';
     } else {
-      dotEl.classList.add('lightblue');
-      txtEl.textContent = 'Binnenkort verse batch, binnen 4 weken bezorgd';
+      cls = 'lightblue';
+      text = 'Binnenkort verse batch, binnen 4 weken bezorgd';
     }
+    dots.forEach(d => d.classList.add(cls));
+    texts.forEach(t => t.textContent = text);
   }
 
   async function loadConfig() {
