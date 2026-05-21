@@ -897,7 +897,7 @@
     __confirmOrder = order;
     const cur = order.order_status || 'todo';
     selectConfirmCard('confirmed');
-    $('#confirm-name').textContent = order.voornaam || '(geen naam)';
+    $('#confirm-name').textContent = 'Bericht ' + (order.voornaam || '(geen naam)');
     $('#confirm-err').textContent = '';
     $('#confirm-view-order').href = '/bestelling/' + order.id;
     $('#confirm-backdrop').classList.add('open');
