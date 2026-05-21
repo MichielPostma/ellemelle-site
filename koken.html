@@ -573,6 +573,7 @@
     <!-- Deel update -->
     <div id="deel-update-wrap" hidden>
       <div class="section-eyebrow">Update bestellingen</div>
+      <button class="btn-primary" id="batch-update-cta" type="button" hidden style="margin-bottom: 12px;">Update bestellingen →</button>
       <div id="deel-update-list"></div>
       <div id="deel-update-empty" hidden>Geen openstaande bestellingen om te updaten.</div>
     </div>
@@ -620,6 +621,17 @@
   </div>
   <div class="error" id="msg-status-err" style="margin-top: 10px;"></div>
   <button class="btn-primary" id="msg-status-save" type="button" style="margin-top: 16px;">Opslaan →</button>
+  <a class="btn-outline" id="msg-status-view-order" href="#" target="_blank" rel="noopener" style="margin-top: 10px;">Bekijk bestelling</a>
+</div>
+
+<!-- Batch update drawer (list with msg-btns per order) -->
+<div class="drawer-backdrop" id="batch-update-backdrop"></div>
+<div class="drawer" id="batch-update-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2>Update bestellingen</h2>
+  <div class="sub">Verstuur per klant de update over de bezorging.</div>
+  <div id="batch-update-list" style="display: grid; gap: 10px; margin-top: 14px;"></div>
+  <div id="batch-update-empty" hidden style="color:#666;font-size:15px;padding:24px 0;text-align:center;">🎉 Alle berichten verzonden</div>
 </div>
 
 <!-- Productiedatum drawer -->
@@ -745,58 +757,112 @@
     }
     return null;
   }
-  function renderDeelUpdate(orders) {
-    const wrap = $('#deel-update-wrap');
-    const list = $('#deel-update-list');
-    const empty = $('#deel-update-empty');
-    if (!wrap || !list) return;
-    wrap.hidden = false;
-    list.innerHTML = '';
-    if (!orders || orders.length === 0) {
-      empty.hidden = false;
-      return;
-    }
-    empty.hidden = true;
-    // Sort: stock first, then by uiterlijke bezorgdatum asc
-    const sorted = orders.slice().sort((a, b) => {
+  function buildKokenCard(o, opts) {
+    opts = opts || {};
+    const card = document.createElement('div');
+    card.className = 'order-card';
+    const dl = deadlineLabel(o.uiterlijke_bezorgdatum || o.delivery_date);
+    const orderStatus = o.order_status || 'todo';
+    const statusLabel = STATUS_LABELS_KOKEN[orderStatus] || orderStatus;
+    const hasStock = (o.delivery_mode === 'stock');
+    const stockTag = hasStock
+      ? `<span class="badge has-stock right-tag">Voorraad</span>`
+      : `<span class="badge no-stock right-tag">Geen voorraad</span>`;
+    const iconChat = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+    const msgBtnHtml = opts.allowMsgBtn
+      ? `<button type="button" class="send-btn" aria-label="Update status voor ${escapeHtml(o.voornaam || '')}">${iconChat}</button>`
+      : '';
+    card.innerHTML = `
+      <div class="info">
+        <div class="name">Bericht ${escapeHtml(o.voornaam || '(geen naam)')}</div>
+        <div class="deadline${dl.late ? ' late' : ''}">${escapeHtml(dl.text)}</div>
+        <div class="tags-row">
+          <span class="badge ${orderStatus}">${escapeHtml(statusLabel)}</span>
+          ${stockTag}
+        </div>
+      </div>
+      ${msgBtnHtml}
+    `;
+    return card;
+  }
+  function sortKokenOrders(orders) {
+    return orders.slice().sort((a, b) => {
       const aStock = (a.delivery_mode === 'stock') ? 0 : 1;
       const bStock = (b.delivery_mode === 'stock') ? 0 : 1;
       if (aStock !== bStock) return aStock - bStock;
       return String(a.uiterlijke_bezorgdatum || a.delivery_date || '')
         .localeCompare(String(b.uiterlijke_bezorgdatum || b.delivery_date || ''));
     });
+  }
+  function renderDeelUpdate(orders) {
+    const wrap = $('#deel-update-wrap');
+    const list = $('#deel-update-list');
+    const empty = $('#deel-update-empty');
+    const cta = $('#batch-update-cta');
+    if (!wrap || !list) return;
+    wrap.hidden = false;
+    list.innerHTML = '';
+    const count = orders ? orders.length : 0;
+    if (count === 0) {
+      empty.hidden = false;
+      if (cta) cta.hidden = true;
+      return;
+    }
+    empty.hidden = true;
+    if (cta) cta.hidden = false;
+    const sorted = sortKokenOrders(orders);
     for (const o of sorted) {
-      const card = document.createElement('div');
-      card.className = 'order-card';
-      card.style.cursor = 'pointer';
-      const dl = deadlineLabel(o.uiterlijke_bezorgdatum || o.delivery_date);
-      const sent = (o.update_message_status === 'sent');
-      const iconSent = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
-      const iconChat = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
-      const orderStatus = o.order_status || 'todo';
-      const statusLabel = STATUS_LABELS_KOKEN[orderStatus] || orderStatus;
-      const hasStock = (o.delivery_mode === 'stock');
-      const stockTag = hasStock
-        ? `<span class="badge has-stock right-tag">Voorraad</span>`
-        : `<span class="badge no-stock right-tag">Geen voorraad</span>`;
-      card.innerHTML = `
-        <div class="info">
-          <div class="name">Bericht ${escapeHtml(o.voornaam || '(geen naam)')}</div>
-          <div class="deadline${dl.late ? ' late' : ''}">${escapeHtml(dl.text)}</div>
-          <div class="tags-row">
-            <span class="badge ${orderStatus}">${escapeHtml(statusLabel)}</span>
-            ${stockTag}
-          </div>
-        </div>
-        <button type="button" class="send-btn${sent ? ' sent' : ''}" aria-label="Update status voor ${escapeHtml(o.voornaam || '')}">
-          ${sent ? iconSent : iconChat}
-        </button>
-      `;
-      const openHandler = (e) => { e.stopPropagation(); openMsgStatusDrawer(o); };
-      card.querySelector('.send-btn')?.addEventListener('click', openHandler);
-      card.addEventListener('click', openHandler);
+      const card = buildKokenCard(o, { allowMsgBtn: false });
+      card.style.cursor = 'default';
       list.appendChild(card);
     }
+  }
+  // --- Batch update drawer (list with msg-btns + sequential handoff) ---
+  function __batchUpdateOrders() {
+    return (STATE.todoOrders || []);
+  }
+  function renderBatchUpdateList() {
+    const list = $('#batch-update-list');
+    const empty = $('#batch-update-empty');
+    if (!list) return;
+    list.innerHTML = '';
+    const orders = __batchUpdateOrders();
+    if (orders.length === 0) {
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    const sorted = sortKokenOrders(orders);
+    sorted.forEach(o => {
+      const card = buildKokenCard(o, { allowMsgBtn: true });
+      card.style.cursor = 'default';
+      const msgBtn = card.querySelector('.send-btn');
+      if (msgBtn) {
+        msgBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onBatchUpdateMsgClick(o);
+        });
+      }
+      list.appendChild(card);
+    });
+  }
+  function onBatchUpdateMsgClick(order) {
+    // Sequential handoff: close batch drawer, open WA, then open msg-status drawer
+    closeBatchUpdateDrawer();
+    const url = buildUpdateUrl(order);
+    setTimeout(() => {
+      if (url) openExternalLink(url);
+      setTimeout(() => openMsgStatusDrawer(order, { skipWA: true }), 0);
+    }, 0);
+  }
+  function openBatchUpdateDrawer() {
+    renderBatchUpdateList();
+    $('#batch-update-backdrop').classList.add('open');
+    $('#batch-update-drawer').classList.add('open');
+  }
+  function closeBatchUpdateDrawer() {
+    $('#batch-update-backdrop').classList.remove('open');
+    $('#batch-update-drawer').classList.remove('open');
   }
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -877,22 +943,21 @@
     a.click();
     setTimeout(() => a.remove(), 0);
   }
-  function openMsgStatusDrawer(order) {
+  function openMsgStatusDrawer(order, opts) {
+    opts = opts || {};
     __currentOrder = order;
     const wasSent = order.update_message_status === 'sent';
-    // For not_sent cards → admin is about to send → pre-select 'sent' + open WA in parallel
-    // For already-sent cards → keep 'sent' selected, no WA re-open
+    // Pre-select 'sent' (most common path: admin just sent the message)
     selectMsgCard('sent');
     const dl = deadlineLabel(order.uiterlijke_bezorgdatum || order.delivery_date);
     $('#msg-status-name').textContent = order.voornaam || '(geen naam)';
     $('#msg-status-sub').textContent = dl.text || '';
     $('#msg-status-err').textContent = '';
+    $('#msg-status-view-order').href = '/bestelling/' + order.id;
     $('#msg-status-backdrop').classList.add('open');
     $('#msg-status-drawer').classList.add('open');
-    if (!wasSent) {
+    if (!wasSent && !opts.skipWA) {
       const url = buildUpdateUrl(order);
-      // Defer one tick so drawer renders before WA-open — prevents iOS Safari
-      // from reusing the current tab when wa.me triggers the app handover
       setTimeout(() => openExternalLink(url), 0);
     }
   }
@@ -914,8 +979,20 @@
     const res = await api('koken-set-message-status', { order_id: __currentOrder.id, status: target });
     if (!res.ok) { $('#msg-status-err').textContent = res.data.error || 'Opslaan mislukt'; return; }
     __currentOrder.update_message_status = target;
+    if (typeof window.__invalidateApiCache === 'function') window.__invalidateApiCache();
+    showToast('Status bijgewerkt', 'success');
     closeMsgStatusDrawer();
-    // Re-render with updated state
+    // If the message was marked sent, the order disappears from the list — re-fetch + render
+    if (target === 'sent') {
+      try {
+        const bz = await api('bezorger-orders');
+        if (bz.ok) {
+          const all = (bz.data.weeks || []).flatMap(w => w.orders || []);
+          const allTodo = all.filter(o => !o.order_status || o.order_status === 'todo');
+          STATE.todoOrders = allTodo.filter(o => o.delivery_mode !== 'stock' && o.update_message_status !== 'sent');
+        }
+      } catch (e) { /* ignore */ }
+    }
     renderDeelUpdate(STATE.todoOrders || []);
   }
 
@@ -1041,8 +1118,8 @@
       const all = (bz.data.weeks || []).flatMap(w => w.orders || []);
       todoOrders = all.filter(o => !o.order_status || o.order_status === 'todo');
       todoCount = todoOrders.length;
-      // Only show orders that need a fresh batch (no stock allocation) in Update bestellingen
-      needsCookOrders = todoOrders.filter(o => o.delivery_mode !== 'stock');
+      // Only show orders that need a fresh batch (no stock) AND have NOT yet had an update message sent
+      needsCookOrders = todoOrders.filter(o => o.delivery_mode !== 'stock' && o.update_message_status !== 'sent');
     }
     STATE.todoOrders = needsCookOrders;
     renderDeelUpdate(needsCookOrders);
@@ -1074,6 +1151,8 @@
   $('#prod-date-btn').addEventListener('click', openProdDateDrawer);
   $('#msg-status-backdrop').addEventListener('click', closeMsgStatusDrawer);
   $('#msg-status-save').addEventListener('click', saveMsgStatus);
+  $('#batch-update-cta').addEventListener('click', openBatchUpdateDrawer);
+  $('#batch-update-backdrop').addEventListener('click', closeBatchUpdateDrawer);
   document.querySelectorAll('#msg-status-cards .msg-status-card').forEach(c => {
     c.addEventListener('click', () => selectMsgCard(c.dataset.status));
   });
