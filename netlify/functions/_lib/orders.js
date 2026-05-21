@@ -162,14 +162,18 @@ async function listEnrichedOrders() {
   open.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
   let remaining = totalStock;
   for (const o of open) {
-    if (o.delivery_date_override) {
-      // Manual override always wins
+    // Stock allocation is chronological — override orders ALSO consume a stock pot when available
+    // (the override date is preserved; only the production-budget bookkeeping changes).
+    const hasOverride = !!o.delivery_date_override;
+    if (remaining > 0) {
+      o.delivery_mode = 'stock';
+      o.delivery_date = hasOverride
+        ? o.delivery_date_override
+        : nextSaturdayISO(toISODate(o.created_at));
+      remaining -= 1;
+    } else if (hasOverride) {
       o.delivery_mode = 'override';
       o.delivery_date = o.delivery_date_override;
-    } else if (remaining > 0) {
-      o.delivery_mode = 'stock';
-      o.delivery_date = nextSaturdayISO(toISODate(o.created_at));
-      remaining -= 1;
     } else {
       o.delivery_mode = o.snapshot_delivery_mode;
       o.delivery_date = o.snapshot_delivery_date;
