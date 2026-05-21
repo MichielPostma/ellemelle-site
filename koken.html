@@ -570,6 +570,13 @@
       <div class="steps" id="steps"></div>
     </div>
 
+    <!-- Deel update -->
+    <div id="deel-update-wrap" hidden>
+      <div class="section-eyebrow">Update bestellingen</div>
+      <div id="deel-update-list"></div>
+      <div id="deel-update-empty" hidden>Geen openstaande bestellingen om te updaten.</div>
+    </div>
+
     <!-- Zet pot op voorraad -->
     <div id="scan-section-wrap">
       <div class="section-eyebrow">Update voorraad</div>
@@ -581,13 +588,6 @@
         </div>
         <button class="btn-outline" id="koken-scan-cancel" type="button">Annuleer</button>
       </div>
-    </div>
-
-    <!-- Deel update -->
-    <div id="deel-update-wrap" hidden>
-      <div class="section-eyebrow">Update bestellingen</div>
-      <div id="deel-update-list"></div>
-      <div id="deel-update-empty" hidden>Geen openstaande bestellingen om te updaten.</div>
     </div>
   </section>
 </main>
@@ -1036,13 +1036,16 @@
     const bz = await api('bezorger-orders');
     let todoCount = 0;
     let todoOrders = [];
+    let needsCookOrders = [];
     if (bz.ok) {
       const all = (bz.data.weeks || []).flatMap(w => w.orders || []);
       todoOrders = all.filter(o => !o.order_status || o.order_status === 'todo');
       todoCount = todoOrders.length;
+      // Only show orders that need a fresh batch (no stock allocation) in Update bestellingen
+      needsCookOrders = todoOrders.filter(o => o.delivery_mode !== 'stock');
     }
-    STATE.todoOrders = todoOrders;
-    renderDeelUpdate(todoOrders);
+    STATE.todoOrders = needsCookOrders;
+    renderDeelUpdate(needsCookOrders);
     STATE.todoCount = todoCount;
     // To-make = open orders minus stock already produced
     const teMaken = Math.max(0, todoCount - (STATE.stock_count || 0));
