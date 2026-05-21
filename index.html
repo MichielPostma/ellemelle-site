@@ -668,6 +668,52 @@
     appearance: none; -webkit-appearance: none;
   }
   #admin-picker input[type="text"]:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(217,48,30,0.12); }
+  /* Admin picker — Nieuwe klant row with QR + Share square buttons */
+  .admin-new-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .admin-new-row .btn-primary {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .admin-new-row .icon-square-btn {
+    flex: 0 0 56px;
+    width: 56px;
+    height: 56px;
+    background: var(--white);
+    color: var(--red);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    transition: transform 120ms, background 120ms;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .admin-new-row .icon-square-btn:hover { background: #faf6ee; }
+  .admin-new-row .icon-square-btn:active { transform: scale(0.96); }
+  .admin-new-row .icon-square-btn svg { display: block; }
+  .admin-new-row .icon-square-btn .iconB { display: none; }
+  .admin-new-row .icon-square-btn.active .iconA { display: none; }
+  .admin-new-row .icon-square-btn.active .iconB { display: block; }
+  .admin-qr-panel {
+    margin-top: 12px;
+    background: var(--white);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .admin-qr-frame { width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; }
+  .admin-qr-frame img, .admin-qr-frame canvas { display: block; width: 240px !important; height: 240px !important; }
+
   #admin-customers { margin-top: 10px; max-height: 360px; overflow-y: auto; }
   #admin-customers .cust-card {
     background: var(--white); border: 1px solid rgba(0,0,0,0.08);
@@ -741,7 +787,37 @@
   <!-- Admin picker (only shown for ?start=admin) -->
 <section id="admin-picker" hidden>
   <h1>Plaats bestelling</h1>
-  <button class="btn-primary" id="admin-new-customer" type="button">Nieuwe klant →</button>
+  <div class="admin-new-row">
+    <button class="btn-primary" id="admin-new-customer" type="button">Nieuwe klant →</button>
+    <button class="icon-square-btn" id="admin-qr-btn" type="button" aria-label="QR-code voor bestelflow tonen">
+      <svg class="iconA" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+        <line x1="14" y1="14" x2="14" y2="17"></line>
+        <line x1="14" y1="14" x2="17" y2="14"></line>
+        <line x1="14" y1="20" x2="14" y2="21"></line>
+        <line x1="17" y1="17" x2="17" y2="21"></line>
+        <line x1="20" y1="14" x2="21" y2="14"></line>
+        <line x1="20" y1="17" x2="21" y2="17"></line>
+        <line x1="20" y1="20" x2="21" y2="20"></line>
+      </svg>
+      <svg class="iconB" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <button class="icon-square-btn" id="admin-share-btn" type="button" aria-label="Deel bestelflow link">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+        <polyline points="16 6 12 2 8 6"></polyline>
+        <line x1="12" y1="2" x2="12" y2="15"></line>
+      </svg>
+    </button>
+  </div>
+  <div class="admin-qr-panel" id="admin-qr-panel" hidden>
+    <div class="admin-qr-frame" id="admin-qr-frame"></div>
+  </div>
   <div class="sub">Bestaande klant</div>
   <div id="admin-customers"></div>
 </section>
@@ -1840,6 +1916,84 @@
     // Admin picker bindings
     const apNew = document.getElementById('admin-new-customer');
     if (apNew) apNew.addEventListener('click', pickNewCustomer);
+
+    // QR toggle
+    const qrBtn = document.getElementById('admin-qr-btn');
+    const qrPanel = document.getElementById('admin-qr-panel');
+    const qrFrame = document.getElementById('admin-qr-frame');
+    let __qrRendered = false;
+    function renderAdminQR() {
+      if (__qrRendered) return;
+      if (!qrFrame) return;
+      qrFrame.innerHTML = '';
+      const url = 'https://ellemelle.netlify.app/';
+      if (window.QRCode) {
+        try {
+          new QRCode(qrFrame, {
+            text: url, width: 240, height: 240,
+            colorDark: '#000000', colorLight: '#FFFFFF',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+          __qrRendered = true;
+        } catch (e) { qrFrame.textContent = 'QR niet geladen'; }
+      } else {
+        qrFrame.textContent = 'QR laadt...';
+      }
+    }
+    function toggleAdminQR() {
+      if (!qrPanel || !qrBtn) return;
+      const open = qrPanel.hidden;
+      if (open) {
+        renderAdminQR();
+        qrPanel.hidden = false;
+        qrBtn.classList.add('active');
+        qrBtn.setAttribute('aria-label', 'QR-code sluiten');
+      } else {
+        qrPanel.hidden = true;
+        qrBtn.classList.remove('active');
+        qrBtn.setAttribute('aria-label', 'QR-code voor bestelflow tonen');
+      }
+    }
+    if (qrBtn) qrBtn.addEventListener('click', toggleAdminQR);
+    if (qrPanel) qrPanel.addEventListener('click', () => {
+      if (!qrPanel.hidden) toggleAdminQR();
+    });
+
+    // Share button — Web Share API with clipboard fallback
+    const shareBtn = document.getElementById('admin-share-btn');
+    async function doAdminShare() {
+      const url = 'https://ellemelle.netlify.app/';
+      const title = 'ELLEMELLE chocopasta — bestel jouw pot';
+      const text = 'Verse chocopasta gemaakt door Ellis en Melle. Bestel jouw pot!';
+      if (navigator.share) {
+        try { await navigator.share({ url, title, text }); return; } catch (e) { /* user cancelled */ return; }
+      }
+      // Fallback: copy to clipboard + toast
+      try {
+        await navigator.clipboard.writeText(url);
+        showAdminToast('Link gekopieerd');
+      } catch (e) {
+        // Fallback to legacy approach
+        const ta = document.createElement('textarea');
+        ta.value = url; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); showAdminToast('Link gekopieerd'); } catch {}
+        document.body.removeChild(ta);
+      }
+    }
+    function showAdminToast(msg) {
+      let t = document.getElementById('admin-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'admin-toast';
+        t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity 200ms;pointer-events:none;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      requestAnimationFrame(() => { t.style.opacity = '1'; });
+      clearTimeout(t.__to);
+      t.__to = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+    }
+    if (shareBtn) shareBtn.addEventListener('click', doAdminShare);
         // Default kanaal to WhatsApp if nothing chosen yet
     if (!formData.kanaal) {
       formData.kanaal = 'whatsapp';
