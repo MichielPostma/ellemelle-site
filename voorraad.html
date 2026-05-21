@@ -968,8 +968,9 @@
       closeDrawer();
       setTimeout(() => location.reload(), 600);
     } else if (ev.data.type === 'admin-open-new-customer') {
-      window.open('/?start=1&fresh=1', '_blank');
-      closeDrawer();
+      // Stay inside the drawer — navigate the iframe to fresh customer flow in embed mode
+      const ifr = document.getElementById('admin-order-iframe');
+      if (ifr) ifr.src = '/?start=1&fresh=1&embed=1';
     }
   });
 })();
