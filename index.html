@@ -66,28 +66,6 @@
     position: relative;
   }
 
-  /* Admin-only back-bar to /bestellingen — hidden by default, revealed via JS if admin session detected */
-  .admin-back-bar[hidden] { display: none !important; }
-  .admin-back-bar {
-    display: block;
-    width: 100%;
-    background: rgba(0,0,0,0.05);
-    color: var(--black);
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    text-align: center;
-    padding: 10px 16px;
-    line-height: 1.2;
-    cursor: pointer;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    transition: background 120ms;
-  }
-  .admin-back-bar:hover { background: rgba(0,0,0,0.08); }
-  body.on-embed .admin-back-bar { display: none !important; }
-  body.on-admin-picker .admin-back-bar { display: none !important; }
-
   /* Counter banner — kept in DOM as fallback target, hidden across all flows */
   .top-banner {
     display: none;
@@ -804,9 +782,6 @@
 </style>
 </head>
 <body>
-
-<!-- Admin-only: subtle back-bar to admin landing (hidden by default; revealed by JS if admin session detected) -->
-<a class="admin-back-bar" id="admin-back-bar" href="/bestellingen" hidden>← Terug naar admin omgeving</a>
 
 <!-- Hidden static form: lets Netlify Forms detect & capture submissions even when JS posts dynamically -->
 <form name="ellemelle-signup" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
@@ -1778,21 +1753,6 @@
 
     loadConfig();
     loadBanner();
-
-    // Admin-only back-bar: reveal if a valid admin session is stored locally
-    (function revealAdminBackBar() {
-      try {
-        const raw = localStorage.getItem('ellemelle_admin_session_v1')
-                 || localStorage.getItem('ellemelle_bezorger_session_v1');
-        if (!raw) return;
-        const o = JSON.parse(raw);
-        if (!o || !o.savedAt || !o.password) return;
-        const TTL_MS = 90 * 24 * 60 * 60 * 1000;
-        if ((Date.now() - o.savedAt) > TTL_MS) return;
-        const bar = document.getElementById('admin-back-bar');
-        if (bar) bar.hidden = false;
-      } catch {}
-    })();
     showStep(1);
 
     $$('[data-next]').forEach(b => b.addEventListener('click', next));
@@ -1827,21 +1787,6 @@
         if (btn) btn.disabled = false;
         // Re-fetch banner for new aantal (delivery mode may change)
         loadBanner();
-
-    // Admin-only back-bar: reveal if a valid admin session is stored locally
-    (function revealAdminBackBar() {
-      try {
-        const raw = localStorage.getItem('ellemelle_admin_session_v1')
-                 || localStorage.getItem('ellemelle_bezorger_session_v1');
-        if (!raw) return;
-        const o = JSON.parse(raw);
-        if (!o || !o.savedAt || !o.password) return;
-        const TTL_MS = 90 * 24 * 60 * 60 * 1000;
-        if ((Date.now() - o.savedAt) > TTL_MS) return;
-        const bar = document.getElementById('admin-back-bar');
-        if (bar) bar.hidden = false;
-      } catch {}
-    })();
       });
     });
 
