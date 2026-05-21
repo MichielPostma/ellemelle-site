@@ -679,9 +679,9 @@
     min-width: 0;
   }
   .admin-new-row .icon-square-btn {
-    flex: 0 0 56px;
-    width: 56px;
-    height: 56px;
+    flex: 0 0 60px;
+    width: 60px;
+    min-height: 60px;
     background: var(--white);
     color: var(--red);
     border: 1px solid rgba(0,0,0,0.08);
@@ -1923,28 +1923,38 @@
     const qrFrame = document.getElementById('admin-qr-frame');
     let __qrRendered = false;
     function renderAdminQR() {
-      if (__qrRendered) return;
-      if (!qrFrame) return;
+      if (__qrRendered) return true;
+      if (!qrFrame) return false;
+      if (!window.QRCode) return false;
       qrFrame.innerHTML = '';
-      const url = 'https://ellemelle.netlify.app/';
-      if (window.QRCode) {
-        try {
-          new QRCode(qrFrame, {
-            text: url, width: 240, height: 240,
-            colorDark: '#000000', colorLight: '#FFFFFF',
-            correctLevel: QRCode.CorrectLevel.M
-          });
-          __qrRendered = true;
-        } catch (e) { qrFrame.textContent = 'QR niet geladen'; }
-      } else {
-        qrFrame.textContent = 'QR laadt...';
+      try {
+        new QRCode(qrFrame, {
+          text: 'https://ellemelle.netlify.app/',
+          width: 240, height: 240,
+          colorDark: '#000000', colorLight: '#FFFFFF',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+        __qrRendered = true;
+        return true;
+      } catch (e) {
+        qrFrame.textContent = 'QR niet geladen';
+        return false;
       }
     }
+    // Eagerly pre-render the QR so the panel reveals without a white flash.
+    // qrcode.min.js has `defer` so it may not be ready yet — retry until QRCode is on window.
+    function tryPreRender(attempts) {
+      attempts = attempts || 0;
+      if (renderAdminQR()) return;
+      if (attempts > 40) return; // ~4s ceiling
+      setTimeout(() => tryPreRender(attempts + 1), 100);
+    }
+    tryPreRender();
     function toggleAdminQR() {
       if (!qrPanel || !qrBtn) return;
       const open = qrPanel.hidden;
       if (open) {
-        renderAdminQR();
+        renderAdminQR(); // no-op if already rendered
         qrPanel.hidden = false;
         qrBtn.classList.add('active');
         qrBtn.setAttribute('aria-label', 'QR-code sluiten');
