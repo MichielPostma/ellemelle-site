@@ -774,7 +774,7 @@
       : '';
     card.innerHTML = `
       <div class="info">
-        <div class="name">Bericht ${escapeHtml(o.voornaam || '(geen naam)')}</div>
+        <div class="name">${escapeHtml(o.voornaam || '(geen naam)')}</div>
         <div class="deadline${dl.late ? ' late' : ''}">${escapeHtml(dl.text)}</div>
         <div class="tags-row">
           <span class="badge ${orderStatus}">${escapeHtml(statusLabel)}</span>
@@ -950,7 +950,7 @@
     // Pre-select 'sent' (most common path: admin just sent the message)
     selectMsgCard('sent');
     const dl = deadlineLabel(order.uiterlijke_bezorgdatum || order.delivery_date);
-    $('#msg-status-name').textContent = order.voornaam || '(geen naam)';
+    $('#msg-status-name').textContent = 'Bericht ' + (order.voornaam || '(geen naam)');
     $('#msg-status-sub').textContent = dl.text || '';
     $('#msg-status-err').textContent = '';
     $('#msg-status-view-order').href = '/bestelling/' + order.id;
