@@ -80,7 +80,16 @@
     line-height: 1.2;
     border-bottom: 1px solid rgba(139,26,14,0.07);
   }
-  .top-banner.full { background: var(--red); color: var(--white); }
+  .top-banner #counter-text { display: inline; }
+  .banner-dot {
+    display: inline-block; vertical-align: middle;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #999; margin-right: 8px; margin-bottom: 2px;
+    flex-shrink: 0;
+  }
+  .banner-dot.green     { background: #1f9d55; }
+  .banner-dot.amber     { background: #f0ad00; }
+  .banner-dot.lightblue { background: #66b3ff; }
 
   /* Topbar */
   .topbar {
@@ -545,7 +554,6 @@
   body.on-intro .top-banner { flex: 0 0 auto; }
   body.on-intro #app .topbar,
   body.on-intro #app .steps,
-  body.on-intro #app #restart-btn { display: none; }
   body.on-intro #app { flex: 0 0 auto; height: 0; padding: 0; min-height: 0; overflow: hidden; }
   body.on-intro .product-hero {
     position: relative;
@@ -629,7 +637,6 @@
   body.on-admin-picker .progress-text { display: none; }
   body.on-admin-picker #counter { display: none; }
   body.on-admin-picker .steps,
-  body.on-admin-picker #restart-btn,
   body.on-admin-picker .product-hero { display: none; }
   #admin-picker { padding: 28px 24px 40px; max-width: 480px; margin: 0 auto; }
   #admin-picker h1 { color: var(--red); font-size: 28px; font-weight: 700; line-height: 1.15; margin-bottom: 18px; letter-spacing: -0.2px; }
@@ -674,7 +681,6 @@
 
   /* Embed mode (admin order drawer iframe) */
   body.on-embed #counter { display: none; }
-  body.on-embed #restart-btn { display: none; }
   body.on-embed { padding-top: 0; }
   /* In embed mode, drop the 480px max-width and nested padding so content uses full drawer width */
   body.on-embed #app { max-width: none; width: 100%; padding: 20px; }
@@ -704,9 +710,10 @@
   <input name="bot-field" type="text">
 </form>
 
-<!-- Top counter banner -->
+<!-- Top status banner: dynamic levering-indicator -->
 <div class="top-banner" id="counter">
-  <span id="counter-text">Bij 15 bestellingen in productie — 0/15 verkocht</span>
+  <span class="banner-dot" id="banner-dot" aria-hidden="true"></span>
+  <span id="counter-text">Even kijken...</span>
 </div>
 
 <main id="app">
@@ -848,9 +855,6 @@
 
   </div>
 
-  <!-- Optional: restart the signup -->
-  <button id="restart-btn" class="btn-outline" type="button" hidden>Start opnieuw</button>
-
 </main>
 
 <!-- Pot photo, edge-to-edge under the form -->
@@ -880,8 +884,7 @@
     aantal: 1
   };
   let currentStep = 0;
-  let counterCount = 0;
-  let counterMax = 15;
+
   let configCache = null;
   let lastLookup = '';
 
@@ -947,9 +950,6 @@
       backBtn.hidden = (n <= 1);
       document.body.classList.remove('on-success');
     }
-    // Restart button appears from step 1 onward (also on success); hidden only on intro
-    const rb = document.getElementById('restart-btn');
-    if (rb) rb.hidden = (n === 0);
     // focus first input
     setTimeout(() => {
       const active = $('.step.active');
@@ -1418,9 +1418,8 @@
       return;
     }
 
-    // Optimistic counter bump
-    counterCount = Math.min(counterMax, counterCount + 1);
-    updateCounterPill();
+    // Refresh banner after submit
+    setTimeout(loadBanner, 500);
 
     // Fire-and-forget notify (sends Resend confirmation if RESEND_API_KEY is set + kanaal=email)
     try {
@@ -1540,26 +1539,50 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // --- Counter -----------------------------------------------------------
-  async function loadCounter() {
-    try {
-      const r = await fetch('/api/count', { cache: 'no-store' });
-      if (!r.ok) throw new Error('count');
-      const data = await r.json();
-      counterCount = parseInt(data.count, 10) || 0;
-      counterMax = parseInt(data.max, 10) || 15;
-    } catch (e) {
-      // keep last known
-    }
-    updateCounterPill();
+  // --- Top banner (levering-status) ----------------------------------------
+  const NL_MAANDEN = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  const NL_DAGEN = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+  function fmtDayDateLong(iso) {
+    if (!iso) return '';
+    const parts = String(iso).split('-');
+    if (parts.length !== 3) return iso;
+    const dt = new Date(Date.UTC(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10)));
+    const dag = NL_DAGEN[dt.getUTCDay()];
+    const dd = dt.getUTCDate();
+    const maand = NL_MAANDEN[dt.getUTCMonth()];
+    return `${dag} ${dd} ${maand}`;
   }
-  function updateCounterPill() {
-    if (counterCount >= counterMax) {
-      counterText.textContent = 'Bij 15 bestellingen in productie — ' + counterMax + '/' + counterMax + ' uitverkocht';
-      counterEl.classList.add('full');
+  async function loadBanner() {
+    let n = 1;
+    try { n = Math.max(1, parseInt(formData && formData.aantal, 10) || 1); } catch {}
+    let info = null;
+    try {
+      const r = await fetch(`/.netlify/functions/levering-info?aantal=${n}&ts=${Date.now()}`, { cache: 'no-store' });
+      if (r.ok) info = await r.json();
+    } catch (e) {}
+    updateBanner(info);
+  }
+  function updateBanner(info) {
+    const dotEl = document.getElementById('banner-dot');
+    const txtEl = document.getElementById('counter-text');
+    if (!dotEl || !txtEl) return;
+    dotEl.classList.remove('green', 'amber', 'lightblue');
+    if (!info) {
+      txtEl.textContent = 'Even kijken...';
+      return;
+    }
+    const mode = info.mode || (info.in_stock ? 'stock' : (info.next_production_date ? 'production' : 'no_schedule'));
+    if (mode === 'stock') {
+      const stock = parseInt(info.stock_count, 10) || 0;
+      dotEl.classList.add('green');
+      txtEl.textContent = stock + ' pot' + (stock === 1 ? '' : 'ten') + ' op voorraad, komend weekend gebracht';
+    } else if (mode === 'production') {
+      dotEl.classList.add('amber');
+      const dateText = fmtDayDateLong(info.next_production_date);
+      txtEl.textContent = 'Verse batch ' + dateText + ', bezorging binnen 2 weken';
     } else {
-      counterText.textContent = 'Bij 15 bestellingen in productie — ' + counterCount + '/' + counterMax + ' verkocht';
-      counterEl.classList.remove('full');
+      dotEl.classList.add('lightblue');
+      txtEl.textContent = 'Binnenkort verse batch, binnen 4 weken bezorgd';
     }
   }
 
@@ -1601,7 +1624,7 @@
     }
 
     loadConfig();
-    loadCounter();
+    loadBanner();
     showStep(1);
 
     $$('[data-next]').forEach(b => b.addEventListener('click', next));
@@ -1634,6 +1657,8 @@
         saveState();
         const btn = document.getElementById('aantal-next');
         if (btn) btn.disabled = false;
+        // Re-fetch banner for new aantal (delivery mode may change)
+        loadBanner();
       });
     });
 
@@ -1724,22 +1749,6 @@
     // Kanaal buttons already set formData.kanaal in their click handler — save then
 
     // Restart button → clear localStorage + reset
-    const restartBtn = document.getElementById('restart-btn');
-    if (restartBtn) {
-      restartBtn.addEventListener('click', () => {
-        if (!confirm('Weet je zeker dat je opnieuw wil beginnen? Je ingevulde gegevens worden gewist.')) return;
-        clearState();
-        resetForm();
-      });
-    }
-
-    // ?start=admin always wins — show admin picker regardless of saved state
-    const __bootParams = new URLSearchParams(location.search);
-    const __forceAdmin = __bootParams.get('start') === 'admin';
-    // ?fresh=1 → clear saved signup state (admin "Nieuwe klant" flow)
-    if (__bootParams.get('fresh') === '1') {
-      try { localStorage.removeItem('ellemelle_signup_state_v1'); } catch {}
-    }
     // Restore saved state if any (skipped when admin picker is forced)
     const saved = __forceAdmin ? null : loadState();
     if (saved && saved.data && saved.step >= 1 && saved.step <= TOTAL_STEPS) {
@@ -1839,7 +1848,7 @@
     })();
 
     // Refresh counter every 30s
-    setInterval(loadCounter, 30000);
+    setInterval(loadBanner, 30000);
   });
 })();
 </script>
