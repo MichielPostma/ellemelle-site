@@ -2045,22 +2045,44 @@
     const kbDef = document.getElementById('kanaal-next');
     if (kbDef) kbDef.disabled = !formData.kanaal;
 
-    // Install back-pill next to every Volgende button (except step 1)
+    // Detect admin context (embed iframe OR localStorage admin session)
+    function __isAdminContext() {
+      if (document.body.classList.contains('on-embed')) return true;
+      try {
+        const raw = localStorage.getItem('ellemelle_admin_session_v1')
+                 || localStorage.getItem('ellemelle_bezorger_session_v1');
+        if (!raw) return false;
+        const o = JSON.parse(raw);
+        const TTL_MS = 90 * 24 * 60 * 60 * 1000;
+        return !!(o && o.savedAt && o.password && (Date.now() - o.savedAt) <= TTL_MS);
+      } catch { return false; }
+    }
+    // Install back-pill next to every Volgende button (steps 2-7 always; step 1 only in admin context → admin-picker)
     (function installBackPills() {
       const ARROW_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>';
+      const isAdmin = __isAdminContext();
       $$('.step [data-next]').forEach(btn => {
         const step = btn.closest('.step');
         if (!step) return;
-        if (step.dataset.step === '1') return; // no back from step 1
         if (step.dataset.step === '0') return; // intro
+        const isStep1 = step.dataset.step === '1';
+        if (isStep1 && !isAdmin) return; // public visitors: no back on step 1
         if (btn.previousElementSibling && btn.previousElementSibling.classList && btn.previousElementSibling.classList.contains('back-pill')) return;
         if (btn.parentNode && btn.parentNode.classList && btn.parentNode.classList.contains('step-actions')) return;
         const backPill = document.createElement('button');
         backPill.type = 'button';
         backPill.className = 'back-pill';
-        backPill.setAttribute('aria-label', 'Vorige');
+        backPill.setAttribute('aria-label', isStep1 ? 'Terug naar Plaats bestelling' : 'Vorige');
         backPill.innerHTML = ARROW_SVG;
-        backPill.addEventListener('click', back);
+        if (isStep1) {
+          // Admin context: back from step 1 → admin picker
+          backPill.addEventListener('click', () => {
+            const embed = document.body.classList.contains('on-embed');
+            location.href = '/?start=admin' + (embed ? '&embed=1' : '');
+          });
+        } else {
+          backPill.addEventListener('click', back);
+        }
         const wrap = document.createElement('div');
         wrap.className = 'step-actions';
         btn.parentNode.insertBefore(wrap, btn);
