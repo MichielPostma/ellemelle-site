@@ -531,7 +531,7 @@
   }
   // --- API session cache (30s TTL on hot read endpoints) ---
   const __CACHED_EPS = new Set(['bezorger-orders','voorraad-list','bestellingen-list','klanten-list','levering-info','admin-list-pots','bestellingen-get']);
-  const __TTL_MS = 30000;
+  const __TTL_MS = 60000; // SWR: cached data is served instantly + revalidated in bg
   function __cacheKey(ep, body) { return 'cache_' + ep + '_' + JSON.stringify(body||{}); }
   window.__invalidateApiCache = function() {
     try {
@@ -545,30 +545,46 @@
   async function api(ep, body) {
     const isRead = __CACHED_EPS.has(ep);
     const key = __cacheKey(ep, body);
+    // Read cached entry once (for both freshness check + later SWR compare)
+    let cached = null;
     if (isRead) {
       try {
-        const cached = sessionStorage.getItem(key);
-        if (cached) {
-          const c = JSON.parse(cached);
-          if (c && c.ts && (Date.now() - c.ts) < __TTL_MS) {
-            return { ok: c.ok, data: c.data, __cached: true };
+        const raw = sessionStorage.getItem(key);
+        cached = raw ? JSON.parse(raw) : null;
+      } catch { cached = null; }
+    }
+    // Helper that performs a real network fetch + updates cache + emits apiFresh on data change
+    const doNetworkFetch = async () => {
+      const r = await fetch('/.netlify/functions/' + ep, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
+      });
+      const data = await r.json().catch(() => ({}));
+      const out = { ok: r.ok, data };
+      if (isRead && r.ok) {
+        let prevStr = null;
+        try { prevStr = cached && cached.data ? JSON.stringify(cached.data) : null; } catch {}
+        try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), ok: out.ok, data })); } catch {}
+        // SWR: if the fresh data differs from what we previously served, notify listeners
+        if (prevStr) {
+          let curStr = null;
+          try { curStr = JSON.stringify(data); } catch {}
+          if (curStr && curStr !== prevStr) {
+            try { window.dispatchEvent(new CustomEvent('apiFresh', { detail: { ep, body, data } })); } catch {}
           }
         }
-      } catch {}
+      }
+      if (!isRead && r.ok) {
+        try { window.__invalidateApiCache && window.__invalidateApiCache(); } catch {}
+      }
+      return out;
+    };
+    // SWR: if a cached entry exists, serve it instantly + revalidate in the background
+    if (isRead && cached && cached.ts && (Date.now() - cached.ts) < __TTL_MS) {
+      doNetworkFetch().catch(() => {});
+      return { ok: cached.ok, data: cached.data, __cached: true };
     }
-    const r = await fetch('/.netlify/functions/' + ep, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
-    });
-    const data = await r.json().catch(() => ({}));
-    const out = { ok: r.ok, data };
-    if (isRead && r.ok) {
-      try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), ok: out.ok, data })); } catch {}
-    }
-    if (!isRead && r.ok) {
-      try { window.__invalidateApiCache && window.__invalidateApiCache(); } catch {}
-    }
-    return out;
+    return await doNetworkFetch();
   }
 
   function showToast(msg, type) {
@@ -754,6 +770,16 @@
     const res = await api('bestellingen-list');
     if (res.ok) {
       saveSession(pw);
+      // SWR: when background revalidation finds fresh data, reload + re-render
+      window.addEventListener('apiFresh', (ev) => {
+        const ep = ev.detail && ev.detail.ep;
+        if (ep === 'bezorger-orders' || ep === 'voorraad-list') {
+          try { load(); } catch {}
+        }
+        if (ep === 'klanten-list' && typeof loadKlanten === 'function' && STATE.activeTab === 'klanten') {
+          try { loadKlanten(); } catch {}
+        }
+      });
       $('#login-view').hidden = true; $('#main-view').hidden = false;
       document.body.classList.remove('on-login');
       STATE.orders = res.data.orders || [];
