@@ -614,22 +614,22 @@
     height: auto;
     max-height: 56vh;
     object-fit: contain;
-    transform: scale(1.45);
+    transform: scale(1.0);
     transform-origin: center center;
     animation: intro-pot-wiggle 4s ease-in-out infinite;
   }
   @keyframes intro-pot-wiggle {
-    /* Two quick shakes (0–20%, ~0.8s), then long pause back at rest — keep scale(1.45) */
-    0%   { transform: scale(1.45) rotate(0deg); }
-    4%   { transform: scale(1.45) rotate(-4deg); }
-    8%   { transform: scale(1.45) rotate(4deg); }
-    12%  { transform: scale(1.45) rotate(-3deg); }
-    16%  { transform: scale(1.45) rotate(3deg); }
-    20%  { transform: scale(1.45) rotate(0deg); }
-    100% { transform: scale(1.45) rotate(0deg); }
+    /* Two quick shakes (0–20%, ~0.8s), then long pause back at rest — keep scale(1.0) */
+    0%   { transform: scale(1.0) rotate(0deg); }
+    4%   { transform: scale(1.0) rotate(-4deg); }
+    8%   { transform: scale(1.0) rotate(4deg); }
+    12%  { transform: scale(1.0) rotate(-3deg); }
+    16%  { transform: scale(1.0) rotate(3deg); }
+    20%  { transform: scale(1.0) rotate(0deg); }
+    100% { transform: scale(1.0) rotate(0deg); }
   }
   @media (prefers-reduced-motion: reduce) {
-    body.on-intro .product-img { animation: none; transform: scale(1.45); }
+    body.on-intro .product-img { animation: none; transform: scale(1.0); }
   }
 
   /* Success: keep product hero fully visible (no dimming) */
