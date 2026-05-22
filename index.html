@@ -1705,7 +1705,11 @@
       text = stock + ' pot' + (stock === 1 ? '' : 'ten') + ' op voorraad, komend weekend gebracht';
     } else if (mode === 'production') {
       cls = 'amber';
-      text = 'Verse batch ' + fmtDayDateLong(info.next_production_date) + ', bezorging binnen 2 weken';
+      const prodTxt = fmtDayDateLong(info.next_production_date);
+      const delTxt = info.delivery_date ? fmtDayDateLong(info.delivery_date) : '';
+      text = delTxt
+        ? 'Verse batch ' + prodTxt + ', thuis bezorgd op ' + delTxt
+        : 'Verse batch ' + prodTxt + ', bezorging binnen 2 weken';
     } else {
       cls = 'lightblue';
       text = 'Binnenkort verse batch, binnen 4 weken bezorgd';
