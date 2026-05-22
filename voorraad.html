@@ -644,7 +644,7 @@
   }
   // --- API session cache (30s TTL on hot read endpoints) ---
   const __CACHED_EPS = new Set(['bezorger-orders','voorraad-list','bestellingen-list','klanten-list','levering-info','admin-list-pots']);
-  const __TTL_MS = 30000;
+  const __TTL_MS = 60000; // SWR: cached data served instantly + revalidated in bg
   function __cacheKey(ep, body) { return 'cache_' + ep + '_' + JSON.stringify(body||{}); }
   window.__invalidateApiCache = function() {
     try {
@@ -658,31 +658,42 @@
   async function api(ep, body) {
     const isRead = __CACHED_EPS.has(ep);
     const key = __cacheKey(ep, body);
+    let cached = null;
     if (isRead) {
       try {
-        const cached = sessionStorage.getItem(key);
-        if (cached) {
-          const c = JSON.parse(cached);
-          if (c && c.ts && (Date.now() - c.ts) < __TTL_MS) {
-            return { ok: c.ok, status: c.status, data: c.data, __cached: true };
+        const raw = sessionStorage.getItem(key);
+        cached = raw ? JSON.parse(raw) : null;
+      } catch { cached = null; }
+    }
+    const doNetworkFetch = async () => {
+      const r = await fetch('/.netlify/functions/' + ep, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
+      });
+      const j = await r.json().catch(() => ({}));
+      const out = { ok: r.ok, status: r.status, data: j };
+      if (isRead && r.ok) {
+        let prevStr = null;
+        try { prevStr = cached && cached.data ? JSON.stringify(cached.data) : null; } catch {}
+        try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), ok: out.ok, status: out.status, data: out.data })); } catch {}
+        if (prevStr) {
+          let curStr = null;
+          try { curStr = JSON.stringify(out.data); } catch {}
+          if (curStr && curStr !== prevStr) {
+            try { window.dispatchEvent(new CustomEvent('apiFresh', { detail: { ep, body, data: out.data } })); } catch {}
           }
         }
-      } catch {}
+      }
+      if (!isRead && r.ok) {
+        try { window.__invalidateApiCache && window.__invalidateApiCache(); } catch {}
+      }
+      return out;
+    };
+    if (isRead && cached && cached.ts && (Date.now() - cached.ts) < __TTL_MS) {
+      doNetworkFetch().catch(() => {});
+      return { ok: cached.ok, status: cached.status, data: cached.data, __cached: true };
     }
-    const r = await fetch('/.netlify/functions/' + ep, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({ password: STATE.password }, body||{})),
-    });
-    const j = await r.json().catch(() => ({}));
-    const out = { ok: r.ok, status: r.status, data: j };
-    if (isRead && r.ok) {
-      try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), ok: out.ok, status: out.status, data: out.data })); } catch {}
-    }
-    // Auto-invalidate cache on writes
-    if (!isRead && r.ok) {
-      try { window.__invalidateApiCache && window.__invalidateApiCache(); } catch {}
-    }
-    return out;
+    return await doNetworkFetch();
   }
 
   // --- Load ---
@@ -861,6 +872,13 @@
     const res = await api('voorraad-list');
     if (res.ok) {
       saveSession(pw);
+      // SWR: when background revalidation finds fresh data, reload + re-render
+      window.addEventListener('apiFresh', (ev) => {
+        const ep = ev.detail && ev.detail.ep;
+        if (ep === 'voorraad-list' || ep === 'bezorger-orders') {
+          try { refresh(); } catch {}
+        }
+      });
       STATE.pots = res.data.pots || [];
       STATE.config = res.data.config || {};
       $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
