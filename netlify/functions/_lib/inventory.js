@@ -130,22 +130,20 @@ async function setPotStatus(potId, status, opts) {
 
 async function countInStock() {
   const store = potsStore();
-  let n = 0;
-  for (const id of POT_IDS) {
-    const v = await store.get(id, { type: 'json' });
-    if (v && v.status === 'voorraad') n++;
-  }
-  return n;
+  // Parallel fetch — same pattern as listAllPots, count voorraad locally.
+  const pots = await Promise.all(
+    POT_IDS.map(id => store.get(id, { type: 'json' }).catch(() => null))
+  );
+  return pots.filter(p => p && p.status === 'voorraad').length;
 }
 
 async function listAllPots() {
   const store = potsStore();
-  const out = [];
-  for (const id of POT_IDS) {
-    const v = await store.get(id, { type: 'json' });
-    out.push(v || { id, status: 'uninitialized' });
-  }
-  return out;
+  // Parallel fetch — 25 blob reads in flight at once instead of serial.
+  const fetched = await Promise.all(
+    POT_IDS.map(id => store.get(id, { type: 'json' }).catch(() => null))
+  );
+  return POT_IDS.map((id, i) => fetched[i] || { id, status: 'uninitialized' });
 }
 
 // --- App config (next_production_date etc.) ---
