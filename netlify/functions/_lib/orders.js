@@ -58,17 +58,25 @@ function computeUiterlijke(createdAt, snapshotMode, snapshotDate) {
   return fallbackNoScheduleDate(createdAt);
 }
 
+// Short-TTL cache for the form lookup (form id never changes per site)
+let __formCache = { at: 0, form: null };
+const __FORM_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 async function fetchAllSubmissions() {
   const token  = process.env.NETLIFY_API_TOKEN;
   const siteId = process.env.NETLIFY_SITE_ID;
   if (!token || !siteId) throw new Error('missing NETLIFY_API_TOKEN or NETLIFY_SITE_ID');
-  const formsRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/forms`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!formsRes.ok) throw new Error('forms list failed');
-  const forms = await formsRes.json();
-  const form = forms.find(f => f.name === 'ellemelle-signup');
-  if (!form) return { form: null, subs: [] };
+  let form = __formCache.form;
+  if (!form || (Date.now() - __formCache.at) > __FORM_CACHE_TTL_MS) {
+    const formsRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/forms`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!formsRes.ok) throw new Error('forms list failed');
+    const forms = await formsRes.json();
+    form = forms.find(f => f.name === 'ellemelle-signup');
+    if (!form) return { form: null, subs: [] };
+    __formCache = { at: Date.now(), form };
+  }
   const subsRes = await fetch(`https://api.netlify.com/api/v1/forms/${form.id}/submissions?per_page=200`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -91,16 +99,34 @@ async function deleteSubmission(orderId) {
   return true;
 }
 
+// Module-level warm-function cache for listEnrichedOrders (cuts repeat polls to ~0ms).
+let __orderCache = { at: 0, data: null };
+const __ORDER_CACHE_TTL_MS = 5000;
+
 // Enrich + chronologically allocate stock. Returns array of orders with effective delivery_date/mode.
 async function listEnrichedOrders() {
-  const { subs } = await fetchAllSubmissions();
+  // Warm cache (per warm-function instance) — admin pages poll repeatedly within seconds
+  if (__orderCache.data && (Date.now() - __orderCache.at) < __ORDER_CACHE_TTL_MS) {
+    // Deep-ish clone via JSON to avoid callers mutating the cached array (esp. delivery_mode/date)
+    return JSON.parse(JSON.stringify(__orderCache.data));
+  }
+  const [subsResult, totalStock] = await Promise.all([
+    fetchAllSubmissions(),
+    countInStock(),
+  ]);
+  const subs = subsResult.subs;
   const ordersStore = getStore(blobOpts('ellemelle-orders'));
+  // Parallel blob reads — was N serial reads (~50-100ms each = multi-second), now one round-trip
+  const states = await Promise.all(
+    subs.map(s => ordersStore.get(s.id, { type: 'json' }).catch(() => null))
+  );
   const enriched = [];
-  for (const sub of subs) {
+  const backfillWrites = [];
+  for (let i = 0; i < subs.length; i++) {
+    const sub = subs[i];
     const d = sub.data || {};
     const orderId = sub.id;
-    let state = await ordersStore.get(orderId, { type: 'json' });
-    state = state || {};
+    let state = states[i] || {};
     let snapshotDate = d.delivery_date || state.delivery_date_snapshot || null;
     let snapshotMode = d.delivery_mode || state.delivery_mode || null;
     if (!snapshotDate || !/^\d{4}-\d{2}-\d{2}$/.test(snapshotDate)) {
@@ -108,12 +134,13 @@ async function listEnrichedOrders() {
       if (!snapshotMode) snapshotMode = 'no_schedule';
     }
     if (!snapshotMode) snapshotMode = 'production';
-    // Backfill uiterlijke_bezorgdatum on first read — fixed at original promise
+    // Backfill uiterlijke_bezorgdatum on first read — fixed at original promise.
+    // Collect writes for fire-and-forget AFTER returning so we don't block the response.
     if (!state.uiterlijke_bezorgdatum_computed) {
       state.uiterlijke_bezorgdatum_computed = computeUiterlijke(sub.created_at, snapshotMode, snapshotDate);
       const histEntry = { at: new Date().toISOString(), action: 'backfill_uiterlijke', value: state.uiterlijke_bezorgdatum_computed };
       state.history = Array.isArray(state.history) ? state.history.concat([histEntry]) : [histEntry];
-      try { await ordersStore.setJSON(orderId, state); } catch {}
+      backfillWrites.push(ordersStore.setJSON(orderId, state).catch(() => null));
     }
     const uiterlijke = state.uiterlijke_bezorgdatum_override || state.uiterlijke_bezorgdatum_computed;
     enriched.push({
@@ -155,8 +182,7 @@ async function listEnrichedOrders() {
   // Drop "deleted" orders from view
   const visible = enriched.filter(o => !o.deleted);
 
-  // Chronological stock allocation
-  const totalStock = await countInStock();
+  // Chronological stock allocation — totalStock already fetched in parallel above
   const open = visible.filter(o => !['delivered','neighbors'].includes(o.order_status));
   const done = visible.filter(o =>  ['delivered','neighbors'].includes(o.order_status));
   open.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
@@ -190,7 +216,18 @@ async function listEnrichedOrders() {
     o.geplande_bezorgweek = o.delivery_date;
     o.is_te_laat = !!(o.uiterlijke_bezorgdatum && o.delivery_date && o.delivery_date > o.uiterlijke_bezorgdatum);
   }
-  return { all: [...open, ...done], total_stock: totalStock };
+  const result = { all: [...open, ...done], total_stock: totalStock };
+  __orderCache = { at: Date.now(), data: result };
+  // Fire-and-forget backfill writes — don't block the response
+  if (backfillWrites.length) {
+    Promise.allSettled(backfillWrites).catch(() => {});
+  }
+  return JSON.parse(JSON.stringify(result));
+}
+
+// Invalidate the warm cache (call after any blob mutation that affects orders).
+function invalidateOrderCache() {
+  __orderCache = { at: 0, data: null };
 }
 
 // Find related orders for the same customer (match on phone digits or lowercase email)
@@ -212,5 +249,6 @@ async function sumActiveOrderPots() {
 
 module.exports = {
   blobOpts, toISODate, nextSaturdayISO, isoWeekOfDate, fallbackNoScheduleDate, computeUiterlijke,
+  invalidateOrderCache,
   fetchAllSubmissions, deleteSubmission, listEnrichedOrders, sumActiveOrderPots, customerMatchKey,
 };
