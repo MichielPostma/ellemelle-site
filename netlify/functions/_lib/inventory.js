@@ -61,12 +61,15 @@ function nextDeliverySaturday() {
   return nextSaturday(new Date());
 }
 function nextDeliveryAfter(productionDateISO) {
-  // First Saturday strictly AFTER the production date (or same day if it's a Sat after today).
-  // If production date is in past or today, just return next Saturday from today.
-  // If production date is future, return first Saturday on/after production date.
+  // First Saturday STRICTLY AFTER the production date.
+  // Production and delivery on the same day is not logistically practical.
+  // If production date is in past/today, fall back to today as pivot, then jump to the next Saturday strictly after.
   const todayISOv = todayISO();
   const pivot = (productionDateISO && productionDateISO > todayISOv) ? productionDateISO : todayISOv;
-  return nextSaturday(pivot);
+  // Skip the pivot day itself by adding 1, then snap to next Saturday on/after that.
+  const x = new Date(pivot + 'T00:00:00Z');
+  x.setUTCDate(x.getUTCDate() + 1);
+  return nextSaturday(x);
 }
 
 async function setProductionDate(potId, dateISO) {
