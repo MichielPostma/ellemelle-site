@@ -216,6 +216,14 @@
     <button class="btn-outline" id="reorder-back-btn">Terug</button>
   </section>
 
+  <section id="pickup-review-view" hidden>
+    <h1 class="step-question">Klopt dit, <span id="pickup-review-name">jij</span>?</h1>
+    <p class="subtitle">We halen alleen de lege pot op — geen nieuwe bestelling.</p>
+    <div class="order-card" id="pickup-review-card"></div>
+    <button class="btn-primary" id="pickup-confirm-btn">Bevestig ophalen →</button>
+    <button class="btn-outline" id="pickup-review-back">Terug</button>
+  </section>
+
   <section id="pickup-confirm-view" hidden>
     <h1 class="step-question">Bedankt voor je feedback!</h1>
     <div class="info-card">
@@ -251,7 +259,7 @@
     { key: 'texture', q: 'Wat vond je van de textuur?', sub: 'Romig, smeuïg, klonterig — geef je oordeel.' },
     { key: 'kids',    q: 'Wat vonden de kids ervan?',   sub: 'Als die er zijn — anders sla je over.' },
   ];
-  const VIEWS = ['loading-view','notfound-view','available-view','delivered-view','pickup-view','reordered-view','survey-view','reorder-review-view','pickup-confirm-view','reorder-success-view'];
+  const VIEWS = ['loading-view','notfound-view','available-view','delivered-view','pickup-view','reordered-view','survey-view','reorder-review-view','pickup-review-view','pickup-confirm-view','reorder-success-view'];
 
   function showToast(msg, type) {
     const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + (type || '') + ' show';
@@ -349,7 +357,7 @@
     if (STATE.surveyStep < SURVEY_Qs.length) { renderSurveyStep(); return; }
     await submitRatings();
     if (STATE.surveyMode === 'reorder') openReorderReview();
-    else await performPickup();
+    else openPickupReview();
   }
   async function submitRatings() {
     const payload = {};
@@ -363,6 +371,26 @@
     } catch {}
   }
 
+  function openPickupReview() {
+    const p = STATE.pot;
+    $('#pickup-review-name').textContent = p.voornaam || 'jij';
+    const addrLine = (p.adres ? escapeHtml(p.adres) : '(adres onbekend)');
+    const cityLine = (p.stad ? escapeHtml(p.stad) : '');
+    // Compute next Saturday (strictly future — incl. next sat if today is sat)
+    const today = new Date();
+    const day = today.getDay();
+    const offset = ((6 - day + 7) % 7) || 7;
+    const next = new Date(today.getTime() + offset * 86400000);
+    const ophaaldatum = 'zaterdag ' + next.getDate() + ' ' + NL_MAANDEN[next.getMonth()];
+    $('#pickup-review-card').innerHTML =
+      '<div class="order-line"><span>1× lege pot ' + escapeHtml(STATE.potId) + '</span><span>ophalen</span></div>' +
+      '<div class="order-line"><span>Statiegeld retour</span><span>€1,00</span></div>' +
+      '<div class="order-meta">' +
+        '<strong>Ophaaladres</strong><br>' + addrLine + '<br>' + cityLine + '<br><br>' +
+        '<strong>Ophaaldatum</strong><br>' + ophaaldatum +
+      '</div>';
+    showView('pickup-review-view');
+  }
   async function performPickup() {
     const r = await fetch('/.netlify/functions/customer-request-pickup', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -423,6 +451,8 @@
   $('#btn-reorder').addEventListener('click', () => startSurvey('reorder'));
   $('#survey-next').addEventListener('click', advanceSurvey);
   $('#survey-skip').addEventListener('click', advanceSurvey);
+  $('#pickup-confirm-btn').addEventListener('click', performPickup);
+  $('#pickup-review-back').addEventListener('click', renderForCurrentState);
   $('#reorder-back-btn').addEventListener('click', () => { if (STATE.pot.status === 'pickup-with-reorder') showView('reordered-view'); else renderForCurrentState(); });
   $('#reorder-confirm').addEventListener('change', () => { $('#reorder-submit-btn').disabled = !$('#reorder-confirm').checked; });
   $('#reorder-submit-btn').addEventListener('click', submitReorder);
