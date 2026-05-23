@@ -11,7 +11,6 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <style>
-  /* Shared tokens — mirror of index.html */
   :root {
     --red: #D9301E;
     --red-dark: #8B1A0E;
@@ -29,27 +28,10 @@
     font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
     font-size: 16px; -webkit-font-smoothing: antialiased; min-height: 100dvh;
   }
-  #app { max-width: 480px; margin: 0 auto; padding: 14px 20px 28px; }
+  #app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; }
 
-  .top-banner {
-    width: 100%;
-    background: #f1e7d4; color: var(--red-dark);
-    font-size: 12.5px; font-weight: 600; letter-spacing: 0.6px;
-    text-transform: uppercase; text-align: center;
-    padding: 11px 16px; line-height: 1.2;
-    border-bottom: 1px solid rgba(139,26,14,0.07);
-  }
-  .progress-text {
-    color: var(--red-dark); font-size: 13px; font-weight: 700;
-    text-align: left; letter-spacing: 0.4px; text-transform: uppercase;
-    opacity: 0.55; margin-bottom: 16px; display: block;
-  }
-  .step-question {
-    color: var(--red); font-size: 28px; line-height: 1.15; margin-bottom: 14px;
-    text-transform: none; letter-spacing: -0.2px; font-weight: 700;
-  }
+  .step-question { color: var(--red); font-size: 28px; line-height: 1.15; margin-bottom: 14px; letter-spacing: -0.2px; font-weight: 700; }
   .subtitle { color: #666; font-size: 15px; line-height: 1.45; margin: 0 0 22px; }
-  .meta { color: #888; font-size: 13px; margin-top: 18px; }
 
   .btn-primary {
     display: block; width: 100%; min-height: 60px;
@@ -63,13 +45,12 @@
   }
   .btn-primary:disabled { background: #d4cfc4; color: rgba(0,0,0,0.4); cursor: not-allowed; box-shadow: none; }
   .btn-primary:not(:disabled):hover { transform: translateY(-1px); }
-
   .btn-outline {
-    display: block; width: 100%; min-height: 60px;
+    display: block; width: 100%; min-height: 60px; line-height: 56px;
     background: transparent; color: var(--red);
     border: 2px solid var(--red); border-radius: var(--radius-md);
     font-family: inherit; font-size: 18px; font-weight: 700; letter-spacing: 0.2px;
-    cursor: pointer; margin-top: 12px;
+    cursor: pointer; margin-top: 12px; text-align: center;
     transition: background 140ms;
   }
   .btn-outline:hover { background: rgba(217,48,30,0.06); }
@@ -77,76 +58,81 @@
   .info-card {
     background: var(--white); border: 1px solid rgba(0,0,0,0.08);
     border-radius: var(--radius-md); padding: 16px 18px;
-    margin: 14px 0; line-height: 1.45; box-shadow: none;
+    margin: 14px 0; line-height: 1.45;
   }
   .info-card strong { display: block; color: var(--black); font-weight: 700; font-size: 16px; margin-bottom: 4px; }
   .info-card .sub { display: block; color: #666; font-size: 14px; }
 
+  .option-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 16px 16px 18px;
+    margin-bottom: 14px; box-shadow: var(--shadow-card);
+  }
+  .option-card .row { display: flex; align-items: center; gap: 14px; }
+  .option-card .icon { flex: 0 0 80px; width: 80px; height: 80px; border-radius: 12px; background: #fff8f3; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .option-card .icon img { max-width: 100%; max-height: 100%; display: block; object-fit: contain; }
+  .option-card .text { flex: 1; min-width: 0; }
+  .option-card .title { color: var(--black); font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .option-card .desc { color: #666; font-size: 14px; line-height: 1.4; }
+  .option-card .btn-primary, .option-card .btn-outline { margin-top: 14px; }
+
+  .pot-info-blok {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 14px 18px; margin: 20px 0;
+  }
+  .pot-info-blok .row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; font-size: 14.5px; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+  .pot-info-blok .row:last-child { border-bottom: 0; }
+  .pot-info-blok .k { color: #666; flex: 0 0 auto; }
+  .pot-info-blok .v { color: var(--black); font-weight: 600; text-align: right; }
+
+  .section-eyebrow { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin: 28px 0 10px; }
+  .history-list { background: var(--white); border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius-md); padding: 4px 18px; }
+  .history-list .entry { display: flex; gap: 14px; padding: 12px 0; align-items: baseline; border-bottom: 1px solid rgba(0,0,0,0.05); }
+  .history-list .entry:last-child { border-bottom: 0; }
+  .history-list .ts { color: #888; font-size: 12.5px; flex: 0 0 92px; white-space: nowrap; }
+  .history-list .label { color: var(--black); font-size: 14.5px; flex: 1; }
+  .history-list .empty { color: #888; font-size: 14px; padding: 14px 0; }
+
+  .stars { display: flex; gap: 6px; margin: 18px 0; }
+  .star { cursor: pointer; padding: 4px; color: rgba(0,0,0,0.18); transition: color 120ms, transform 120ms; background: none; border: 0; }
+  .star:hover, .star.hover { color: var(--red); }
+  .star.on { color: var(--red); }
+  .star:active { transform: scale(0.92); }
+  .star svg { display: block; width: 40px; height: 40px; }
+
+  .skip-link { display: block; text-align: center; color: #888; font-size: 14px; padding: 12px; margin-top: 6px; text-decoration: underline; cursor: pointer; background: none; border: 0; width: 100%; }
+  .progress-text { color: var(--black); font-size: 13px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; opacity: 0.55; margin-bottom: 12px; display: block; }
   .loading { color: #666; font-size: 15px; padding: 32px 0; text-align: center; }
 
-  .toast {
-    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-    background: var(--black); color: white; padding: 12px 20px; border-radius: 999px;
-    font-size: 14px; font-weight: 600; z-index: 100;
-    opacity: 0; transition: opacity 200ms; pointer-events: none;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.18); max-width: 90%; text-align: center;
-  }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--black); color: white; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 100; opacity: 0; transition: opacity 200ms; pointer-events: none; box-shadow: 0 8px 20px rgba(0,0,0,0.18); max-width: 90%; text-align: center; }
   .toast.show { opacity: 1; }
   .toast.success { background: #1c7d3f; }
   .toast.error { background: var(--red); }
 
-  /* Reorder review step */
-  .order-card {
-    background: var(--white); border-radius: var(--radius-md); padding: 18px 18px;
-    box-shadow: var(--shadow-card); margin-bottom: 14px; text-align: left;
-  }
+  .order-card { background: var(--white); border-radius: var(--radius-md); padding: 18px; box-shadow: var(--shadow-card); margin-bottom: 14px; text-align: left; }
   .order-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 15px; }
   .order-line.total { border-top: 2px dashed var(--cream-dark); padding-top: 12px; margin-top: 8px; font-weight: 700; font-size: 19px; color: var(--black); }
   .order-meta { font-size: 13.5px; line-height: 1.55; color: rgba(0,0,0,0.72); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--cream-dark); }
   .order-meta strong { color: var(--black); }
 
-  .check-row {
-    display: flex; align-items: flex-start; gap: 10px;
-    margin: 12px 0; font-size: 14px; line-height: 1.45;
-    cursor: pointer;
-  }
+  .check-row { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0; font-size: 14px; line-height: 1.45; cursor: pointer; }
   .check-row input { margin-top: 2px; }
 
-  /* Success state */
   .step.success { text-align: center; }
-  #qrcode {
-    display: flex; justify-content: center; align-items: center;
-    width: 240px; height: 240px; margin: 28px auto 24px;
-    padding: 20px; background: #fff; border-radius: 14px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-    animation: qr-wiggle 4s ease-in-out infinite;
-    transform-origin: center center;
-  }
+  #qrcode { display: flex; justify-content: center; align-items: center; width: 240px; height: 240px; margin: 28px auto 24px; padding: 20px; background: #fff; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.12); animation: qr-wiggle 4s ease-in-out infinite; transform-origin: center center; }
   #qrcode img, #qrcode canvas { display: block; }
-  @keyframes qr-wiggle {
-    0%   { transform: rotate(0deg); }
-    4%   { transform: rotate(-4deg); }
-    8%   { transform: rotate(4deg); }
-    12%  { transform: rotate(-3deg); }
-    16%  { transform: rotate(3deg); }
-    20%  { transform: rotate(0deg); }
-    100% { transform: rotate(0deg); }
-  }
+  @keyframes qr-wiggle { 0%{transform:rotate(0)} 4%{transform:rotate(-4deg)} 8%{transform:rotate(4deg)} 12%{transform:rotate(-3deg)} 16%{transform:rotate(3deg)} 20%{transform:rotate(0)} 100%{transform:rotate(0)} }
   @media (prefers-reduced-motion: reduce) { #qrcode { animation: none; } }
   .success-subtitle { color: #666; font-size: 15px; line-height: 1.45; text-align: center; margin: 6px auto 0; max-width: 360px; }
 </style>
 </head>
 <body>
 
-<div class="top-banner" id="banner-text">Jouw ELLEMELLE pot</div>
-
 <main id="app">
   <span class="progress-text" id="pot-label">Pot</span>
 
-  <!-- Loading -->
   <section id="loading-view"><div class="loading">Even kijken…</div></section>
 
-  <!-- State: not found -->
   <section id="notfound-view" hidden>
     <h1 class="step-question">Hmm, deze pot kennen we niet.</h1>
     <div class="info-card">
@@ -155,7 +141,6 @@
     </div>
   </section>
 
-  <!-- State: available -->
   <section id="available-view" hidden>
     <h1 class="step-question">Deze pot wacht nog op een bezorging.</h1>
     <div class="info-card">
@@ -164,25 +149,45 @@
     </div>
   </section>
 
-  <!-- State: delivered (choices) -->
   <section id="delivered-view" hidden>
-    <h1 class="step-question" id="delivered-h1">Hi!</h1>
-    <p class="subtitle">Je pot ELLEMELLE chocopasta is bij je bezorgd. Wat wil je nu doen?</p>
-    <button class="btn-primary" id="btn-reorder">Ja, ik wil nieuwe pot →</button>
-    <button class="btn-outline" id="btn-pickup">Alleen ophalen</button>
-    <p class="meta" id="delivered-meta"></p>
+    <h1 class="step-question" id="delivered-h1">Hoe smaakt je pot?</h1>
+
+    <div class="option-card">
+      <div class="row">
+        <div class="icon"><img src="/Images/pot-bezorgd.png" alt="" loading="lazy"></div>
+        <div class="text">
+          <div class="title">Ophalen + nieuwe pot</div>
+          <div class="desc">Wij halen de lege pot op en bezorgen een nieuwe.</div>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-reorder">Ja, ik wil dit →</button>
+    </div>
+
+    <div class="option-card">
+      <div class="row">
+        <div class="icon"><img src="/Images/pot-leeg-label.png" alt="" loading="lazy"></div>
+        <div class="text">
+          <div class="title">Alleen ophalen</div>
+          <div class="desc">Lege pot terug, statiegeld retour.</div>
+        </div>
+      </div>
+      <button class="btn-outline" id="btn-pickup">Alleen ophalen →</button>
+    </div>
+
+    <div class="pot-info-blok" id="pot-info-blok"></div>
+
+    <div class="section-eyebrow">Pot historie</div>
+    <div class="history-list" id="history-list"></div>
   </section>
 
-  <!-- State: pickup-requested -->
   <section id="pickup-view" hidden>
-    <h1 class="step-question">Top!</h1>
+    <h1 class="step-question" id="pickup-h1">Bedankt!</h1>
     <div class="info-card">
-      <strong>We halen je pot zo snel mogelijk op.</strong>
+      <strong>We komen je pot snel halen.</strong>
       <span class="sub">Bedankt dat je de glazen pot teruggeeft — €1 statiegeld krijg je terug bij je volgende bestelling.</span>
     </div>
   </section>
 
-  <!-- State: pickup-with-reorder -->
   <section id="reordered-view" hidden>
     <h1 class="step-question">Top!</h1>
     <div class="info-card">
@@ -191,7 +196,14 @@
     </div>
   </section>
 
-  <!-- Reorder flow: review -->
+  <section id="survey-view" hidden>
+    <h1 class="step-question" id="survey-q">Hoe smaakt je pot?</h1>
+    <p class="subtitle" id="survey-sub"></p>
+    <div class="stars" id="survey-stars" role="radiogroup" aria-label="Geef een score"></div>
+    <button class="btn-primary" id="survey-next" disabled>Volgende →</button>
+    <button class="skip-link" id="survey-skip" type="button">Sla over</button>
+  </section>
+
   <section id="reorder-review-view" hidden>
     <h1 class="step-question">Klopt dit, <span id="reorder-name">jij</span>?</h1>
     <p class="subtitle">We bezorgen op hetzelfde adres als vorige keer.</p>
@@ -204,7 +216,14 @@
     <button class="btn-outline" id="reorder-back-btn">Terug</button>
   </section>
 
-  <!-- Reorder flow: success -->
+  <section id="pickup-confirm-view" hidden>
+    <h1 class="step-question">Bedankt voor je feedback!</h1>
+    <div class="info-card">
+      <strong id="pickup-confirm-headline">We halen je pot op.</strong>
+      <span class="sub" id="pickup-confirm-sub"></span>
+    </div>
+  </section>
+
   <section id="reorder-success-view" hidden class="step success">
     <h1 class="step-question" id="success-h1">Leuk!</h1>
     <p class="success-subtitle">Doe je betaling via QR code of gebruik de button.</p>
@@ -212,7 +231,6 @@
     <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Of betaal met iDeal →</a>
     <div class="order-card" id="success-recap" style="margin-top: 24px;"></div>
   </section>
-
 </main>
 
 <div class="toast" id="toast"></div>
@@ -221,100 +239,146 @@
 <script>
 (function(){
   'use strict';
-
   const $ = sel => document.querySelector(sel);
-  const $$ = sel => Array.from(document.querySelectorAll(sel));
 
   const STATE = {
-    potId: null,
-    pot: null,            // server response
-    configCache: null,    // tikkie URLs
-    reorderResp: null,    // server response of the reorder submit
+    potId: null, pot: null, configCache: null, reorderResp: null,
+    surveyMode: null, surveyStep: 0,
+    ratings: { taste: 0, texture: 0, kids: 0 },
   };
+  const SURVEY_Qs = [
+    { key: 'taste',   q: 'Wat vond je van de smaak?',   sub: 'Tip: 5 = top, 1 = niet lekker.' },
+    { key: 'texture', q: 'Wat vond je van de textuur?', sub: 'Romig, smeuïg, klonterig — geef je oordeel.' },
+    { key: 'kids',    q: 'Wat vonden de kids ervan?',   sub: 'Als die er zijn — anders sla je over.' },
+  ];
+  const VIEWS = ['loading-view','notfound-view','available-view','delivered-view','pickup-view','reordered-view','survey-view','reorder-review-view','pickup-confirm-view','reorder-success-view'];
 
   function showToast(msg, type) {
-    const t = $('#toast');
-    t.textContent = msg;
-    t.className = 'toast ' + (type || '') + ' show';
-    clearTimeout(window.__toastT);
-    window.__toastT = setTimeout(() => t.classList.remove('show'), 3000);
+    const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + (type || '') + ' show';
+    clearTimeout(window.__toastT); window.__toastT = setTimeout(() => t.classList.remove('show'), 3000);
   }
-
   function showView(id) {
-    ['loading-view','notfound-view','available-view','delivered-view','pickup-view',
-     'reordered-view','reorder-review-view','reorder-success-view'].forEach(v => {
-      $('#' + v).hidden = (v !== id);
-    });
+    VIEWS.forEach(v => { const el = $('#' + v); if (el) el.hidden = (v !== id); });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
-
-  function getPotIdFromURL() {
-    const m = location.pathname.match(/POT-\d{3}/i);
-    return m ? m[0].toUpperCase() : null;
-  }
-
-  function escapeHtml(s) {
-    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
+  function getPotIdFromURL() { const m = location.pathname.match(/POT-\d{3}/i); return m ? m[0].toUpperCase() : null; }
+  function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  const NL_MAANDEN = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  function fmtDateLong(input) { if(!input) return '—'; const d=new Date(input); if(isNaN(d.getTime())) return String(input); return d.getDate()+' '+NL_MAANDEN[d.getMonth()]; }
+  function fmtDateTime(input) { if(!input) return ''; const d=new Date(input); if(isNaN(d.getTime())) return String(input); const dd=String(d.getDate()).padStart(2,'0'); const mm=String(d.getMonth()+1).padStart(2,'0'); const hh=String(d.getHours()).padStart(2,'0'); const mi=String(d.getMinutes()).padStart(2,'0'); return dd+'-'+mm+' '+hh+':'+mi; }
 
   async function fetchPot(potId) {
     const r = await fetch('/.netlify/functions/pot-get?pot_id=' + encodeURIComponent(potId), { cache: 'no-store' });
     return r.ok ? r.json() : null;
   }
-
   async function loadConfig() {
-    try {
-      const r = await fetch('/api/config', { cache: 'no-store' });
-      if (r.ok) STATE.configCache = await r.json();
-    } catch {}
+    try { const r = await fetch('/api/config', { cache: 'no-store' }); if (r.ok) STATE.configCache = await r.json(); } catch {}
+  }
+
+  function renderInfoBlok() {
+    const p = STATE.pot;
+    const rows = [
+      { k: 'Geproduceerd', v: p.production_date ? fmtDateLong(p.production_date) : '—' },
+      { k: 'Houdbaar t/m', v: p.expiry_date ? fmtDateLong(p.expiry_date) : '—' },
+      { k: 'Statiegeld', v: '€1,00' },
+      { k: 'Besteller', v: p.voornaam || '—' },
+    ];
+    $('#pot-info-blok').innerHTML = rows.map(r => '<div class="row"><span class="k">'+escapeHtml(r.k)+'</span><span class="v">'+escapeHtml(r.v)+'</span></div>').join('');
+  }
+  function buildHistory() {
+    const p = STATE.pot;
+    const entries = [];
+    if (p.production_date) entries.push({ ts: p.production_date, label: 'Pot gevuld op ' + fmtDateLong(p.production_date) });
+    if (p.delivered_at) entries.push({ ts: p.delivered_at, label: 'Bezorgd op ' + fmtDateTime(p.delivered_at) });
+    if (p.return_requested_at || p.pickup_requested_at) { const t = p.return_requested_at || p.pickup_requested_at; entries.push({ ts: t, label: 'Ophaal aangevraagd op ' + fmtDateTime(t) }); }
+    if (p.returned_at) entries.push({ ts: p.returned_at, label: 'Pot teruggebracht op ' + fmtDateTime(p.returned_at) });
+    if (p.rated_at) entries.push({ ts: p.rated_at, label: 'Beoordeling gegeven op ' + fmtDateTime(p.rated_at) });
+    entries.sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+    return entries;
+  }
+  function renderHistory() {
+    const list = $('#history-list');
+    const entries = buildHistory();
+    if (entries.length === 0) { list.innerHTML = '<div class="empty">Nog geen events voor deze pot.</div>'; return; }
+    list.innerHTML = entries.map(e => '<div class="entry"><span class="ts">'+escapeHtml(fmtDateTime(e.ts))+'</span><span class="label">'+escapeHtml(e.label)+'</span></div>').join('');
   }
 
   function renderForCurrentState() {
     const p = STATE.pot;
     if (!p) { showView('notfound-view'); return; }
     $('#pot-label').textContent = 'Pot ' + p.id;
-    if (p.status === 'available') {
-      showView('available-view');
-    } else if (p.status === 'delivered') {
-      const name = p.voornaam ? `Hi ${p.voornaam}!` : 'Hi!';
-      $('#delivered-h1').textContent = name;
-      if (p.delivered_at) {
-        $('#delivered-meta').textContent = 'Bezorgd op ' + new Date(p.delivered_at).toLocaleDateString('nl-NL', { day:'numeric', month:'long' });
-      } else {
-        $('#delivered-meta').textContent = '';
-      }
+    if (p.status === 'available') showView('available-view');
+    else if (p.status === 'delivered') {
+      $('#delivered-h1').textContent = p.voornaam ? p.voornaam + ', hoe smaakt je pot?' : 'Hoe smaakt je pot?';
+      renderInfoBlok(); renderHistory();
       showView('delivered-view');
-    } else if (p.status === 'pickup-requested') {
-      showView('pickup-view');
-    } else if (p.status === 'pickup-with-reorder') {
-      showView('reordered-view');
-    } else {
-      showView('notfound-view');
     }
+    else if (p.status === 'pickup-requested') {
+      $('#pickup-h1').textContent = p.voornaam ? 'Bedankt ' + p.voornaam + '!' : 'Bedankt!';
+      showView('pickup-view');
+    }
+    else if (p.status === 'pickup-with-reorder') showView('reordered-view');
+    else showView('notfound-view');
   }
 
-  // --- Pickup only ---
-  async function requestPickup() {
-    const btn = $('#btn-pickup'), prim = $('#btn-reorder');
-    btn.disabled = true; prim.disabled = true;
-    btn.textContent = 'Bezig…';
+  const STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><polygon points="12,2 14.9,8.6 22,9.3 16.5,14 18.2,21 12,17.3 5.8,21 7.5,14 2,9.3 9.1,8.6"/></svg>';
+  function renderSurveyStep() {
+    const idx = STATE.surveyStep, cfg = SURVEY_Qs[idx];
+    $('#survey-q').textContent = cfg.q;
+    $('#survey-sub').textContent = cfg.sub;
+    const cur = STATE.ratings[cfg.key] || 0;
+    const wrap = $('#survey-stars'); wrap.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'star' + (i <= cur ? ' on' : '');
+      btn.setAttribute('aria-label', i + ' van 5');
+      btn.innerHTML = STAR_SVG;
+      btn.addEventListener('click', () => { STATE.ratings[cfg.key] = i; renderSurveyStep(); });
+      wrap.appendChild(btn);
+    }
+    $('#survey-next').disabled = !(STATE.ratings[cfg.key] > 0);
+    showView('survey-view');
+  }
+  function startSurvey(mode) {
+    STATE.surveyMode = mode; STATE.surveyStep = 0;
+    STATE.ratings = { taste: 0, texture: 0, kids: 0 };
+    renderSurveyStep();
+  }
+  async function advanceSurvey() {
+    STATE.surveyStep += 1;
+    if (STATE.surveyStep < SURVEY_Qs.length) { renderSurveyStep(); return; }
+    await submitRatings();
+    if (STATE.surveyMode === 'reorder') openReorderReview();
+    else await performPickup();
+  }
+  async function submitRatings() {
+    const payload = {};
+    Object.keys(STATE.ratings).forEach(k => { if (STATE.ratings[k] > 0) payload[k] = STATE.ratings[k]; });
+    if (Object.keys(payload).length === 0) return;
+    try {
+      await fetch('/.netlify/functions/customer-save-rating', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pot_id: STATE.potId, ratings: payload }),
+      });
+    } catch {}
+  }
+
+  async function performPickup() {
     const r = await fetch('/.netlify/functions/customer-request-pickup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pot_id: STATE.potId }),
     });
     const j = await r.json().catch(() => ({}));
-    if (r.ok) {
-      showToast('Top! Ophaalverzoek doorgegeven.', 'success');
-      STATE.pot.status = 'pickup-requested';
-      renderForCurrentState();
-    } else {
-      btn.disabled = false; prim.disabled = false;
-      btn.textContent = 'Alleen ophalen';
-      showToast(j.error || 'Iets ging mis', 'error');
-    }
+    if (!r.ok) { showToast(j.error || 'Iets ging mis', 'error'); renderForCurrentState(); return; }
+    const today = new Date();
+    const day = today.getDay();
+    const offset = ((6 - day + 7) % 7) || 7;
+    const next = new Date(today.getTime() + offset * 86400000);
+    $('#pickup-confirm-headline').textContent = 'We halen je pot op zaterdag ' + next.getDate() + ' ' + NL_MAANDEN[next.getMonth()] + '.';
+    $('#pickup-confirm-sub').textContent = 'Statiegeld €1,00 wordt teruggestort. Bedankt voor je feedback!';
+    showView('pickup-confirm-view');
   }
 
-  // --- Reorder review ---
   function openReorderReview() {
     const p = STATE.pot;
     $('#reorder-name').textContent = p.voornaam || 'jij';
@@ -324,90 +388,50 @@
       '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
       '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
       '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
-      '<div class="order-meta">' +
-        '<strong>Bezorgadres</strong><br>' + addrLine + '<br>' + cityLine + '<br><br>' +
-        'Binnen 4 weken aan je deur door Ellis & Melle. Lege pot ' + escapeHtml(STATE.potId) + ' nemen we mee.' +
-      '</div>';
-    $('#reorder-confirm').checked = false;
-    $('#reorder-submit-btn').disabled = true;
+      '<div class="order-meta"><strong>Bezorgadres</strong><br>'+addrLine+'<br>'+cityLine+'<br><br>Binnen 4 weken aan je deur door Ellis & Melle. Lege pot '+escapeHtml(STATE.potId)+' nemen we mee.</div>';
+    $('#reorder-confirm').checked = false; $('#reorder-submit-btn').disabled = true;
     showView('reorder-review-view');
   }
-
   async function submitReorder() {
-    const btn = $('#reorder-submit-btn');
-    btn.disabled = true; btn.textContent = 'Bezig…';
-    const r = await fetch('/.netlify/functions/customer-reorder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pot_id: STATE.potId }),
-    });
+    const btn = $('#reorder-submit-btn'); btn.disabled = true; btn.textContent = 'Bezig…';
+    const r = await fetch('/.netlify/functions/customer-reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pot_id: STATE.potId }) });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      btn.disabled = false; btn.textContent = 'Doe betaling →';
-      showToast(j.error || 'Bestellen mislukt', 'error');
-      return;
-    }
-    STATE.reorderResp = j;
-    STATE.pot.status = 'pickup-with-reorder';
+    if (!r.ok) { btn.disabled = false; btn.textContent = 'Doe betaling →'; showToast(j.error || 'Bestellen mislukt', 'error'); return; }
+    STATE.reorderResp = j; STATE.pot.status = 'pickup-with-reorder';
     await renderReorderSuccess();
   }
-
   async function renderReorderSuccess() {
     showView('reorder-success-view');
     const p = STATE.pot;
     $('#success-h1').innerHTML = 'Leuk ' + escapeHtml(p.voornaam || '') + '! Doe je betaling, dan bezorgen we binnen 4 weken 🎉';
-    // Tikkie URL
     if (!STATE.configCache) await loadConfig();
     const cfg = STATE.configCache || {};
     const tikkieURL = (cfg.tikkieA && Math.random() > 0.5) ? cfg.tikkieA : (cfg.tikkieB || cfg.tikkieA || '#');
     $('#tikkie-btn').href = tikkieURL;
-    // QR
-    const qrEl = $('#qrcode');
-    qrEl.innerHTML = '';
-    if (window.QRCode) {
-      try {
-        new QRCode(qrEl, { text: tikkieURL, width: 200, height: 200, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
-      } catch { qrEl.textContent = 'QR niet geladen — gebruik knop'; }
-    } else {
-      qrEl.textContent = 'QR laadt…';
-    }
-    // Recap
-    const addr = p.adres || '';
-    const stad = p.stad || '';
+    const qrEl = $('#qrcode'); qrEl.innerHTML = '';
+    if (window.QRCode) { try { new QRCode(qrEl, { text: tikkieURL, width: 200, height: 200, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M }); } catch { qrEl.textContent = 'QR niet geladen — gebruik knop'; } }
+    else qrEl.textContent = 'QR laadt…';
+    const addr = p.adres || '', stad = p.stad || '';
     $('#success-recap').innerHTML =
       '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
       '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
       '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
-      '<div class="order-meta">' +
-        '<strong>Bezorgadres</strong><br>' + escapeHtml(addr) + '<br>' + escapeHtml(stad) + '<br><br>' +
-        '<strong>Oude pot</strong> ' + escapeHtml(STATE.potId) + ' halen we mee.' +
-      '</div>';
+      '<div class="order-meta"><strong>Bezorgadres</strong><br>'+escapeHtml(addr)+'<br>'+escapeHtml(stad)+'<br><br><strong>Oude pot</strong> '+escapeHtml(STATE.potId)+' halen we mee.</div>';
   }
 
-  // Events
-  $('#btn-pickup').addEventListener('click', requestPickup);
-  $('#btn-reorder').addEventListener('click', openReorderReview);
-  $('#reorder-back-btn').addEventListener('click', () => {
-    if (STATE.pot.status === 'pickup-with-reorder') showView('reordered-view');
-    else renderForCurrentState();
-  });
-  $('#reorder-confirm').addEventListener('change', () => {
-    $('#reorder-submit-btn').disabled = !$('#reorder-confirm').checked;
-  });
+  $('#btn-pickup').addEventListener('click', () => startSurvey('pickup'));
+  $('#btn-reorder').addEventListener('click', () => startSurvey('reorder'));
+  $('#survey-next').addEventListener('click', advanceSurvey);
+  $('#survey-skip').addEventListener('click', advanceSurvey);
+  $('#reorder-back-btn').addEventListener('click', () => { if (STATE.pot.status === 'pickup-with-reorder') showView('reordered-view'); else renderForCurrentState(); });
+  $('#reorder-confirm').addEventListener('change', () => { $('#reorder-submit-btn').disabled = !$('#reorder-confirm').checked; });
   $('#reorder-submit-btn').addEventListener('click', submitReorder);
 
-  // Boot
   (async () => {
     STATE.potId = getPotIdFromURL();
-    if (!STATE.potId) {
-      showView('notfound-view');
-      return;
-    }
+    if (!STATE.potId) { showView('notfound-view'); return; }
     const p = await fetchPot(STATE.potId);
-    if (!p || p.error) {
-      showView('notfound-view');
-      return;
-    }
+    if (!p || p.error) { showView('notfound-view'); return; }
     STATE.pot = p;
     renderForCurrentState();
   })();
