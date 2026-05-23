@@ -63,15 +63,29 @@ exports.handler = async (event) => {
     if (!voornaam && orderBlob && orderBlob.voornaam) voornaam = orderBlob.voornaam;
   }
 
+  // Fetch order blob for additional context (pickup status, ratings, etc.)
+  let orderBlob = null;
+  if (pot.order_id) {
+    try { orderBlob = await ordersStore.get(pot.order_id, { type: 'json' }); } catch {}
+  }
+
   return {
     statusCode: 200, headers,
     body: JSON.stringify({
       id: potId,
       status: pot.status,
-      delivered_at: pot.delivered_at || null,
-      voornaam: voornaam || null,
-      adres: adres || null,
-      stad: stad || null,
+      production_date: pot.production_date || null,
+      expiry_date:     pot.expiry_date || null,
+      delivered_at:    pot.delivered_at || null,
+      return_requested_at: pot.return_requested_at || null,
+      returned_at:     pot.returned_at || null,
+      voornaam:        voornaam || null,
+      adres:           adres || null,
+      stad:            stad || null,
+      // Order-derived signals (already-submitted ratings, pickup state)
+      pickup_requested_at: (orderBlob && orderBlob.pickup_requested_at) || null,
+      ratings:             (orderBlob && orderBlob.ratings) || null,
+      rated_at:            (orderBlob && orderBlob.rated_at) || null,
     }),
   };
 };
