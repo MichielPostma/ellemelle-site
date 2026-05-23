@@ -170,6 +170,9 @@ async function listEnrichedOrders() {
       // Update-message tracker (for koken batch flow)
       update_message_status: state.update_message_status || 'not_sent',
       update_message_status_at: state.update_message_status_at || null,
+      // Customer satisfaction ratings (filled in via /pot/:id survey)
+      ratings: state.ratings || null,
+      rated_at: state.rated_at || null,
       // Delivery progress
       delivered_pot: state.delivered_pot || null,
       delivered_at:  state.delivered_at  || null,
