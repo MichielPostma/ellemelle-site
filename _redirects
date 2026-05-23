@@ -31,3 +31,4 @@
 /bestellingen /bestellingen.html 200
 /bestelling/* /bestelling.html 200
 /api/klanten/list /.netlify/functions/klanten-list 200
+/api/customer/save-rating /.netlify/functions/customer-save-rating 200
