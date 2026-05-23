@@ -262,6 +262,13 @@
       <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact">—</span></div>
     </div>
 
+    <div class="actions-label">Feedback</div>
+    <div class="info-card" id="d-feedback">
+      <div class="detail-row"><span class="k">Smaak</span><span class="v" id="d-rating-taste">—</span></div>
+      <div class="detail-row"><span class="k">Textuur</span><span class="v" id="d-rating-texture">—</span></div>
+      <div class="detail-row"><span class="k">Kids</span><span class="v" id="d-rating-kids">—</span></div>
+    </div>
+
     <div class="actions-label">Bestelhistorie van deze klant</div>
     <div class="info-card" id="d-history"></div>
 
@@ -496,6 +503,18 @@
     $('#d-aantal').textContent = '1';
     $('#d-prijs').textContent = '€6,00';
     $('#d-created').textContent = fmtDateTime(o.created_at);
+
+    // Feedback ratings
+    const ratings = (o && o.ratings) || {};
+    const renderStars = (n) => {
+      if (!n || n < 1) return '<span style="color:#999;">n/a</span>';
+      const FULL = '★', EMPTY = '☆';
+      const stars = FULL.repeat(n) + EMPTY.repeat(Math.max(0, 5 - n));
+      return '<span style="color:var(--red);letter-spacing:2px;font-size:16px;">' + stars + '</span> <span style="color:#666;font-size:12px;">(' + n + '/5)</span>';
+    };
+    $('#d-rating-taste').innerHTML   = renderStars(ratings.taste);
+    $('#d-rating-texture').innerHTML = renderStars(ratings.texture);
+    $('#d-rating-kids').innerHTML    = renderStars(ratings.kids);
 
     // History
     renderActivity();
