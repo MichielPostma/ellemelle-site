@@ -49,8 +49,16 @@ exports.handler = async (event) => {
   }
 
   const now = new Date().toISOString();
+  const existingHistory = Array.isArray(pot.history) ? pot.history : [];
+  // Log the delivery event into pot.history so admin scan-drawer can show a full audit trail.
+  const histEntry = {
+    at: now,
+    action: 'delivered',
+    order_id: orderId,
+  };
   await potsStore.setJSON(potId, {
     ...pot, status: 'delivered', order_id: orderId, delivered_at: now,
+    history: existingHistory.concat([histEntry]),
   });
   await ordersStore.setJSON(orderId, {
     ...existingOrder, delivered_pot: potId, delivered_at: now, order_status: 'delivered',
