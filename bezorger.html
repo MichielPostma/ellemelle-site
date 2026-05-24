@@ -935,7 +935,7 @@
     if (!res.ok) { creditEl.textContent = '–'; return; }
     const credit  = Number(res.data.statiegeld_credit || 0);
     const history = res.data.history || [];
-    creditEl.textContent = credit > 0 ? fmtEuro(credit) + ' tegoed' : 'Geen tegoed';
+    creditEl.textContent = fmtEuro(credit);
     if (history.length === 0) {
       listEl.innerHTML = '<div class="sub" style="color:#666; font-size:13px; padding-top:6px;">Nog geen historie</div>';
       return;
@@ -955,7 +955,11 @@
     if (!STATE.currentOrder) return;
     const res = await api('bezorger-pot-return', { order_id: STATE.currentOrder.id, pot_id: potId });
     if (res.ok) {
-      showToast(`Pot ${res.data.pot_id} ingenomen — €1 tegoed`, 'success');
+      const wasSwap = !!(res.data && res.data.was_swap);
+      const msg = wasSwap
+        ? `Pot ${res.data.pot_id} ingenomen — swap (statiegeld blijft staan)`
+        : `Pot ${res.data.pot_id} ingenomen — statiegeld terug`;
+      showToast(msg, 'success');
       stopReturnScanner();
       $('#return-scan-view').hidden = true;
       await loadCustomerHistory(STATE.currentOrder.id);
