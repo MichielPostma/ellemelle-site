@@ -292,11 +292,13 @@
       <div class="detail-row"><span class="k">Statiegeld credit</span><span class="v" id="d-credit">€0,00</span></div>
     </div>
 
-    <div class="actions-label">Feedback</div>
-    <div class="info-card" id="d-feedback">
-      <div class="detail-row"><span class="k">Smaak</span><span class="v" id="d-rating-taste">—</span></div>
-      <div class="detail-row"><span class="k">Textuur</span><span class="v" id="d-rating-texture">—</span></div>
-      <div class="detail-row"><span class="k">Kids</span><span class="v" id="d-rating-kids">—</span></div>
+    <div id="d-feedback-wrap" hidden>
+      <div class="actions-label">Feedback</div>
+      <div class="info-card" id="d-feedback">
+        <div class="detail-row"><span class="k">Smaak</span><span class="v" id="d-rating-taste">—</span></div>
+        <div class="detail-row"><span class="k">Textuur</span><span class="v" id="d-rating-texture">—</span></div>
+        <div class="detail-row"><span class="k">Kids</span><span class="v" id="d-rating-kids">—</span></div>
+      </div>
     </div>
 
     <div class="actions-label">Bestelhistorie van deze klant</div>
@@ -410,11 +412,7 @@
       return { label: `${n} dagen geleden bij buren bezorgd`, overdue: false };
     }
     if (status === 'picked_up') {
-      const n = daysAgo(o.pot_returned_at || o.delivered_at);
-      if (n === null) return { label: 'Opgehaald', overdue: false };
-      if (n === 0) return { label: 'Vandaag opgehaald', overdue: false };
-      if (n === 1) return { label: 'Gisteren opgehaald', overdue: false };
-      return { label: `${n} dagen geleden opgehaald`, overdue: false };
+      return { label: 'Pot is opgehaald, klaar voor de vaatwasser', overdue: false };
     }
     if (status === 'pickup_self_requested') {
       if (o.pickup_requested_at) {
@@ -589,17 +587,22 @@
     $('#d-prijs').textContent = '€6,00';
     $('#d-created').textContent = fmtDateTime(o.created_at);
 
-    // Feedback ratings
+    // Feedback ratings — hide the whole section unless the customer actually submitted a rating.
     const ratings = (o && o.ratings) || {};
-    const renderStars = (n) => {
-      if (!n || n < 1) return '<span style="color:#999;">n/a</span>';
-      const FULL = '★', EMPTY = '☆';
-      const stars = FULL.repeat(n) + EMPTY.repeat(Math.max(0, 5 - n));
-      return '<span style="color:var(--red);letter-spacing:2px;font-size:16px;">' + stars + '</span> <span style="color:#666;font-size:12px;">(' + n + '/5)</span>';
-    };
-    $('#d-rating-taste').innerHTML   = renderStars(ratings.taste);
-    $('#d-rating-texture').innerHTML = renderStars(ratings.texture);
-    $('#d-rating-kids').innerHTML    = renderStars(ratings.kids);
+    const hasRating = ['taste','texture','kids'].some(k => Number.isInteger(ratings[k]) && ratings[k] >= 1);
+    const fbWrap = document.getElementById('d-feedback-wrap');
+    if (fbWrap) fbWrap.hidden = !hasRating;
+    if (hasRating) {
+      const renderStars = (n) => {
+        if (!n || n < 1) return '<span style="color:#999;">n/a</span>';
+        const FULL = '★', EMPTY = '☆';
+        const stars = FULL.repeat(n) + EMPTY.repeat(Math.max(0, 5 - n));
+        return '<span style="color:var(--red);letter-spacing:2px;font-size:16px;">' + stars + '</span> <span style="color:#666;font-size:12px;">(' + n + '/5)</span>';
+      };
+      $('#d-rating-taste').innerHTML   = renderStars(ratings.taste);
+      $('#d-rating-texture').innerHTML = renderStars(ratings.texture);
+      $('#d-rating-kids').innerHTML    = renderStars(ratings.kids);
+    }
 
     // History
     renderActivity();
