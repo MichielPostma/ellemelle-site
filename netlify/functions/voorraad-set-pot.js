@@ -60,13 +60,18 @@ exports.handler = async (event) => {
     let pot = status === 'voorraad'
       ? await setProductionDate(potId, body.production_date || null)
       : await setPotStatus(potId, status);
+    const now = new Date().toISOString();
     // When admin recycles a pot back into stock (from returned), stamp a new cycle start.
     // pot.history is PRESERVED (admin can still see old trips); /pot/:id filters history
     // to entries whose timestamp ≥ current_cycle_start so each customer sees a fresh pot.
     if (curStatus === 'returned' && (status === 'voorraad' || status === 'available')) {
-      pot = { ...pot, current_cycle_start: new Date().toISOString() };
-      await potsStore.setJSON(potId, pot);
+      pot = { ...pot, current_cycle_start: now };
     }
+    // Append status_change entry so admin scan-drawer shows the timeline.
+    const histEntry = { at: now, action: 'status_change', from: curStatus, to: status };
+    const newHistory = (Array.isArray(pot.history) ? pot.history : []).concat([histEntry]);
+    pot = { ...pot, history: newHistory };
+    await potsStore.setJSON(potId, pot);
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true, pot }) };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: String(e && e.message || e) }) };
