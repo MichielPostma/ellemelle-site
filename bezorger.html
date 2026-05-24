@@ -465,7 +465,8 @@
       </div>
     </div>
     <div id="undo-view" hidden>
-      <button class="btn-outline" id="undo-btn" type="button">Bezorging ongedaan maken</button>
+      <a class="btn-primary" id="open-pot-page-btn" href="#" target="_blank" rel="noopener">Open pot pagina →</a>
+      <button class="btn-outline" id="undo-btn" type="button" style="margin-top: 12px;">Bezorging ongedaan maken</button>
     </div>
     <button class="btn-outline" id="left-with-neighbours-btn" type="button">Bezorgd bij buren</button>
     <button class="btn-outline" id="request-pickup-self-btn" type="button">Verzoek thuis ophalen</button>
@@ -840,17 +841,39 @@
     if (diff === 1) return { label: 'Morgen bezorgen', overdue: false };
     return { label: `Over ${diff} dagen bezorgen`, overdue: false };
   }
+  function daysAgoFromIso(iso) {
+    if (!iso) return null;
+    const target = new Date(iso);
+    if (isNaN(target.getTime())) return null;
+    const today = new Date();
+    const t0 = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate()));
+    const t1 = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    return Math.round((t1 - t0) / (1000 * 60 * 60 * 24));
+  }
+  function deliveredAgoLabel(iso) {
+    const n = daysAgoFromIso(iso);
+    if (n === null) return 'Bezorgd';
+    if (n <= 0) return 'Vandaag bezorgd';
+    if (n === 1) return 'Gisteren bezorgd';
+    return n + ' dagen geleden bezorgd';
+  }
   function openDetail(order) {
     STATE.currentOrder = order;
     $('#detail-name').textContent = order.voornaam || '(geen naam)';
-    const cd = deliveryCountdown(order.delivery_date);
-    // Te laat alleen tonen als geplande > uiterlijke (is_te_laat)
-    const isLate = !!order.is_te_laat;
-    const label = isLate ? cd.label : (cd.overdue ? `Vandaag bezorgen` : cd.label);
+    const isDelivered = (order.order_status === 'delivered') || !!order.delivered_pot;
     const cdEl = $('#detail-countdown');
-    cdEl.textContent = label || '';
-    cdEl.style.color = isLate ? 'var(--red)' : '#666';
-    cdEl.style.fontWeight = isLate ? '700' : '500';
+    if (isDelivered) {
+      cdEl.textContent = deliveredAgoLabel(order.delivered_at || order.delivery_date);
+      cdEl.style.color = '#1c7d3f';
+      cdEl.style.fontWeight = '600';
+    } else {
+      const cd = deliveryCountdown(order.delivery_date);
+      const isLate = !!order.is_te_laat;
+      const label = isLate ? cd.label : (cd.overdue ? 'Vandaag bezorgen' : cd.label);
+      cdEl.textContent = label || '';
+      cdEl.style.color = isLate ? 'var(--red)' : '#666';
+      cdEl.style.fontWeight = isLate ? '700' : '500';
+    }
     const addrFull = `${order.straat} ${order.huisnummer}${order.toevoeging ? '-' + order.toevoeging : ''}`;
     const cityFull = `${order.postcode || ''} ${order.plaats || ''}`.trim();
     $('#d-addr').textContent = addrFull;
@@ -869,6 +892,8 @@
     if (order.delivered_pot) {
       $('#scan-view').hidden = true;
       $('#undo-view').hidden = false;
+      const openBtn = $('#open-pot-page-btn');
+      if (openBtn) openBtn.href = '/pot/' + encodeURIComponent(order.delivered_pot);
     } else {
       $('#scan-view').hidden = false;
       $('#undo-view').hidden = true;
