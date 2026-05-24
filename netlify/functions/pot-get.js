@@ -22,10 +22,12 @@ exports.handler = async (event) => {
   let potId = '';
   if (event.queryStringParameters && event.queryStringParameters.pot_id) {
     potId = event.queryStringParameters.pot_id;
-  } else if (event.path) {
+  }
+  if (!potId && event.path) {
     const m = event.path.match(/POT-\d{3}/i);
     if (m) potId = m[0];
-  } else if (event.body) {
+  }
+  if (!potId && event.body) {
     try { potId = (JSON.parse(event.body || '{}').pot_id || '').toString(); } catch {}
   }
   potId = potId.toUpperCase().trim();
