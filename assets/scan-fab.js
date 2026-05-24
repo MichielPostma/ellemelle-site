@@ -195,7 +195,6 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
         <div id="sfb-orders-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
       <div id="sfb-err" style="color:#D9301E;font-size:14px;font-weight:600;margin-top:10px;display:none;"></div>
-      <button id="sfb-cancel" type="button" style="display:block;width:100%;min-height:56px;line-height:52px;background:transparent;color:#D9301E;border:2px solid #D9301E;border-radius:14px;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:0.2px;cursor:pointer;margin-top:14px;text-align:center;-webkit-tap-highlight-color:transparent;">Annuleer</button>
       <hr id="sfb-divider" style="border:none;border-top:1px solid rgba(0,0,0,0.08);margin:22px 0 18px;">
       <div id="sfb-details" style="display:flex;flex-direction:column;gap:6px;"></div>
       <div id="sfb-history-wrap" hidden style="margin-top:18px;">
@@ -208,7 +207,6 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     document.body.appendChild(drawer);
     drawerRoot = { backdrop, drawer };
     backdrop.addEventListener('click', closeDrawer);
-    document.getElementById('sfb-cancel').addEventListener('click', closeDrawer);
   }
 
   function closeDrawer() {
