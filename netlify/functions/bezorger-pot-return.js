@@ -1,4 +1,10 @@
-// Take in an empty pot: pot returns to "available" stock + customer gets €1 statiegeld credit.
+// Take in an empty pot.
+// Two scenarios:
+//   1. Pure return (no swap): customer.statiegeld_credit -= 1 (deposit "refunded").
+//   2. Swap (pot.status === 'pickup-with-reorder'): no credit change — deposit rolls onto
+//      the new pot. The +€1 from the new order already incremented the credit at order time;
+//      the −€1 we'd normally apply on return is suppressed here.
+//
 // The previous delivery is archived in pot.history so we still know who had it.
 // POST { password, order_id, pot_id }
 
@@ -44,6 +50,11 @@ exports.handler = async (event) => {
     return { statusCode: 409, headers, body: JSON.stringify({ error: 'pot already available' }) };
   }
 
+  // Detect swap: pot.status === 'pickup-with-reorder' means a new order was placed via
+  // /pot/:id "Lege pot ophalen en nieuwe bestelling", which we treat as a swap (deposit
+  // rolls onto the incoming new pot). All other return states are "pure returns".
+  const isSwap = pot.status === 'pickup-with-reorder';
+
   const now = new Date().toISOString();
   // Archive the current trip in pot.history
   const trip = {
@@ -51,6 +62,7 @@ exports.handler = async (event) => {
     delivered_at: pot.delivered_at || null,
     returned_at: now,
     returned_for_order: orderId,
+    was_swap: isSwap,
   };
   const history = Array.isArray(pot.history) ? pot.history : [];
   history.push(trip);
@@ -77,29 +89,44 @@ exports.handler = async (event) => {
           ...order,
           delivered_pot: null,
           pot_returned_at: now,
+          pot_returned_was_swap: isSwap,
         });
       }
     } catch {}
   }
 
-  // Credit the customer of the *return* order +€1
-  try {
-    const token = process.env.NETLIFY_API_TOKEN;
-    const sub = await fetch(`https://api.netlify.com/api/v1/submissions/${orderId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (sub.ok) {
-      const j = await sub.json();
-      const d = j.data || {};
-      const ck = customerKey(d);
-      if (ck) await appendHistory(ck, d, {
-        action: 'pot-returned', pot_id: potId, order_id: orderId, credit_delta: 1.0,
+  // Mutate customer credit on the *original* delivery's customer (not the return-order's).
+  // For pure returns: -1. For swaps: no change.
+  let creditMutation = null;
+  if (!isSwap && pot.order_id) {
+    try {
+      const token = process.env.NETLIFY_API_TOKEN;
+      const sub = await fetch(`https://api.netlify.com/api/v1/submissions/${pot.order_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-    }
-  } catch (e) { /* swallow */ }
+      if (sub.ok) {
+        const j = await sub.json();
+        const d = j.data || {};
+        const ck = customerKey(d);
+        if (ck) {
+          await appendHistory(ck, d, {
+            action: 'pot-returned', pot_id: potId, order_id: orderId, credit_delta: -1,
+          });
+          creditMutation = { customer_key: ck, delta: -1 };
+        }
+      }
+    } catch (e) { /* swallow */ }
+  }
 
   return {
     statusCode: 200, headers,
-    body: JSON.stringify({ ok: true, pot_id: potId, returned_at: now, new_status: 'available' }),
+    body: JSON.stringify({
+      ok: true,
+      pot_id: potId,
+      returned_at: now,
+      new_status: 'available',
+      was_swap: isSwap,
+      credit_mutation: creditMutation,
+    }),
   };
 };
