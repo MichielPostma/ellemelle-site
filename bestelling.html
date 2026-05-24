@@ -121,6 +121,8 @@
   .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .badge.neighbors { background: rgba(255,210,74,0.25); color: #b85c00; }
   .badge.retry     { background: rgba(139,26,14,0.08); color: var(--red-dark); }
+  .badge.pickup_self_requested { background: rgba(255,193,7,0.18); color: #b75d00; }
+  .badge.picked_up { background: rgba(28,125,63,0.18); color: #1c7d3f; }
 
   .error { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 500; min-height: 18px; }
 
@@ -432,7 +434,7 @@
     clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
   }
 
-  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
   function modeLabel(o) {
     const d = fmtDate(o.delivery_date);
     if (o.delivery_mode === 'stock') return 'Op voorraad — ' + d;
@@ -580,11 +582,13 @@
   function clearGeplande()   { __gepAction = 'clear'; $('#date-geplande').value   = ''; }
   // --- Wijzigen drawer (merged Status + Datum) ---
   const STATUS_OPTS = [
-    { val: 'todo',      label: 'Nieuw (reset — ontkoppel pot)' },
-    { val: 'confirmed', label: 'Bevestigd' },
-    { val: 'delivered', label: 'Bezorgd' },
-    { val: 'neighbors', label: 'Buren' },
-    { val: 'retry',     label: 'Nieuwe poging' },
+    { val: 'todo',                  label: 'Nieuw' },
+    { val: 'confirmed',             label: 'Bevestigd' },
+    { val: 'delivered',             label: 'Bezorgd' },
+    { val: 'neighbors',             label: 'Buren' },
+    { val: 'retry',                 label: 'Nieuwe poging' },
+    { val: 'pickup_self_requested', label: 'Verzoek zelf ophalen' },
+    { val: 'picked_up',             label: 'Opgehaald' },
   ];
   let __uitAction = 'keep';
   let __gepAction = 'keep'; // 'keep' | 'save' | 'clear'
