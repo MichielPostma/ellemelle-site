@@ -34,7 +34,8 @@ exports.handler = async (event) => {
     const potsAtHome = {};
     for (const pid of POT_IDS) {
       const p = await potsStore.get(pid, { type: 'json' });
-      if (p && p.status === 'delivered' && p.order_id) {
+      // Include pickup-requested + pickup-with-reorder so pots_at_home matches statiegeld_credit
+      if (p && ['delivered','pickup-requested','pickup-with-reorder'].includes(p.status) && p.order_id) {
         potsAtHome[p.order_id] = (potsAtHome[p.order_id] || 0) + 1;
       }
     }
