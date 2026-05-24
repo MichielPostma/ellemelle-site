@@ -93,6 +93,9 @@ exports.handler = async (event) => {
           delivered_pot: null,
           pot_returned_at: now,
           pot_returned_was_swap: isSwap,
+          // Final state for a pure return — pot is back, customer cycle closed.
+          // Swap-returns stay 'delivered' since a new pot is on its way.
+          order_status: isSwap ? (order.order_status || 'delivered') : 'picked_up',
         });
       }
     } catch {}
