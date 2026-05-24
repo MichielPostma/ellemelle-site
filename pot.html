@@ -150,28 +150,26 @@
   </section>
 
   <section id="delivered-view" hidden>
-    <h1 class="step-question" id="delivered-h1">Hoe smaakt je pot?</h1>
+    <h1 class="step-question" id="delivered-h1">Is je pot op?</h1>
 
     <div class="option-card">
       <div class="row">
         <div class="icon"><img src="/Images/pot-bezorgd.png" alt="" loading="lazy"></div>
         <div class="text">
-          <div class="title">Ophalen + nieuwe pot</div>
-          <div class="desc">Wij halen de lege pot op en bezorgen een nieuwe.</div>
+          <div class="title">Lege pot ophalen en nieuwe bestelling</div>
         </div>
       </div>
-      <button class="btn-primary" id="btn-reorder">Ja, ik wil dit →</button>
+      <button class="btn-primary" id="btn-reorder">Nieuwe bestelling →</button>
     </div>
 
     <div class="option-card">
       <div class="row">
         <div class="icon"><img src="/Images/pot-leeg-label.png" alt="" loading="lazy"></div>
         <div class="text">
-          <div class="title">Alleen ophalen</div>
-          <div class="desc">Lege pot terug, statiegeld retour.</div>
+          <div class="title">Lege pot ophalen en statiegeld terug</div>
         </div>
       </div>
-      <button class="btn-outline" id="btn-pickup">Alleen ophalen →</button>
+      <button class="btn-outline" id="btn-pickup">Pot ophalen →</button>
     </div>
 
     <div class="pot-info-blok" id="pot-info-blok"></div>
@@ -317,7 +315,7 @@
     $('#pot-label').textContent = 'Pot ' + p.id;
     if (p.status === 'available') showView('available-view');
     else if (p.status === 'delivered') {
-      $('#delivered-h1').textContent = p.voornaam ? p.voornaam + ', hoe smaakt je pot?' : 'Hoe smaakt je pot?';
+      $('#delivered-h1').textContent = p.voornaam ? p.voornaam + ', is je pot op?' : 'Is je pot op?';
       renderInfoBlok(); renderHistory();
       showView('delivered-view');
     }
