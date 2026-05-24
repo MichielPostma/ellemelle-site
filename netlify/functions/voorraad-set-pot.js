@@ -60,10 +60,11 @@ exports.handler = async (event) => {
     let pot = status === 'voorraad'
       ? await setProductionDate(potId, body.production_date || null)
       : await setPotStatus(potId, status);
-    // Optional: wipe pot.history when admin explicitly resets the lifecycle.
-    // Used by scan-FAB when transitioning a returned pot back into voorraad/available.
-    if (body.clear_history === true) {
-      pot = { ...pot, history: [] };
+    // When admin recycles a pot back into stock (from returned), stamp a new cycle start.
+    // pot.history is PRESERVED (admin can still see old trips); /pot/:id filters history
+    // to entries whose timestamp ≥ current_cycle_start so each customer sees a fresh pot.
+    if (curStatus === 'returned' && (status === 'voorraad' || status === 'available')) {
+      pot = { ...pot, current_cycle_start: new Date().toISOString() };
       await potsStore.setJSON(potId, pot);
     }
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true, pot }) };
