@@ -3,6 +3,7 @@
 
 const { getStore } = require('@netlify/blobs');
 const { countInStock } = require('./inventory');
+const { customerKey, appendHistory } = require('./customer');
 
 function blobOpts(name) {
   const opts = { name, consistency: 'strong' };
@@ -142,6 +143,32 @@ async function listEnrichedOrders() {
       state.history = Array.isArray(state.history) ? state.history.concat([histEntry]) : [histEntry];
       backfillWrites.push(ordersStore.setJSON(orderId, state).catch(() => null));
     }
+    // Lazy first-seen credit application: orders enter via Netlify Forms (no server hook),
+    // so we apply the +€1/pot deposit credit the FIRST time we observe an order.
+    // Idempotent via state.credit_applied flag. Reorders skip the increment (the deposit
+    // rolls onto the new pot from the previous one — bezorger-pot-return.js handles the swap).
+    if (!state.credit_applied) {
+      const isReorder = String(d.is_reorder || '').toLowerCase() === 'true';
+      const aantal = Math.max(1, parseInt(d.aantal || 1, 10) || 1);
+      const ck = customerKey(d);
+      state.credit_applied = true;
+      state.credit_applied_at = new Date().toISOString();
+      state.credit_applied_amount = isReorder ? 0 : aantal;
+      state.credit_applied_skipped_reason = isReorder ? 'reorder-swap' : null;
+      const histEntry2 = {
+        at: state.credit_applied_at,
+        action: 'apply_order_credit',
+        amount: state.credit_applied_amount,
+        is_reorder: isReorder,
+      };
+      state.history = Array.isArray(state.history) ? state.history.concat([histEntry2]) : [histEntry2];
+      backfillWrites.push(ordersStore.setJSON(orderId, state).catch(() => null));
+      if (!isReorder && ck) {
+        backfillWrites.push(appendHistory(ck, d, {
+          action: 'order-placed', order_id: orderId, aantal, credit_delta: aantal,
+        }).catch(() => null));
+      }
+    }
     const uiterlijke = state.uiterlijke_bezorgdatum_override || state.uiterlijke_bezorgdatum_computed;
     enriched.push({
       id: orderId,
@@ -170,6 +197,8 @@ async function listEnrichedOrders() {
       // Update-message tracker (for koken batch flow)
       update_message_status: state.update_message_status || 'not_sent',
       update_message_status_at: state.update_message_status_at || null,
+      // Stable contact-hash for customer credit + grouping (sha1 hex of normalized phone/email)
+      customer_key: customerKey(d),
       // Customer satisfaction ratings (filled in via /pot/:id survey)
       ratings: state.ratings || null,
       rated_at: state.rated_at || null,
