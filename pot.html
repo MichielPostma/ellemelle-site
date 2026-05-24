@@ -100,7 +100,23 @@
   .star:active { transform: scale(0.92); }
   .star svg { display: block; width: 40px; height: 40px; }
 
-  .skip-link { display: block; text-align: center; color: #888; font-size: 14px; padding: 12px; margin-top: 6px; text-decoration: underline; cursor: pointer; background: none; border: 0; width: 100%; }
+  .step-actions {
+    display: flex; align-items: stretch; gap: 10px; margin-top: 14px;
+  }
+  .step-actions .back-pill {
+    flex: 0 0 60px; width: 60px; min-height: 60px;
+    background: var(--white); color: var(--red);
+    border: 0; border-radius: var(--radius-md);
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    transition: transform 120ms, background 120ms;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .step-actions .back-pill:hover { background: #faf6ee; }
+  .step-actions .back-pill:active { transform: scale(0.96); }
+  .step-actions .back-pill svg { width: 22px; height: 22px; display: block; }
+  .step-actions .btn-primary { flex: 1 1 auto; margin-top: 0; min-width: 0; }
   .progress-text { color: var(--black); font-size: 13px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; opacity: 0.55; margin-bottom: 12px; display: block; }
   .loading { color: #666; font-size: 15px; padding: 32px 0; text-align: center; }
 
@@ -196,10 +212,13 @@
 
   <section id="survey-view" hidden>
     <h1 class="step-question" id="survey-q">Hoe smaakt je pot?</h1>
-    <p class="subtitle" id="survey-sub"></p>
     <div class="stars" id="survey-stars" role="radiogroup" aria-label="Geef een score"></div>
-    <button class="btn-primary" id="survey-next" disabled>Volgende →</button>
-    <button class="skip-link" id="survey-skip" type="button">Sla over</button>
+    <div class="step-actions">
+      <button type="button" class="back-pill" id="survey-back" aria-label="Vorige">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <button class="btn-primary" id="survey-next" disabled>Volgende →</button>
+    </div>
   </section>
 
   <section id="reorder-review-view" hidden>
@@ -331,7 +350,6 @@
   function renderSurveyStep() {
     const idx = STATE.surveyStep, cfg = SURVEY_Qs[idx];
     $('#survey-q').textContent = cfg.q;
-    $('#survey-sub').textContent = cfg.sub;
     const cur = STATE.ratings[cfg.key] || 0;
     const wrap = $('#survey-stars'); wrap.innerHTML = '';
     for (let i = 1; i <= 5; i++) {
@@ -448,7 +466,15 @@
   $('#btn-pickup').addEventListener('click', () => startSurvey('pickup'));
   $('#btn-reorder').addEventListener('click', () => startSurvey('reorder'));
   $('#survey-next').addEventListener('click', advanceSurvey);
-  $('#survey-skip').addEventListener('click', advanceSurvey);
+  $('#survey-back').addEventListener('click', () => {
+    if (STATE.surveyStep > 0) {
+      STATE.surveyStep -= 1;
+      renderSurveyStep();
+    } else {
+      // From step 1, back goes to main delivered view
+      renderForCurrentState();
+    }
+  });
   $('#pickup-confirm-btn').addEventListener('click', performPickup);
   $('#pickup-review-back').addEventListener('click', renderForCurrentState);
   $('#reorder-back-btn').addEventListener('click', () => { if (STATE.pot.status === 'pickup-with-reorder') showView('reordered-view'); else renderForCurrentState(); });
