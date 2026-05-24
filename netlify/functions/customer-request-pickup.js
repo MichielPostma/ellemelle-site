@@ -77,7 +77,12 @@ exports.handler = async (event) => {
     history: existingHistory.concat([histEntry]),
   });
   const existingOrder = (await ordersStore.get(pot.order_id, { type: 'json' })) || {};
-  await ordersStore.setJSON(pot.order_id, { ...existingOrder, pickup_requested_at: now });
+  // Promote the order's status so admin sees the pickup request show up in the UI.
+  await ordersStore.setJSON(pot.order_id, {
+    ...existingOrder,
+    pickup_requested_at: now,
+    order_status: 'pickup_self_requested',
+  });
 
   // Fetch the customer's name for the notification
   let voornaam = '';
