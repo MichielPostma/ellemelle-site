@@ -11,7 +11,16 @@
 // POST { password, dry_run? }
 
 const { getStore } = require('@netlify/blobs');
-const { POT_IDS, blobOpts } = require('./_lib/inventory');
+const { POT_IDS } = require('./_lib/inventory');
+
+function blobOpts(name) {
+  const opts = { name, consistency: 'strong' };
+  if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_API_TOKEN) {
+    opts.siteID = process.env.NETLIFY_SITE_ID;
+    opts.token = process.env.NETLIFY_API_TOKEN;
+  }
+  return opts;
+}
 
 exports.handler = async (event) => {
   const headers = { 'Content-Type': 'application/json' };
