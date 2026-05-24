@@ -609,7 +609,7 @@
     clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
   }
 
-  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
 
   function shortDeadline(o) {
     const cd = deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
