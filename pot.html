@@ -166,7 +166,7 @@
   </section>
 
   <section id="delivered-view" hidden>
-    <h1 class="step-question" id="delivered-h1">Is je pot op?</h1>
+    <h1 class="step-question" id="delivered-h1">Wat kunnen we voor je doen?</h1>
 
     <div class="option-card">
       <div class="row">
@@ -334,7 +334,7 @@
     $('#pot-label').textContent = 'Pot ' + p.id;
     if (p.status === 'available') showView('available-view');
     else if (p.status === 'delivered') {
-      $('#delivered-h1').textContent = p.voornaam ? p.voornaam + ', is je pot op?' : 'Is je pot op?';
+      $('#delivered-h1').textContent = p.voornaam ? p.voornaam + ', wat kunnen we voor je doen?' : 'Wat kunnen we voor je doen?';
       renderInfoBlok(); renderHistory();
       showView('delivered-view');
     }
