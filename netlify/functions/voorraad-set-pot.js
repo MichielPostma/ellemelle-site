@@ -57,9 +57,15 @@ exports.handler = async (event) => {
     }) };
   }
   try {
-    const pot = status === 'voorraad'
+    let pot = status === 'voorraad'
       ? await setProductionDate(potId, body.production_date || null)
       : await setPotStatus(potId, status);
+    // Optional: wipe pot.history when admin explicitly resets the lifecycle.
+    // Used by scan-FAB when transitioning a returned pot back into voorraad/available.
+    if (body.clear_history === true) {
+      pot = { ...pot, history: [] };
+      await potsStore.setJSON(potId, pot);
+    }
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true, pot }) };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: String(e && e.message || e) }) };
