@@ -192,6 +192,21 @@
       <button class="btn-outline" id="btn-pickup">Pot ophalen →</button>
     </div>
 
+    <div class="option-card">
+      <div class="row">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--red);">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <div class="text">
+          <div class="title">Stel je vraag via WhatsApp</div>
+          <div class="desc">Direct contact met Ellis en Melle.</div>
+        </div>
+      </div>
+      <a class="btn-outline" id="btn-whatsapp" href="#" target="_blank" rel="noopener">Stuur bericht →</a>
+    </div>
+
     <div class="pot-info-blok" id="pot-info-blok"></div>
 
     <div class="section-eyebrow">Pot historie</div>
@@ -339,6 +354,8 @@
     if (p.status === 'available') showView('available-view');
     else if (p.status === 'delivered') {
       $('#delivered-h1').textContent = p.voornaam ? p.voornaam + ', wat kunnen we voor je doen?' : 'Wat kunnen we voor je doen?';
+      const waMsg = 'Hi Ellis en Melle, ik heb een vraag over ' + p.id + ':';
+      $('#btn-whatsapp').href = 'https://wa.me/31641669615?text=' + encodeURIComponent(waMsg);
       renderInfoBlok(); renderHistory();
       showView('delivered-view');
     }
