@@ -13,6 +13,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
   let drawerRoot = null;
   let __currentPot = null;
   let __ordersCache = null;  // {at, orders} — small in-memory cache
+  let __selectedStockTarget = null; // 'available' | 'voorraad' — for stock state picker
 
   // ───── helpers ─────────────────────────────────────────────────────────
   function getPassword() {
@@ -179,7 +180,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity 200ms;z-index:90;';
     const drawer = document.createElement('div');
     drawer.id = 'sfb-drawer';
-    drawer.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#f5e6cf;border-radius:20px 20px 0 0;padding:16px 20px 28px;transform:translateY(100%);transition:transform 220ms;z-index:100;max-height:88vh;overflow-y:auto;box-shadow:0 -10px 30px rgba(0,0,0,0.12);padding-bottom:max(28px,env(safe-area-inset-bottom));';
+    drawer.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#feece2;border-radius:20px 20px 0 0;padding:16px 20px 28px;transform:translateY(100%);transition:transform 220ms;z-index:100;max-height:88vh;overflow-y:auto;box-shadow:0 -10px 30px rgba(0,0,0,0.12);padding-bottom:max(28px,env(safe-area-inset-bottom));';
     drawer.innerHTML = `
       <div style="width:40px;height:4px;border-radius:2px;background:rgba(0,0,0,0.18);margin:0 auto 14px;"></div>
       <div id="sfb-pid" style="font-size:14px;font-weight:700;color:#999;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">POT-XXX</div>
@@ -194,12 +195,12 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
         <div id="sfb-orders-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
       <div id="sfb-err" style="color:#D9301E;font-size:14px;font-weight:600;margin-top:10px;display:none;"></div>
-      <button id="sfb-cancel" type="button" style="display:block;width:100%;min-height:50px;background:transparent;color:#666;border:none;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:14px;-webkit-tap-highlight-color:transparent;">Annuleer</button>
+      <button id="sfb-cancel" type="button" style="display:block;width:100%;min-height:56px;line-height:52px;background:transparent;color:#D9301E;border:2px solid #D9301E;border-radius:14px;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:0.2px;cursor:pointer;margin-top:14px;text-align:center;-webkit-tap-highlight-color:transparent;">Annuleer</button>
       <hr id="sfb-divider" style="border:none;border-top:1px solid rgba(0,0,0,0.08);margin:22px 0 18px;">
       <div id="sfb-details" style="display:flex;flex-direction:column;gap:6px;"></div>
       <div id="sfb-history-wrap" hidden style="margin-top:18px;">
         <div style="color:#666;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Pot historie</div>
-        <div id="sfb-history" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="sfb-history" style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:0;overflow:hidden;"></div>
       </div>
       <div id="sfb-footer-actions" style="margin-top:22px;display:flex;flex-direction:column;gap:10px;"></div>
     `;
@@ -378,6 +379,52 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     return open;
   }
 
+
+  // Radio-card picker for stock states (available + voorraad), modelled on the old /voorraad drawer.
+  function renderStockPicker(parent, currentStatus) {
+    parent.innerHTML = '';
+    const cardStyle = 'display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px;background:#fff;border-radius:14px;border:2px solid rgba(0,0,0,0.08);cursor:pointer;text-align:left;font-family:inherit;-webkit-tap-highlight-color:transparent;transition:border-color 120ms;box-shadow:0 2px 10px rgba(139,26,14,0.06);';
+    const opts = [
+      { value: 'available', title: 'Leeg',   sub: 'Pot is leeg en klaar om gevuld te worden', img: '/Images/pot-leeg-label.png' },
+      { value: 'voorraad',  title: 'Gevuld', sub: 'Pot is gevuld en klaar voor bezorging',     img: '/Images/pot-bezorgd.png' },
+    ];
+    opts.forEach(o => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.target = o.value;
+      btn.style.cssText = cardStyle;
+      btn.innerHTML = `
+        <img src="${o.img}" style="width:64px;height:64px;object-fit:contain;mix-blend-mode:multiply;flex-shrink:0;">
+        <div style="min-width:0;flex:1;">
+          <div style="color:#1A1A1A;font-size:17px;font-weight:700;margin-bottom:2px;">${o.title}</div>
+          <div style="color:#666;font-size:13px;line-height:1.35;">${o.sub}</div>
+        </div>
+      `;
+      btn.addEventListener('click', () => selectStockTarget(o.value));
+      parent.appendChild(btn);
+    });
+    selectStockTarget(currentStatus === 'voorraad' ? 'voorraad' : 'available');
+  }
+
+  function selectStockTarget(target) {
+    __selectedStockTarget = target;
+    document.querySelectorAll('#sfb-actions button[data-target]').forEach(b => {
+      b.style.borderColor = b.dataset.target === target ? '#D9301E' : 'rgba(0,0,0,0.08)';
+    });
+    document.getElementById('sfb-prod-date').hidden = target !== 'voorraad';
+  }
+
+  async function saveStockTarget() {
+    if (!__currentPot || !__selectedStockTarget) return;
+    const target = __selectedStockTarget;
+    const curr = __currentPot.status === 'uninitialized' ? 'available' : __currentPot.status;
+    if (curr === target) { toast('Geen wijziging'); return; }
+    if (await setPotStatus(target)) {
+      toast(`${__currentPot.id} → ${target === 'voorraad' ? 'gevuld' : 'leeg'}`, 'success');
+      closeDrawer(); softRefreshPage();
+    }
+  }
+
   // ───── per-status renderers ────────────────────────────────────────────
   function renderActions(pot) {
     const wrap = document.getElementById('sfb-actions');
@@ -389,43 +436,30 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     dateWrap.hidden = true;
     ordersWrap.hidden = true;
 
-    if (status === 'uninitialized') {
-      titleEl.textContent = 'Deze pot is nog niet op voorraad, wat wil je doen?';
-      // Show date input — used if user picks "voorraad vol"
-      dateWrap.hidden = false;
+    if (status === 'uninitialized' || status === 'available') {
+      // Radio-card picker (Leeg / Gevuld) + datum input + Bewaar primary button.
+      titleEl.textContent = (status === 'uninitialized')
+        ? 'Deze pot is nog niet op voorraad, wat wil je doen?'
+        : 'Deze pot is leeg op voorraad, wat wil je doen?';
+      // Card picker lives inside #sfb-actions (we hand it that DOM node)
+      wrap.style.gap = '10px';
+      renderStockPicker(wrap, status);
+      // Date input — only relevant for the voorraad target; renderStockPicker toggles it via selectStockTarget.
       document.getElementById('sfb-date').value = todayISO();
-      wrap.appendChild(actionButton('Op voorraad vol →', { variant: 'primary', onClick: async () => {
-        if (await setPotStatus('voorraad')) {
-          toast(`${pot.id} → gevuld`, 'success');
-          closeDrawer(); softRefreshPage();
-        }
-      }}));
-      wrap.appendChild(actionButton('Op voorraad leeg →', { variant: 'outline', onClick: async () => {
-        if (await setPotStatus('available')) {
-          toast(`${pot.id} → leeg`, 'success');
-          closeDrawer(); softRefreshPage();
-        }
-      }}));
-    }
-    else if (status === 'available') {
-      titleEl.textContent = 'Deze pot is op voorraad (leeg), wat wil je doen?';
-      dateWrap.hidden = false;
-      document.getElementById('sfb-date').value = todayISO();
-      wrap.appendChild(actionButton('Pot gevuld →', { variant: 'primary', onClick: async () => {
-        if (await setPotStatus('voorraad')) {
-          toast(`${pot.id} → gevuld`, 'success');
-          closeDrawer(); softRefreshPage();
-        }
-      }}));
+      // Bewaar button below the cards
+      const saveBtn = actionButton('Bewaar →', { variant: 'primary', onClick: saveStockTarget });
+      saveBtn.style.marginTop = '8px';
+      wrap.appendChild(saveBtn);
     }
     else if (status === 'voorraad') {
-      titleEl.textContent = 'Deze pot is op voorraad (gevuld), wat wil je doen?';
-      wrap.appendChild(actionButton('Pot leeg →', { variant: 'outline', onClick: async () => {
-        if (await setPotStatus('available')) {
-          toast(`${pot.id} → leeg`, 'success');
-          closeDrawer(); softRefreshPage();
-        }
-      }}));
+      titleEl.textContent = 'Deze pot is gevuld op voorraad, wat wil je doen?';
+      // Radio-card picker so admin can flip Leeg/Gevuld in the same drawer.
+      wrap.style.gap = '10px';
+      renderStockPicker(wrap, status);
+      document.getElementById('sfb-date').value = pot.production_date || todayISO();
+      const saveBtn = actionButton('Bewaar →', { variant: 'primary', onClick: saveStockTarget });
+      saveBtn.style.marginTop = '8px';
+      wrap.appendChild(saveBtn);
       // "Pot afgeven" sectie
       ordersWrap.hidden = false;
       const list = document.getElementById('sfb-orders-list');
@@ -541,14 +575,16 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     if (!h.length) { wrap.hidden = true; return; }
     wrap.hidden = false;
     const sorted = [...h].sort((a, b) =>
-      String(b.returned_at || b.ts || b.delivered_at || '').localeCompare(String(a.returned_at || a.ts || a.delivered_at || ''))
+      String(b.returned_at || b.at || b.ts || b.delivered_at || '').localeCompare(String(a.returned_at || a.at || a.ts || a.delivered_at || ''))
     );
-    list.innerHTML = sorted.slice(0, 8).map(entry => {
-      const date = entry.returned_at || entry.ts || entry.delivered_at || '';
+    // Render as a single white info-card with bottom-bordered entries (matches /bestelling Activiteit).
+    list.innerHTML = sorted.slice(0, 12).map((entry, idx, arr) => {
+      const date = entry.at || entry.returned_at || entry.ts || entry.delivered_at || '';
       const dateStr = date ? fmtDateShort(date.slice ? date.slice(0,10) : date) : '';
-      return `<div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;line-height:1.4;background:rgba(0,0,0,0.03);padding:8px 12px;border-radius:10px;">
-        <span style="color:#666;">${esc(dateStr)}</span>
-        <span style="color:#1A1A1A;font-weight:500;text-align:right;">${esc(historyLabel(entry))}</span>
+      const isLast = idx === arr.length - 1;
+      return `<div style="padding:12px 16px;display:flex;flex-direction:column;gap:2px;${isLast ? '' : 'border-bottom:1px solid rgba(0,0,0,0.06);'}">
+        <span style="color:#888;font-size:12px;">${esc(dateStr)}</span>
+        <span style="color:#1A1A1A;font-size:14px;line-height:1.4;">${esc(historyLabel(entry))}</span>
       </div>`;
     }).join('');
   }
@@ -578,7 +614,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     if (status === 'uninitialized') return;
     if (status === 'delivered') {
       wrap.appendChild(actionButton('Pot verwijderen', {
-        variant: 'subtle',
+        variant: 'outline',
         onClick: async () => {
           if (!__currentPot) return;
           const name = __currentPot.voornaam || 'klant';
@@ -589,7 +625,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       }));
       return;
     }
-    wrap.appendChild(actionButton('Pot verwijderen', { variant: 'subtle', onClick: deleteCurrent }));
+    wrap.appendChild(actionButton('Pot verwijderen', { variant: 'outline', onClick: deleteCurrent }));
   }
 
   function softRefreshPage() {
