@@ -385,6 +385,13 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       btn.addEventListener('click', () => selectStockTarget(o.value));
       parent.appendChild(btn);
     });
+    // Relocate the productiedatum block (#sfb-prod-date) INTO the same flex column so
+    // it sits between the Gevuld card and the Bewaar button that follows.
+    const dateEl = document.getElementById('sfb-prod-date');
+    if (dateEl) {
+      dateEl.style.marginTop = '4px';
+      parent.appendChild(dateEl);
+    }
     selectStockTarget(currentStatus === 'voorraad' ? 'voorraad' : 'available');
   }
 
