@@ -68,7 +68,14 @@ exports.handler = async (event) => {
   }
 
   const now = new Date().toISOString();
-  await potsStore.setJSON(potId, { ...pot, status: 'pickup-requested', return_requested_at: now });
+  const existingHistory = Array.isArray(pot.history) ? pot.history : [];
+  const histEntry = { at: now, action: 'pickup_requested', order_id: pot.order_id };
+  await potsStore.setJSON(potId, {
+    ...pot,
+    status: 'pickup-requested',
+    return_requested_at: now,
+    history: existingHistory.concat([histEntry]),
+  });
   const existingOrder = (await ordersStore.get(pot.order_id, { type: 'json' })) || {};
   await ordersStore.setJSON(pot.order_id, { ...existingOrder, pickup_requested_at: now });
 
