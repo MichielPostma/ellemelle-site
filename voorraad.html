@@ -687,8 +687,9 @@
         const e = expiryText(p.expiry_date);
         meta = e.text;
         metaExpired = e.expired;
-      } else if (status === 'delivered' && p.order_id) {
-        meta = `Order #${String(p.order_id).slice(-6)}`;
+      } else if (status === 'delivered' && p.customer && p.customer.voornaam) {
+        // Show klant voornaam — cleaner than raw order id
+        meta = p.customer.voornaam;
       }
       const imgSrc = potImageFor(status);
       card.innerHTML = `
