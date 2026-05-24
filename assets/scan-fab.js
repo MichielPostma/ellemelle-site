@@ -179,7 +179,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity 200ms;z-index:90;';
     const drawer = document.createElement('div');
     drawer.id = 'sfb-drawer';
-    drawer.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#feece2;border-radius:20px 20px 0 0;padding:16px 20px 28px;transform:translateY(100%);transition:transform 220ms;z-index:100;max-height:88vh;overflow-y:auto;box-shadow:0 -10px 30px rgba(0,0,0,0.12);padding-bottom:max(28px,env(safe-area-inset-bottom));';
+    drawer.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#f5e6cf;border-radius:20px 20px 0 0;padding:16px 20px 28px;transform:translateY(100%);transition:transform 220ms;z-index:100;max-height:88vh;overflow-y:auto;box-shadow:0 -10px 30px rgba(0,0,0,0.12);padding-bottom:max(28px,env(safe-area-inset-bottom));';
     drawer.innerHTML = `
       <div style="width:40px;height:4px;border-radius:2px;background:rgba(0,0,0,0.18);margin:0 auto 14px;"></div>
       <div id="sfb-pid" style="font-size:14px;font-weight:700;color:#999;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">POT-XXX</div>
@@ -201,6 +201,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
         <div style="color:#666;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Pot historie</div>
         <div id="sfb-history" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
+      <div id="sfb-footer-actions" style="margin-top:22px;display:flex;flex-direction:column;gap:10px;"></div>
     `;
     document.body.appendChild(backdrop);
     document.body.appendChild(drawer);
@@ -279,7 +280,6 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     if (target === 'voorraad') {
       body.production_date = (opts && opts.production_date) || document.getElementById('sfb-date').value || todayISO();
     }
-    if (opts && opts.clear_history) body.clear_history = true;
     const data = await withGuard(() => api('voorraad-set-pot', body));
     if (!data) return false;
     return true;
@@ -455,18 +455,19 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       dateWrap.hidden = false;
       document.getElementById('sfb-date').value = todayISO();
       wrap.appendChild(actionButton('Vol op voorraad zetten →', { variant: 'primary', onClick: async () => {
-        if (await setPotStatus('voorraad', { clear_history: true })) {
+        if (await setPotStatus('voorraad')) {
           toast(`${pot.id} → gevuld (nieuwe cyclus)`, 'success');
           closeDrawer(); softRefreshPage();
         }
       }}));
       wrap.appendChild(actionButton('Leeg op voorraad zetten →', { variant: 'outline', onClick: async () => {
-        if (await setPotStatus('available', { clear_history: true })) {
+        if (await setPotStatus('available')) {
           toast(`${pot.id} → leeg (nieuwe cyclus)`, 'success');
           closeDrawer(); softRefreshPage();
         }
       }}));
-      wrap.appendChild(actionButton('Pot verwijderen', { variant: 'subtle', onClick: deleteCurrent }));
+      // "Pot verwijderen" sits at the bottom for returned-state — below pot details + history.
+      // We render it after the history block via the dedicated footer slot.
     }
     else {
       titleEl.textContent = 'Onbekende pot-status: ' + status;
@@ -551,10 +552,21 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     renderActions(pot);
     renderDetails(pot);
     renderHistory(pot);
+    renderFooter(pot);
     drawerRoot.backdrop.style.opacity = '1';
     drawerRoot.backdrop.style.pointerEvents = 'auto';
     drawerRoot.drawer.style.transform = 'translateY(0)';
     drawerRoot.drawer.scrollTop = 0;
+  }
+
+  // Render any always-at-the-bottom buttons (currently: Verwijder pot for returned-state).
+  function renderFooter(pot) {
+    const wrap = document.getElementById('sfb-footer-actions');
+    wrap.innerHTML = '';
+    const status = pot.status || 'uninitialized';
+    if (status === 'returned') {
+      wrap.appendChild(actionButton('Pot verwijderen', { variant: 'subtle', onClick: deleteCurrent }));
+    }
   }
 
   function softRefreshPage() {
