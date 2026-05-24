@@ -133,9 +133,9 @@
   .ratings-card .ratings-eyebrow { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
   .ratings-card .ratings-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; font-size: 14.5px; border-bottom: 1px solid rgba(0,0,0,0.05); }
   .ratings-card .ratings-row:last-child { border-bottom: 0; }
-  .ratings-card .ratings-row.total { padding-top: 10px; margin-top: 4px; border-top: 1px solid rgba(0,0,0,0.08); border-bottom: 0; font-weight: 700; }
+  .ratings-card .ratings-row.total { padding-top: 10px; margin-top: 4px; border-bottom: 0; font-weight: 700; }
   .ratings-card .rk { color: var(--black); }
-  .ratings-card .rv { color: var(--red); font-weight: 700; letter-spacing: 0.5px; }
+  .ratings-card .rv { color: var(--black); font-weight: 700; letter-spacing: 0.5px; }
   /* Message-icon button on cards (todo / confirmed) */
   .order-card .msg-btn {
     flex: 0 0 56px; width: 56px; height: 56px;
@@ -447,7 +447,7 @@
         </select>
       </div>
       <div class="ratings-card" id="ratings-card" hidden>
-        <div class="ratings-eyebrow">Gemiddelde ratings</div>
+        <div class="ratings-eyebrow">Feedback</div>
         <div class="ratings-row"><span class="rk">Smaak</span><span class="rv" id="rv-taste">—</span></div>
         <div class="ratings-row"><span class="rk">Textuur</span><span class="rv" id="rv-texture">—</span></div>
         <div class="ratings-row"><span class="rk">Kids</span><span class="rv" id="rv-kids">—</span></div>
@@ -743,7 +743,7 @@
         }
       });
     });
-    const fmt = pair => pair[1] ? (pair[0] / pair[1]).toFixed(1) + ' / 5' : '—';
+    const fmt = pair => pair[1] ? (pair[0] / pair[1]).toFixed(1) : '—';
     const card = document.getElementById('ratings-card');
     const totalN = sums.taste[1] + sums.texture[1] + sums.kids[1];
     if (!card) return;
@@ -753,7 +753,7 @@
     document.getElementById('rv-texture').textContent = fmt(sums.texture);
     document.getElementById('rv-kids').textContent    = fmt(sums.kids);
     const total = (sums.taste[0]+sums.texture[0]+sums.kids[0]) / Math.max(1, totalN);
-    document.getElementById('rv-total').textContent = total.toFixed(1) + ' / 5';
+    document.getElementById('rv-total').textContent = total.toFixed(1);
   }
   function renderKlanten() {
     const wrap = $('#klanten-list'); wrap.innerHTML = '';
