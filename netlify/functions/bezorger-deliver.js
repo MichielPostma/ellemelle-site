@@ -37,8 +37,11 @@ exports.handler = async (event) => {
   if (!pot) {
     return { statusCode: 404, headers, body: JSON.stringify({ error: 'pot not found — run seed-pots first' }) };
   }
-  if (pot.status !== 'available') {
-    return { statusCode: 409, headers, body: JSON.stringify({ error: 'pot not available', status: pot.status, current_order: pot.order_id }) };
+  // Accept pots that are EITHER empty (available) OR ready-to-ship (voorraad).
+  // Voorraad pots come straight off the production shelf and get delivered to a customer
+  // in one scan via the admin scan-FAB flow.
+  if (pot.status !== 'available' && pot.status !== 'voorraad') {
+    return { statusCode: 409, headers, body: JSON.stringify({ error: 'pot not available or voorraad', status: pot.status, current_order: pot.order_id }) };
   }
   const existingOrder = (await ordersStore.get(orderId, { type: 'json' })) || {};
   if (existingOrder.delivered_pot) {
