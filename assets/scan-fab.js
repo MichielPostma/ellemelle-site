@@ -193,8 +193,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
         </div>
       </div>
       <div id="sfb-err" style="color:#D9301E;font-size:14px;font-weight:600;margin-top:10px;display:none;"></div>
-      <hr id="sfb-divider" style="border:none;border-top:1px solid rgba(0,0,0,0.08);margin:22px 0 18px;">
-      <div id="sfb-details" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <div id="sfb-details" style="margin-top:22px;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:4px 18px;"></div>
       <div id="sfb-history-wrap" hidden style="margin-top:18px;">
         <div style="color:#666;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Pot historie</div>
         <div id="sfb-history" style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:0;overflow:hidden;"></div>
@@ -496,19 +495,26 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     if (pot.adres) {
       rows.push(['Adres', pot.adres]);
     }
-    // Statiegeld info — only meaningful for delivered/returned (link to order)
+    // Statiegeld is a fixed €1 per pot
+    rows.push(['Statiegeld', '€1,00']);
+    // Note: pot.ratings + pot.rated_at intentionally NOT shown here — ratings belong
+    // on the order detail page (/bestelling/:id Feedback section), not on pot info.
     if (pot.order_id) {
       rows.push([
         'Bestelling',
         `<a href="/bestelling/${esc(pot.order_id)}" style="color:#D9301E;text-decoration:none;font-weight:600;">Bekijk →</a>`,
       ]);
     }
-    wrap.innerHTML = rows.map(([k, v]) =>
-      `<div style="display:flex;justify-content:space-between;gap:10px;font-size:14px;line-height:1.4;">
-        <span style="color:#666;">${esc(k)}</span>
-        <span style="color:#1A1A1A;font-weight:500;text-align:right;">${v.startsWith('<a ') ? v : esc(v)}</span>
-      </div>`
-    ).join('');
+    // Render as /bestelling-style .detail-row rows: label-left grey + value-right black,
+    // bottom-border between rows. Inner padding lives on the wrapper card itself.
+    wrap.innerHTML = rows.map(([k, v], i, arr) => {
+      const isLast = i === arr.length - 1;
+      const border = isLast ? '' : 'border-bottom:1px solid rgba(0,0,0,0.06);';
+      return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;font-size:14px;line-height:1.4;${border}">
+        <span style="color:#666;font-weight:500;">${esc(k)}</span>
+        <span style="color:#1A1A1A;font-weight:600;text-align:right;">${v.startsWith('<a ') ? v : esc(v)}</span>
+      </div>`;
+    }).join('');
   }
 
   function describe(s) {
