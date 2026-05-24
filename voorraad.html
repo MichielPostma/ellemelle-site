@@ -698,9 +698,13 @@
         ${meta ? `<div class="meta"${metaExpired ? ' style="color: var(--red);"' : ''}>${meta}</div>` : ''}
       `;
       card.addEventListener('click', () => {
-        // Unified drawer: tap on tile opens the same state-aware scan-FAB drawer
-        // that the QR-scanner does. Falls back to a console warning if scan-fab
-        // module hasn't loaded yet (shouldn't happen at click time).
+        // Tap on a delivered pot tile → jump straight to the linked bestelling page.
+        // Faster than going through the drawer when admin just wants to inspect/edit the order.
+        if (p.status === 'delivered' && p.order_id) {
+          window.location.href = '/bestelling/' + p.order_id;
+          return;
+        }
+        // All other statuses: open the shared state-aware scan-FAB drawer.
         if (window.__sfb && typeof window.__sfb.handlePotScan === 'function') {
           window.__sfb.handlePotScan(p.id);
         }
