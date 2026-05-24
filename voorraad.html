@@ -465,48 +465,7 @@
   </section>
 </main>
 
-<!-- Drawer for individual pot -->
-<div class="drawer-backdrop" id="drawer-backdrop"></div>
-<div class="drawer" id="pot-drawer" role="dialog" aria-modal="true">
-  <div class="drawer-handle"></div>
-  <h2 id="drawer-pid">POT-XXX</h2>
-  <div class="sub" id="drawer-sub">—</div>
-
-  <div id="status-cards" hidden style="margin-top: 16px; display: grid; gap: 10px;">
-    <button class="status-card" type="button" data-status="available">
-      <img class="sc-img" src="/Images/pot-leeg-label.png" alt="">
-      <div class="sc-text">
-        <div class="sc-title">Leeg</div>
-        <div class="sc-sub">Pot is leeg en klaar om gevuld te worden</div>
-      </div>
-    </button>
-    <button class="status-card" type="button" data-status="voorraad">
-      <img class="sc-img" src="/Images/pot-bezorgd.png" alt="">
-      <div class="sc-text">
-        <div class="sc-title">Gevuld</div>
-        <div class="sc-sub">Pot is gevuld en klaar voor bezorging</div>
-      </div>
-    </button>
-  </div>
-
-  <div id="prod-date-field" hidden style="margin-top: 14px;">
-    <div class="actions-label">Productiedatum</div>
-    <div class="prod-date-wrap">
-      <input type="date" id="prod-date-input" />
-      <svg class="prod-date-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M4 6l4 4 4-4"/>
-      </svg>
-    </div>
-  </div>
-
-  <a class="btn-outline" id="drawer-customer-link" href="#" hidden style="margin-top: 14px;">Bekijk bestelling</a>
-  <div id="drawer-readonly" hidden style="margin-top: 12px; padding: 12px 14px; background: rgba(0,0,0,0.04); border-radius: var(--radius-md); color: #555; font-size: 13px; line-height: 1.45;">
-    Status wordt automatisch beheerd via de bezorger-flow.
-  </div>
-  <div class="error" id="drawer-err"></div>
-  <button class="btn-primary" id="drawer-save" type="button" hidden style="margin-top: 16px;">Bewaar →</button>
-  <button class="btn-outline" id="drawer-delete" type="button" hidden style="margin-top: 24px;">Verwijder pot</button>
-</div>
+<!-- Pot tap drawer is provided by the shared scan-FAB module (assets/scan-fab.js). -->
 
 <div class="toast" id="toast"></div>
 
@@ -738,99 +697,20 @@
         <div class="badge ${status}">${STATUS_LABELS[status] || status}</div>
         ${meta ? `<div class="meta"${metaExpired ? ' style="color: var(--red);"' : ''}>${meta}</div>` : ''}
       `;
-      card.addEventListener('click', () => openDrawer(p));
+      card.addEventListener('click', () => {
+        // Unified drawer: tap on tile opens the same state-aware scan-FAB drawer
+        // that the QR-scanner does. Falls back to a console warning if scan-fab
+        // module hasn't loaded yet (shouldn't happen at click time).
+        if (window.__sfb && typeof window.__sfb.handlePotScan === 'function') {
+          window.__sfb.handlePotScan(p.id);
+        }
+      });
       grid.appendChild(card);
     });
   }
 
-  // --- Drawer ---
-  let __selectedTarget = null;
-  function selectStatusCard(target) {
-    __selectedTarget = target;
-    document.querySelectorAll('#status-cards .status-card').forEach(c => {
-      c.classList.toggle('selected', c.dataset.status === target);
-    });
-    // Toggle production-date input visibility — only when Gevuld selected
-    togglePD(target === 'voorraad');
-  }
-  function openDrawer(pot) {
-    STATE.currentPot = pot;
-    $('#drawer-pid').textContent = pot.id;
-    const status = pot.status || 'uninitialized';
-    $('#drawer-sub').textContent = drawerSubFor(pot);
-    $('#drawer-err').textContent = '';
-    const cards = $('#status-cards');
-    const saveBtn = $('#drawer-save');
-    const ro = $('#drawer-readonly');
-    const delBtn = $('#drawer-delete');
-    const link = $('#drawer-customer-link');
-    // Show Verwijder for Leeg/Gevuld/Retour, hide for Bezorgd
-    delBtn.hidden = (status === 'delivered');
-    if (status === 'delivered') {
-      // Delivered: read-only banner + customer block, no cards/save/prod-date
-      cards.hidden = true;
-      saveBtn.hidden = true;
-      togglePD(false);
-      const c = pot.customer || {};
-      const name = c.voornaam || 'klant';
-      const addr = c.adres || '';
-      let sentence = '';
-      if (pot.order_id) {
-        sentence = `Deze pot is bezorgd aan ${name}${addr ? ` op ${addr}` : ''}. `;
-        link.href = '/bestelling/' + pot.order_id;
-        link.hidden = false;
-      } else {
-        link.hidden = true;
-      }
-      ro.textContent = sentence + 'Status wordt automatisch beheerd via de bezorger-flow.';
-      ro.hidden = false;
-    } else {
-      // Leeg / Gevuld / Retour: status-card picker
-      cards.hidden = false;
-      saveBtn.hidden = false;
-      link.hidden = true;
-      ro.hidden = true;
-      $('#prod-date-input').value = pot.production_date || todayISO();
-      // Pre-selection:
-      // - Leeg / uninit → 'available'
-      // - Gevuld → 'voorraad'
-      // - Retour → 'available' (default returns to leeg-pool)
-      const pre = (status === 'voorraad') ? 'voorraad' : 'available';
-      selectStatusCard(pre);
-    }
-    $('#drawer-backdrop').classList.add('open');
-    $('#pot-drawer').classList.add('open');
-  }
-  function closeDrawer() {
-    STATE.currentPot = null;
-    $('#drawer-backdrop').classList.remove('open');
-    $('#pot-drawer').classList.remove('open');
-  }
-  function togglePD(show) { $('#prod-date-field').hidden = !show; }
-  async function saveStatus() {
-    if (!STATE.currentPot) return;
-    const target = __selectedTarget;
-    if (!target) { $('#drawer-err').textContent = 'Kies een status'; return; }
-    const currentStatus = STATE.currentPot.status || 'uninitialized';
-    // Normalise: uninitialized counts as available for compare
-    const cur = (currentStatus === 'uninitialized') ? 'available' : currentStatus;
-    // For retour: any change is allowed; for leeg/gevuld: only when different
-    if (target === cur && currentStatus !== 'returned') {
-      showToast('Geen wijziging', 'success');
-      return;
-    }
-    const body = { pot_id: STATE.currentPot.id, status: target };
-    if (target === 'voorraad') {
-      const v = $('#prod-date-input').value || todayISO();
-      if (!v) { $('#drawer-err').textContent = 'Vul productiedatum in'; return; }
-      body.production_date = v;
-    }
-    const res = await api('voorraad-set-pot', body);
-    if (!res.ok) { $('#drawer-err').textContent = res.data.error || 'Mislukt'; return; }
-    showToast(`${body.pot_id} → ${STATUS_LABELS[body.status]}`, 'success');
-    closeDrawer();
-    refresh();
-  }
+  // Drawer logic moved to shared scan-FAB module (assets/scan-fab.js).
+  // Tap on a pot tile triggers window.__sfb.handlePotScan(potId).
 
   // --- Scanner ---
   async function startScan() {
@@ -893,22 +773,7 @@
   $('#filter-select').addEventListener('change', renderGrid);
   $('#scan-btn').addEventListener('click', () => { if (STATE.qrScanner) stopScan(); else startScan(); });
   $('#scan-cancel').addEventListener('click', stopScan);
-  $('#drawer-close')?.addEventListener('click', closeDrawer);
-  $('#drawer-backdrop').addEventListener('click', closeDrawer);
-  $('#drawer-save').addEventListener('click', saveStatus);
-  document.querySelectorAll('#status-cards .status-card').forEach(c => {
-    c.addEventListener('click', () => selectStatusCard(c.dataset.status));
-  });
-  $('#drawer-delete').addEventListener('click', async () => {
-    if (!STATE.currentPot) return;
-    const pid = STATE.currentPot.id;
-    if (!confirm('Weet je het zeker? Dit kan niet ongedaan gemaakt worden.')) return;
-    const res = await api('voorraad-delete-pot', { pot_id: pid });
-    if (!res.ok) { showToast(res.data.error || 'Verwijderen mislukt', 'error'); return; }
-    showToast(`${pid} verwijderd`, 'success');
-    closeDrawer();
-    await refresh();
-  });
+  // Drawer event bindings removed — the shared scan-FAB drawer handles its own clicks.
 
   // Menu
   $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
@@ -932,7 +797,7 @@
           const potParam = params.get('pot');
           if (potParam && /^POT-\d{3}$/.test(potParam.toUpperCase())) {
             const pot = STATE.pots.find(p => p.id === potParam.toUpperCase());
-            if (pot) setTimeout(() => openDrawer(pot), 100);
+            if (pot) setTimeout(() => window.__sfb && window.__sfb.handlePotScan(pot.id), 200);
           }
         } catch {}
       } else {
