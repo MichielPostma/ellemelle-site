@@ -807,7 +807,7 @@
       const card = document.createElement('div');
       card.className = 'order-card';
       const status = o.order_status || 'todo';
-      const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
+      const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
       const badgeText = STATUS_LABELS[status] || 'Todo';
       const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
       const stepHtml = `<span class="step-num">Stop ${idx + 1}</span>`;
