@@ -88,6 +88,11 @@ exports.handler = async (event) => {
       pickup_requested_at: (orderBlob && orderBlob.pickup_requested_at) || null,
       ratings:             (orderBlob && orderBlob.ratings) || null,
       rated_at:            (orderBlob && orderBlob.rated_at) || null,
+      // Pot trip history (admin sees all entries; /pot/:id filters by current_cycle_start
+      // so each new customer sees a fresh pot without the previous owner's records).
+      history:              Array.isArray(pot.history) ? pot.history : [],
+      current_cycle_start:  pot.current_cycle_start || null,
+      order_id:             pot.order_id || null,
     }),
   };
 };
