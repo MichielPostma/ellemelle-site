@@ -287,6 +287,7 @@
       <div class="detail-row"><span class="k">Plaats</span><span class="v" id="d-plaats">—</span></div>
       <div class="detail-row"><span class="k">Updates</span><span class="v" id="d-kanaal">—</span></div>
       <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact">—</span></div>
+      <div class="detail-row"><span class="k">Statiegeld credit</span><span class="v" id="d-credit">€0,00</span></div>
     </div>
 
     <div class="actions-label">Feedback</div>
@@ -527,7 +528,10 @@
     } else if (o.email) {
       c.innerHTML = `<a href="mailto:${o.email}">${o.email}</a>`;
     } else { c.textContent = '—'; }
-    $('#d-aantal').textContent = '1';
+    // Statiegeld credit (deposit outstanding) — comes from /bestellingen-get .customer.statiegeld_credit
+    const credit = (STATE.customer && Number(STATE.customer.statiegeld_credit)) || 0;
+    $('#d-credit').textContent = '€' + credit.toFixed(2).replace('.', ',');
+    $('#d-aantal').textContent = String(o.aantal || 1);
     $('#d-prijs').textContent = '€6,00';
     $('#d-created').textContent = fmtDateTime(o.created_at);
 
@@ -568,6 +572,7 @@
     if (!res.ok) { showToast(res.data.error || 'Order niet gevonden', 'error'); return; }
     STATE.order = res.data.order;
     STATE.history = res.data.history || [];
+    STATE.customer = res.data.customer || null;
     renderDetail();
   }
 
@@ -693,7 +698,7 @@
       if (res.ok) {
         $('#login-view').hidden = true; $('#detail-view').hidden = false;
         document.body.classList.remove('on-login');
-        STATE.order = res.data.order; STATE.history = res.data.history || [];
+        STATE.order = res.data.order; STATE.history = res.data.history || []; STATE.customer = res.data.customer || null;
         renderDetail();
       } else {
         clearSession(); STATE.password = null;
@@ -739,6 +744,8 @@
     if (o.kanaal)     q.set('kanaal',     o.kanaal);
     if (o.telefoon)   q.set('telefoon',   o.telefoon);
     if (o.email)      q.set('email',      o.email);
+    const credit = (window.STATE && window.STATE.customer && Number(window.STATE.customer.statiegeld_credit)) || 0;
+    if (credit > 0) q.set('credit', String(credit));
     return '/?' + q.toString();
   }
   function openDrawer() {
