@@ -217,6 +217,8 @@
   .order-card .badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
   .order-card .badge.todo      { background: rgba(0,0,0,0.06); color: #666; }
   .order-card .badge.confirmed { background: rgba(33,118,255,0.10); color: #2176ff; }
+  .order-card .badge.pickup_self_requested { background: rgba(255,193,7,0.18); color: #b75d00; }
+  .order-card .badge.picked_up { background: rgba(28,125,63,0.18); color: #1c7d3f; }
   .order-card .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .order-card .badge.no-stock  { background: rgba(255,193,7,0.12); color: #b75d00; }
   .order-card .badge.has-stock { background: rgba(34,197,94,0.12); color: #15803d; }
@@ -704,7 +706,7 @@
     return `${d}-${m}-${y.slice(2)}`;
   }
 
-  const STATUS_LABELS_KOKEN = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
+  const STATUS_LABELS_KOKEN = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
     // --- Deel update ---
   const NL_DAYS = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
   const NL_MONTHS_SHORT = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
