@@ -143,7 +143,11 @@ async function listAllPots() {
   const fetched = await Promise.all(
     POT_IDS.map(id => store.get(id, { type: 'json' }).catch(() => null))
   );
-  return POT_IDS.map((id, i) => fetched[i] || { id, status: 'uninitialized' });
+  // Only return pots that have an actual blob record. Never-seeded or deleted
+  // pots are filtered out so /voorraad shows only the active inventory.
+  // To bring a new pot into the system, admin scans the QR via the scan-FAB —
+  // that opens the drawer in 'uninitialized' state where they can pick Vol/Leeg.
+  return fetched.filter(p => p != null);
 }
 
 // --- App config (next_production_date etc.) ---
