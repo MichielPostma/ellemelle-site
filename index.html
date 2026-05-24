@@ -1936,6 +1936,23 @@
         prepareStep(1);
         showStep(1);
         try { history.replaceState({}, '', location.pathname); } catch {}
+      } else if (params.get('start') === 'existing') {
+        // Admin: skip picker, prefill customer from URL params, jump to step 4 (Aantal)
+        const c = {
+          voornaam:   params.get('voornaam')   || '',
+          straat:     params.get('straat')     || '',
+          huisnummer: params.get('huisnummer') || '',
+          toevoeging: params.get('toevoeging') || '',
+          postcode:   params.get('postcode')   || '',
+          plaats:     params.get('plaats')     || 'Haarlem',
+          kanaal:     params.get('kanaal')     || 'whatsapp',
+          telefoon:   params.get('telefoon')   || '',
+          email:      params.get('email')      || '',
+          adres: ((params.get('straat')||'') + ' ' + (params.get('huisnummer')||'') + (params.get('toevoeging') ? '-' + params.get('toevoeging') : '')).trim(),
+          key:        params.get('customer_key') || '',
+        };
+        pickExistingCustomer(c);
+        try { history.replaceState({}, '', location.pathname); } catch {}
       } else {
         // Fresh visitor → intro screen
         currentStep = 0;
