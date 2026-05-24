@@ -1348,10 +1348,21 @@
     const n = Math.max(1, parseInt(formData.aantal, 10) || 1);
     const potsTotal = n * 500; // €5.00 per pot in cents
     const stat = n * 100;       // €1.00 statiegeld per pot
-    const total = potsTotal + stat;
+    // Outstanding deposit from previous pots (admin reorder for an existing klant).
+    // Cap the deduction at the new statiegeld so totals never go negative — extra credit
+    // simply rolls onto the next order.
+    const credit = (__adminMode === 'existing')
+      ? Math.max(0, Number(formData.__statiegeld_credit) || 0)
+      : 0;
+    const creditDeduction = Math.min(credit, n) * 100;
+    const total = potsTotal + stat - creditDeduction;
+    const creditLine = creditDeduction > 0
+      ? '<div class="order-line"><span>Statiegeld retour (credit van vorige pot' + (credit===1?'':'ten') + ')</span><span>−' + fmtEuro(creditDeduction) + '</span></div>'
+      : '';
     const baseHtml = (lev) =>
       '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(potsTotal) + '</span></div>' +
       '<div class="order-line"><span>Statiegeld (' + n + ' pot' + (n===1?'':'ten') + ')</span><span>' + fmtEuro(stat) + '</span></div>' +
+      creditLine +
       '<div class="order-line total"><span>Totaal</span><span>' + fmtEuro(total) + '</span></div>' +
       '<div class="order-meta">' +
         leveringHtml(lev) +
@@ -1464,6 +1475,9 @@
     }
     formData.plaats = c.plaats || 'Haarlem';
     formData.__customer_identifier = c.key || '';
+    // Statiegeld credit (outstanding deposit) — used on step 7 to show deduction.
+    // Comes either from /klanten-list (in-app picker) or URL ?credit=N (FAB from /bestelling/:id).
+    formData.__statiegeld_credit = Math.max(0, Number(c.statiegeld_credit) || 0);
     hideAdminPicker();
     currentStep = 4;
     prepareStep(4);
@@ -1606,11 +1620,20 @@
       const kIcon = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
       const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
       const sn = Math.max(1, parseInt(formData.aantal, 10) || 1);
-      const sPots = sn * 500, sStat = sn * 100, sTot = sPots + sStat;
+      const sPots = sn * 500, sStat = sn * 100;
+      const sCredit = (__adminMode === 'existing')
+        ? Math.max(0, Number(formData.__statiegeld_credit) || 0)
+        : 0;
+      const sCreditDed = Math.min(sCredit, sn) * 100;
+      const sTot = sPots + sStat - sCreditDed;
+      const sCreditLine = sCreditDed > 0
+        ? '<div class="order-line"><span>Statiegeld retour (credit van vorige pot' + (sCredit===1?'':'ten') + ')</span><span>−' + fmtEuro(sCreditDed) + '</span></div>'
+        : '';
       const sKLabel = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'e-mail';
       recap.innerHTML =
         '<div class="order-line"><span>' + sn + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(sPots) + '</span></div>' +
         '<div class="order-line"><span>Statiegeld (' + sn + ' pot' + (sn===1?'':'ten') + ')</span><span>' + fmtEuro(sStat) + '</span></div>' +
+        sCreditLine +
         '<div class="order-line total"><span>Totaal</span><span>' + fmtEuro(sTot) + '</span></div>' +
         '<div class="order-meta">' +
           '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
@@ -1950,6 +1973,7 @@
           email:      params.get('email')      || '',
           adres: ((params.get('straat')||'') + ' ' + (params.get('huisnummer')||'') + (params.get('toevoeging') ? '-' + params.get('toevoeging') : '')).trim(),
           key:        params.get('customer_key') || '',
+          statiegeld_credit: Number(params.get('credit') || '0') || 0,
         };
         pickExistingCustomer(c);
         try { history.replaceState({}, '', location.pathname); } catch {}
