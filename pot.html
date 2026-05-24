@@ -331,8 +331,32 @@
     if (p.return_requested_at || p.pickup_requested_at) { const t = p.return_requested_at || p.pickup_requested_at; entries.push({ ts: t, label: 'Ophaal aangevraagd op ' + fmtDateTime(t) }); }
     if (p.returned_at) entries.push({ ts: p.returned_at, label: 'Pot teruggebracht op ' + fmtDateTime(p.returned_at) });
     if (p.rated_at) entries.push({ ts: p.rated_at, label: 'Beoordeling gegeven op ' + fmtDateTime(p.rated_at) });
-    entries.sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
-    return entries;
+    // Surface any archived trips that belong to the CURRENT cycle (post-reset only).
+    // pot.history may include older entries from previous customers — those are dropped
+    // by the current_cycle_start filter below so the customer never sees them.
+    if (Array.isArray(p.history)) {
+      p.history.forEach(h => {
+        const t = h.returned_at || h.delivered_at || h.ts;
+        if (!t) return;
+        if (h.delivered_at) entries.push({ ts: h.delivered_at, label: 'Bezorgd op ' + fmtDateTime(h.delivered_at) });
+        if (h.returned_at)  entries.push({ ts: h.returned_at,  label: 'Pot teruggebracht op ' + fmtDateTime(h.returned_at) });
+      });
+    }
+    // Filter to current cycle only — drops anything timestamped before the last reset.
+    const cycleStart = p.current_cycle_start ? String(p.current_cycle_start) : null;
+    const filtered = cycleStart
+      ? entries.filter(e => String(e.ts) >= cycleStart)
+      : entries;
+    // De-dup (in case both individual fields + archived history reference the same event)
+    const seen = new Set();
+    const unique = filtered.filter(e => {
+      const k = String(e.ts) + '|' + e.label;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    unique.sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+    return unique;
   }
   function renderHistory() {
     const list = $('#history-list');
