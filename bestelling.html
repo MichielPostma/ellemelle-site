@@ -434,7 +434,7 @@
     clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
   }
 
-  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
   function modeLabel(o) {
     const d = fmtDate(o.delivery_date);
     if (o.delivery_mode === 'stock') return 'Op voorraad — ' + d;
@@ -450,7 +450,7 @@
     confirmed: 'Bevestigd',
     delivered: 'Bezorgd',
     neighbors: 'Buren',
-    retry: 'Nieuwe poging',
+    retry: 'Nieuwe bezorgpoging',
   };
   function fmtActivityTime(iso) {
     if (!iso) return '';
@@ -586,7 +586,7 @@
     { val: 'confirmed',             label: 'Bevestigd' },
     { val: 'delivered',             label: 'Bezorgd' },
     { val: 'neighbors',             label: 'Buren' },
-    { val: 'retry',                 label: 'Nieuwe poging' },
+    { val: 'retry',                 label: 'Nieuwe bezorgpoging' },
     { val: 'pickup_self_requested', label: 'Verzoek zelf ophalen' },
     { val: 'picked_up',             label: 'Opgehaald' },
   ];
