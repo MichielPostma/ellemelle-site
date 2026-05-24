@@ -56,8 +56,11 @@ exports.handler = async (event) => {
   const isSwap = pot.status === 'pickup-with-reorder';
 
   const now = new Date().toISOString();
-  // Archive the current trip in pot.history
+  // Archive the current trip in pot.history (with an explicit action label).
   const trip = {
+    at: now,
+    action: 'returned',
+    kind: isSwap ? 'swap' : 'pickup',
     order_id: pot.order_id || orderId,
     delivered_at: pot.delivered_at || null,
     returned_at: now,
