@@ -53,11 +53,16 @@ exports.handler = async (event) => {
   const mergedRatings = { ...prevRatings, ...cleaned };
   const now = new Date().toISOString();
   const next = { ...existingOrder, ratings: mergedRatings, rated_at: now };
-  // Append a small history entry for audit
+  // Append a small history entry for audit (on the order side)
   const hist = Array.isArray(existingOrder.history) ? existingOrder.history : [];
   hist.push({ at: now, action: 'save_rating', value: cleaned });
   next.history = hist;
   await ordersStore.setJSON(pot.order_id, next);
+
+  // Also stamp pot.history so the admin scan-drawer shows the rating event.
+  const potHistory = Array.isArray(pot.history) ? pot.history : [];
+  potHistory.push({ at: now, action: 'rated', stars: cleaned, order_id: pot.order_id });
+  await potsStore.setJSON(potId, { ...pot, history: potHistory });
 
   return { statusCode: 200, headers, body: JSON.stringify({ ok: true, ratings: mergedRatings, rated_at: now }) };
 };
