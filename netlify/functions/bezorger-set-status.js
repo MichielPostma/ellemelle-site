@@ -1,6 +1,6 @@
 // Update an order's status manually (admin override).
 // POST { password, order_id, status }
-// Allowed status values: 'todo' | 'confirmed' | 'delivered' | 'neighbors' | 'retry'
+// Allowed status values: 'todo' | 'confirmed' | 'delivered' | 'neighbors' | 'retry' | 'pickup_self_requested' | 'picked_up'
 // Special: when resetting to 'todo' and a pot was previously delivered, unlink the pot
 // (return it to 'available' stock) so it can be re-used.
 
@@ -15,7 +15,7 @@ function blobOpts(name) {
   return opts;
 }
 
-const ALLOWED = new Set(['todo', 'confirmed', 'delivered', 'neighbors', 'retry']);
+const ALLOWED = new Set(['todo', 'confirmed', 'delivered', 'neighbors', 'retry', 'pickup_self_requested', 'picked_up']);
 
 exports.handler = async (event) => {
   const headers = { 'Content-Type': 'application/json' };
