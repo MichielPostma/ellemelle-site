@@ -94,11 +94,15 @@
   .history-list .empty { color: #888; font-size: 14px; padding: 14px 0; }
 
   .stars { display: flex; gap: 6px; margin: 18px 0; }
-  .star { cursor: pointer; padding: 4px; color: rgba(0,0,0,0.18); transition: color 120ms, transform 120ms; background: none; border: 0; }
-  .star:hover, .star.hover { color: var(--red); }
-  .star.on { color: var(--red); }
+  .star { cursor: pointer; padding: 4px; background: none; border: 0; transition: transform 120ms; -webkit-tap-highlight-color: transparent; }
   .star:active { transform: scale(0.92); }
-  .star svg { display: block; width: 40px; height: 40px; }
+  .star svg { display: block; width: 40px; height: 40px; transition: fill 120ms, stroke 120ms; }
+  /* Inactive: white fill + subtle grey outline, visible on cream bg */
+  .star svg { fill: var(--white); stroke: rgba(0,0,0,0.22); stroke-width: 1.5; }
+  /* Hover preview */
+  .star:hover svg, .star.hover svg { fill: rgba(217,48,30,0.18); stroke: var(--red); }
+  /* Active (selected) */
+  .star.on svg { fill: var(--red); stroke: var(--red); }
 
   .step-actions {
     display: flex; align-items: stretch; gap: 10px; margin-top: 14px;
