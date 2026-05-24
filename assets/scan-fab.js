@@ -250,6 +250,18 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
   // ───── status-history label ────────────────────────────────────────────
   function historyLabel(entry) {
     const a = entry.action || '';
+    if (a === 'delivered')        return 'Bezorgd';
+    if (a === 'pickup_requested') return 'Ophaal aangevraagd';
+    if (a === 'rated') {
+      const r = entry.stars || {};
+      const avg = ['taste','texture','kids'].map(k => r[k]).filter(Number.isFinite);
+      const n = avg.length ? (avg.reduce((s,x)=>s+x,0)/avg.length).toFixed(1) : null;
+      return n ? `Beoordeling ${n}★` : 'Beoordeling';
+    }
+    if (a === 'returned')         return entry.kind === 'swap' ? 'Teruggenomen (swap)' : 'Teruggenomen';
+    if (a === 'status_change')    return `Status: ${entry.from || '?'} → ${entry.to || '?'}`;
+    if (a === 'save_rating')      return 'Beoordeling';
+    // Legacy 'trip' entries (pre-#208) had delivered_at + returned_at + was_swap, no explicit action
     if (entry.delivered_at && entry.returned_at && !a) {
       const swap = entry.was_swap ? ' (swap)' : '';
       return `Bezorgd → teruggenomen${swap}`;
@@ -285,9 +297,10 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     return true;
   }
 
-  async function deleteCurrent() {
+  async function deleteCurrent(opts) {
     if (!__currentPot) return;
-    if (!confirm(`Weet je het zeker? POT ${__currentPot.id} wordt verwijderd.`)) return;
+    const skipFirst = !!(opts && opts.skipFirstConfirm);
+    if (!skipFirst && !confirm(`Weet je het zeker? POT ${__currentPot.id} wordt verwijderd.`)) return;
     const data = await withGuard(() => api('voorraad-delete-pot', { pot_id: __currentPot.id }));
     if (!data) return;
     toast(`${__currentPot.id} verwijderd`, 'success');
@@ -404,7 +417,6 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
           closeDrawer(); softRefreshPage();
         }
       }}));
-      wrap.appendChild(actionButton('Verwijder pot', { variant: 'outline', onClick: deleteCurrent }));
     }
     else if (status === 'voorraad') {
       titleEl.textContent = 'Deze pot is op voorraad (gevuld), wat wil je doen?';
@@ -414,7 +426,6 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
           closeDrawer(); softRefreshPage();
         }
       }}));
-      wrap.appendChild(actionButton('Verwijder pot', { variant: 'subtle', onClick: deleteCurrent }));
       // "Pot afgeven" sectie
       ordersWrap.hidden = false;
       const list = document.getElementById('sfb-orders-list');
@@ -447,8 +458,6 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       titleEl.textContent = `Deze pot is bij ${name}, wat wil je doen?`;
       wrap.appendChild(actionButton('Statiegeld terug geven →', { variant: 'primary', onClick: () => returnPot() }));
       wrap.appendChild(actionButton('Wisselen voor nieuwe pot →', { variant: 'outline', onClick: () => returnPot({ swap: true }) }));
-      // Allow delete (in case of bookkeeping mishap) but make it subtle
-      wrap.appendChild(actionButton('Pot verwijderen', { variant: 'subtle', onClick: deleteCurrent }));
     }
     else if (status === 'returned') {
       titleEl.textContent = 'Deze pot heb je eerder teruggenomen, wat wil je doen?';
@@ -559,14 +568,28 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     drawerRoot.drawer.scrollTop = 0;
   }
 
-  // Render any always-at-the-bottom buttons (currently: Verwijder pot for returned-state).
+  // Render the always-at-the-bottom Verwijder pot button.
+  // For `delivered` an extra-strong confirm is needed because the pot is at a customer.
   function renderFooter(pot) {
     const wrap = document.getElementById('sfb-footer-actions');
     wrap.innerHTML = '';
     const status = pot.status || 'uninitialized';
-    if (status === 'returned') {
-      wrap.appendChild(actionButton('Pot verwijderen', { variant: 'subtle', onClick: deleteCurrent }));
+    // Uninitialized has nothing to delete yet
+    if (status === 'uninitialized') return;
+    if (status === 'delivered') {
+      wrap.appendChild(actionButton('Pot verwijderen', {
+        variant: 'subtle',
+        onClick: async () => {
+          if (!__currentPot) return;
+          const name = __currentPot.voornaam || 'klant';
+          const ok = confirm(`Weet je het echt zeker? POT ${__currentPot.id} staat nog bij ${name}. Verwijderen kan niet ongedaan worden.`);
+          if (!ok) return;
+          await deleteCurrent({ skipFirstConfirm: true });
+        },
+      }));
+      return;
     }
+    wrap.appendChild(actionButton('Pot verwijderen', { variant: 'subtle', onClick: deleteCurrent }));
   }
 
   function softRefreshPage() {
