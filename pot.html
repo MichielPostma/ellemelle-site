@@ -344,7 +344,7 @@
   function renderForCurrentState() {
     const p = STATE.pot;
     if (!p) { showView('notfound-view'); return; }
-    $('#pot-label').textContent = 'Pot ' + p.id;
+    $('#pot-label').textContent = p.id;
     if (p.status === 'available') showView('available-view');
     else if (p.status === 'delivered') {
       $('#delivered-h1').textContent = p.voornaam ? p.voornaam + ', wat kunnen we voor je doen?' : 'Wat kunnen we voor je doen?';
