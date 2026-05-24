@@ -377,6 +377,58 @@
     if (diff === 1) return { label: 'Bezorgen morgen', overdue: false };
     return { label: `Bezorgen over ${diff} dagen`, overdue: false };
   }
+  function daysAgo(iso) {
+    if (!iso) return null;
+    const t = new Date(iso); if (isNaN(t.getTime())) return null;
+    const tDay = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()));
+    const today = new Date();
+    const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    return Math.max(0, Math.round((todayUtc - tDay) / (1000*60*60*24)));
+  }
+  function fmtDayLong(iso) {
+    if (!iso) return '';
+    const M = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+    const d = new Date(iso); if (isNaN(d.getTime())) return '';
+    return `${d.getDate()} ${M[d.getMonth()]}`;
+  }
+  // Status-aware big-date label for the /bestelling/:id header.
+  // Returns { label, overdue } — overdue triggers the red color (legacy behaviour).
+  function bigDateLabel(o) {
+    const status = o.order_status || 'todo';
+    if (status === 'delivered') {
+      const n = daysAgo(o.delivered_at);
+      if (n === null) return { label: 'Bezorgd', overdue: false };
+      if (n === 0) return { label: 'Vandaag bezorgd', overdue: false };
+      if (n === 1) return { label: 'Gisteren bezorgd', overdue: false };
+      return { label: `${n} dagen geleden bezorgd`, overdue: false };
+    }
+    if (status === 'neighbors') {
+      const n = daysAgo(o.delivered_at);
+      if (n === null) return { label: 'Bij buren bezorgd', overdue: false };
+      if (n === 0) return { label: 'Vandaag bij buren bezorgd', overdue: false };
+      if (n === 1) return { label: 'Gisteren bij buren bezorgd', overdue: false };
+      return { label: `${n} dagen geleden bij buren bezorgd`, overdue: false };
+    }
+    if (status === 'picked_up') {
+      const n = daysAgo(o.pot_returned_at || o.delivered_at);
+      if (n === null) return { label: 'Opgehaald', overdue: false };
+      if (n === 0) return { label: 'Vandaag opgehaald', overdue: false };
+      if (n === 1) return { label: 'Gisteren opgehaald', overdue: false };
+      return { label: `${n} dagen geleden opgehaald`, overdue: false };
+    }
+    if (status === 'pickup_self_requested') {
+      if (o.pickup_requested_at) {
+        return { label: `Ophaal aangevraagd op ${fmtDayLong(o.pickup_requested_at)}`, overdue: false };
+      }
+      return { label: 'Ophaal aangevraagd', overdue: false };
+    }
+    if (status === 'retry') {
+      const cd = deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
+      return { label: `Nieuwe bezorgpoging — ${cd.label.toLowerCase()}`, overdue: cd.overdue };
+    }
+    // todo / confirmed / anything else → keep existing countdown to planned date
+    return deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
+  }
   function fmtDateTime(iso) {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -434,7 +486,7 @@
     clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
   }
 
-  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
   function modeLabel(o) {
     const d = fmtDate(o.delivery_date);
     if (o.delivery_mode === 'stock') return 'Op voorraad — ' + d;
@@ -449,7 +501,7 @@
     todo: 'Nieuw',
     confirmed: 'Bevestigd',
     delivered: 'Bezorgd',
-    neighbors: 'Buren',
+    neighbors: 'Buren bezorgd',
     retry: 'Nieuwe bezorgpoging',
   };
   function fmtActivityTime(iso) {
@@ -508,7 +560,7 @@
     const o = STATE.order;
     if (!o) return;
     $('#d-name').textContent = o.voornaam || '(geen naam)';
-    const cd = deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
+    const cd = bigDateLabel(o);
     const isLate = !!o.is_te_laat;
     const dEl = $('#d-deliverydate');
     dEl.textContent = isLate ? cd.label : (cd.overdue ? 'Bezorgen vandaag' : cd.label);
@@ -585,7 +637,7 @@
     { val: 'todo',                  label: 'Nieuw' },
     { val: 'confirmed',             label: 'Bevestigd' },
     { val: 'delivered',             label: 'Bezorgd' },
-    { val: 'neighbors',             label: 'Buren' },
+    { val: 'neighbors',             label: 'Buren bezorgd' },
     { val: 'retry',                 label: 'Nieuwe bezorgpoging' },
     { val: 'pickup_self_requested', label: 'Verzoek zelf ophalen' },
     { val: 'picked_up',             label: 'Opgehaald' },
