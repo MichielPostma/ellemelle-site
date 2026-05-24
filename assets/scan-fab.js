@@ -12,7 +12,6 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
   let overlayEl = null;
   let drawerRoot = null;
   let __currentPot = null;
-  let __ordersCache = null;  // {at, orders} — small in-memory cache
   let __selectedStockTarget = null; // 'available' | 'voorraad' — for stock state picker
 
   // ───── helpers ─────────────────────────────────────────────────────────
@@ -188,11 +187,10 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       <div id="sfb-actions" style="display:flex;flex-direction:column;gap:10px;"></div>
       <div id="sfb-prod-date" hidden style="margin-top:14px;">
         <div style="color:#666;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;">Productiedatum</div>
-        <input type="date" id="sfb-date" style="width:100%;min-height:56px;padding:0 18px;font-size:16px;font-family:inherit;font-weight:400;background:#fff;border:2px solid transparent;border-radius:14px;box-shadow:0 2px 10px rgba(139,26,14,0.08);color:#1A1A1A;appearance:none;-webkit-appearance:none;text-align:left;line-height:52px;height:56px;box-sizing:border-box;">
-      </div>
-      <div id="sfb-orders" hidden style="margin-top:24px;">
-        <div style="color:#666;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;">Pot afgeven aan</div>
-        <div id="sfb-orders-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div class="sfb-date-wrap" style="position:relative;">
+          <input type="date" id="sfb-date" style="display:block;width:100%;height:56px;min-height:56px;background:#fff;color:#1A1A1A;border:2px solid transparent;border-radius:14px;box-shadow:0 2px 10px rgba(139,26,14,0.08);font-family:inherit;font-size:16px;font-weight:400;letter-spacing:0.2px;padding:0 44px 0 18px;box-sizing:border-box;line-height:52px;appearance:none;-webkit-appearance:none;-webkit-tap-highlight-color:transparent;text-align:left;margin:0;">
+          <svg style="position:absolute;right:18px;top:50%;transform:translateY(-50%);color:#D9301E;pointer-events:none;" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
       </div>
       <div id="sfb-err" style="color:#D9301E;font-size:14px;font-weight:600;margin-top:10px;display:none;"></div>
       <hr id="sfb-divider" style="border:none;border-top:1px solid rgba(0,0,0,0.08);margin:22px 0 18px;">
@@ -351,32 +349,19 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     window.open('/?' + q.toString(), '_blank');
   }
 
-  async function deliverToOrder(orderId, orderVoornaam) {
-    if (!__currentPot) return;
-    const data = await withGuard(() => api('bezorger-deliver', {
-      pot_id: __currentPot.id, order_id: orderId,
-    }));
-    if (!data) return;
-    toast(`${__currentPot.id} bezorgd aan ${orderVoornaam || 'klant'}`, 'success');
-    closeDrawer();
-    // Navigate to the bestelling page so admin can confirm details + see success state
-    window.location.href = '/bestelling/' + orderId + '?just_delivered=' + encodeURIComponent(__currentPot.id);
-  }
 
-  // ───── orders fetcher (for voorraad mode) ──────────────────────────────
-  async function loadOpenOrders() {
-    if (__ordersCache && (Date.now() - __ordersCache.at) < 10000) return __ordersCache.orders;
-    const res = await api('bestellingen-list');
-    if (!res.ok) return [];
-    const all = res.data.orders || [];
-    const open = all.filter(o =>
-      ['todo', 'confirmed'].includes(o.order_status) &&
-      !o.delivered_pot
-    ).sort((a, b) => String(a.delivery_date || a.created_at).localeCompare(String(b.delivery_date || b.created_at)));
-    __ordersCache = { at: Date.now(), orders: open };
-    return open;
-  }
-
+  // Inject one-off CSS for date input pseudo-elements (webkit only) so the value text
+  // is left-aligned and vertically centered like the rest of the admin dropdown controls.
+  (function injectDateCss(){
+    if (document.getElementById('sfb-date-css')) return;
+    const style = document.createElement('style');
+    style.id = 'sfb-date-css';
+    style.textContent = `
+      #sfb-date::-webkit-date-and-time-value { text-align: left; line-height: 52px; height: 52px; margin: 0; }
+      #sfb-date::-webkit-calendar-picker-indicator { position:absolute; right:0; top:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+    `;
+    document.head.appendChild(style);
+  })();
 
   // Radio-card picker for stock states (available + voorraad), modelled on the old /voorraad drawer.
   function renderStockPicker(parent, currentStatus) {
@@ -430,9 +415,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     const status = pot.status || 'uninitialized';
     const titleEl = document.getElementById('sfb-title');
     const dateWrap = document.getElementById('sfb-prod-date');
-    const ordersWrap = document.getElementById('sfb-orders');
     dateWrap.hidden = true;
-    ordersWrap.hidden = true;
 
     if (status === 'uninitialized' || status === 'available') {
       // Radio-card picker (Leeg / Gevuld) + datum input + Bewaar primary button.
@@ -458,32 +441,6 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       const saveBtn = actionButton('Bewaar →', { variant: 'primary', onClick: saveStockTarget });
       saveBtn.style.marginTop = '8px';
       wrap.appendChild(saveBtn);
-      // "Pot afgeven" sectie
-      ordersWrap.hidden = false;
-      const list = document.getElementById('sfb-orders-list');
-      list.innerHTML = '<div style="color:#666;font-size:14px;padding:8px 4px;">Openstaande bestellingen laden…</div>';
-      loadOpenOrders().then(orders => {
-        if (!orders.length) {
-          list.innerHTML = '<div style="color:#666;font-size:14px;padding:8px 4px;">Geen openstaande bestellingen.</div>';
-          return;
-        }
-        list.innerHTML = '';
-        orders.forEach(o => {
-          const row = document.createElement('button');
-          row.type = 'button';
-          row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:#fff;border:none;border-radius:14px;padding:14px 16px;text-align:left;font-family:inherit;cursor:pointer;box-shadow:0 2px 10px rgba(139,26,14,0.06);-webkit-tap-highlight-color:transparent;';
-          const adres = `${o.straat || ''} ${o.huisnummer || ''}${o.toevoeging ? '-' + o.toevoeging : ''}`.trim();
-          row.innerHTML = `
-            <div style="min-width:0;flex:1;">
-              <div style="font-size:15px;font-weight:700;color:#1A1A1A;">${esc(o.voornaam || '?')}</div>
-              <div style="font-size:13px;color:#666;margin-top:2px;">${esc(adres)}</div>
-            </div>
-            <div style="font-size:12px;color:#999;font-weight:600;flex-shrink:0;">${esc(fmtDateShort(o.delivery_date))}</div>
-          `;
-          row.addEventListener('click', () => deliverToOrder(o.id, o.voornaam));
-          list.appendChild(row);
-        });
-      });
     }
     else if (status === 'delivered') {
       const name = pot.voornaam || 'klant';
