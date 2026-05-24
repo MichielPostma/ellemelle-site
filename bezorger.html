@@ -128,6 +128,8 @@
   .order-card .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .order-card .badge.neighbors { background: rgba(255,210,74,0.25); color: #b85c00; }
   .order-card .badge.retry     { background: rgba(139,26,14,0.08); color: var(--red-dark); }
+  .order-card .badge.pickup_self_requested { background: rgba(255,193,7,0.18); color: #b75d00; }
+  .order-card .badge.picked_up { background: rgba(28,125,63,0.18); color: #1c7d3f; }
   .order-card .addr { color: #666; font-size: 14px; margin-top: 4px; }
   .order-card .btn-outline { margin-top: 12px; }
 
@@ -805,7 +807,7 @@
       const card = document.createElement('div');
       card.className = 'order-card';
       const status = o.order_status || 'todo';
-      const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging' };
+      const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren', retry: 'Nieuwe poging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
       const badgeText = STATUS_LABELS[status] || 'Todo';
       const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
       const stepHtml = `<span class="step-num">Stop ${idx + 1}</span>`;
