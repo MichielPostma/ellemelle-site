@@ -262,7 +262,23 @@
 
   <!-- DETAIL -->
   <section id="detail-view">
-    <a class="back-link" href="/bestellingen">← Terug</a>
+    <a class="back-link" id="back-link" href="/bestellingen">← Terug</a>
+    <script>
+      // Smart back: use history.back() when we arrived from a same-origin admin page,
+      // otherwise fall back to /bestellingen so the link still works on direct loads.
+      (function(){
+        const link = document.getElementById('back-link');
+        if (!link) return;
+        const ref = document.referrer || '';
+        const sameOrigin = ref && ref.startsWith(location.origin);
+        const fromAdmin = sameOrigin && /(\/bestellingen|\/voorraad|\/bezorger|\/koken)/.test(ref);
+        if (fromAdmin && history.length > 1) {
+          link.addEventListener('click', (e) => { e.preventDefault(); history.back(); });
+          // Update the href to the referrer so middle-click / cmd-click still work
+          link.href = ref;
+        }
+      })();
+    </script>
     <h1 class="step-question" id="d-name">—</h1>
 
     <div class="actions-label">Bezorging</div>
