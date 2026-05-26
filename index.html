@@ -968,10 +968,7 @@
     <!-- STEP 8: Success — dynamic title + QR + iDeal CTA + order recap -->
     <section class="step success" data-step="8">
       <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉</h1>
-      <p class="success-subtitle">Doe je betaling via QR code of gebruik de button.</p>
-      <div id="qrcode"></div>
       <button type="button" class="btn-primary" id="ideal-btn">Betaal met iDeal →</button>
-      <a href="#" class="btn-outline" id="tikkie-btn" target="_blank" rel="noopener" style="margin-top: 12px;">Liever Tikkie? →</a>
       <div class="order-card" id="success-recap"></div>
       <button id="reset-btn" type="button" hidden></button>
     </section>
@@ -1003,7 +1000,6 @@
   const ALLOWED_POSTCODES = ['2032'];
 
   // --- Config & state ----------------------------------------------------
-  const TIKKIE_FALLBACK = ['https://tikkie.example.com/A', 'https://tikkie.example.com/B'];
   const TOTAL_STEPS = 7;
   const formData = {
     voornaam: '', telefoon: '', email: '', kanaal: '',
@@ -1605,13 +1601,6 @@
     const sn = document.getElementById('success-name');
     if (sn) sn.textContent = formData.voornaam || '';
 
-    // Tikkie URL (button + QR)
-    const tikkies = (configCache && configCache.tikkieA && configCache.tikkieB)
-      ? [configCache.tikkieA, configCache.tikkieB] : TIKKIE_FALLBACK;
-    const tikkieUrl = tikkies[Math.floor(Math.random() * tikkies.length)];
-    const tBtn = document.getElementById('tikkie-btn');
-    if (tBtn) tBtn.href = tikkieUrl;
-
     // Order recap on success — same .order-card structure as step 6
     const recap = document.getElementById('success-recap');
     if (recap) {
@@ -1673,52 +1662,6 @@
         }
       });
     }
-
-    const qrEl = $('#qrcode');
-    qrEl.innerHTML = '';
-    if (window.QRCode) {
-      try {
-        new QRCode(qrEl, {
-          text: tikkieUrl, width: 200, height: 200,
-          colorDark: '#000000', colorLight: '#FFFFFF',
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      } catch (e) { qrEl.textContent = 'QR niet geladen — gebruik knop'; }
-    } else {
-      qrEl.textContent = 'QR laadt…';
-    }
-  }
-
-  // --- Reset -------------------------------------------------------------
-  function resetForm() {
-    clearState();
-    Object.keys(formData).forEach(k => formData[k] = '');
-    $$('input').forEach(i => {
-      if (i.type === 'hidden') return;
-      if (i.type === 'checkbox') i.checked = false;
-      else i.value = (i.id === 'input-plaats') ? 'Haarlem' : '';
-    });
-    $('#address-confirm').hidden = true;
-    $('#address-confirm').innerHTML = '';
-    $('#address-confirm').classList.remove('loading','notfound');
-    $('#manual-address').hidden = true;
-    $('#submit-btn').disabled = false;
-    $('#submit-btn').textContent = 'Doe betaling →';
-    const nb3 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
-    if (nb3) nb3.disabled = false;
-    const nb2 = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
-    if (nb2) nb2.disabled = false;
-    const pCard = document.getElementById('postcode-card');
-    if (pCard) pCard.hidden = true;
-    $$('.kanaal-card[data-kanaal]').forEach(c => { c.style.borderColor = ''; c.classList.remove('selected'); });
-    const kbReset = document.getElementById('kanaal-next');
-    if (kbReset) kbReset.disabled = true;
-    const cb = document.getElementById('confirm-checkbox'); if (cb) cb.checked = false;
-    lastLookup = '';
-    hideError();
-    currentStep = 0;
-    showStep(0);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // --- Top banner (levering-status) ----------------------------------------
