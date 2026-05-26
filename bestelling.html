@@ -796,6 +796,17 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </button>
 
+<!-- Retourpagina klant drawer -->
+<div class="admin-drawer-backdrop" id="customer-pot-backdrop"></div>
+<div class="admin-drawer" id="customer-pot-drawer" role="dialog" aria-modal="true">
+  <div class="admin-drawer-header">
+    <button class="admin-drawer-close" id="customer-pot-close" type="button" aria-label="Sluiten">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+    </button>
+  </div>
+  <iframe id="customer-pot-iframe" src="about:blank" title="Retourpagina klant"></iframe>
+</div>
+
 <!-- Admin order drawer -->
 <div class="admin-drawer-backdrop" id="admin-order-backdrop"></div>
 <div class="admin-drawer" id="admin-order-drawer" role="dialog" aria-modal="true">
@@ -856,6 +867,32 @@
       iframe.src = '/?start=1&fresh=1&embed=1';
     }
   });
+})();
+
+// "Retourpagina klant" drawer — iframe to /pot/{POT-ID}?embed=1
+(function(){
+  const btn = document.getElementById('customer-pot-btn');
+  if (!btn) return;
+  const drawer = document.getElementById('customer-pot-drawer');
+  const backdrop = document.getElementById('customer-pot-backdrop');
+  const closeBtn = document.getElementById('customer-pot-close');
+  const iframe = document.getElementById('customer-pot-iframe');
+  if (!drawer || !iframe) return;
+  function openDrawer() {
+    const potId = btn.dataset.potId;
+    if (!potId) return;
+    iframe.src = '/pot/' + encodeURIComponent(potId) + '?embed=1';
+    backdrop.classList.add('open');
+    drawer.classList.add('open');
+  }
+  function closeDrawer() {
+    backdrop.classList.remove('open');
+    drawer.classList.remove('open');
+    setTimeout(() => { iframe.src = 'about:blank'; }, 300);
+  }
+  btn.addEventListener('click', openDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
 })();
 </script>
 
