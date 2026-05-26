@@ -970,7 +970,8 @@
       <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉</h1>
       <p class="success-subtitle">Doe je betaling via QR code of gebruik de button.</p>
       <div id="qrcode"></div>
-      <a href="#" class="btn-primary" id="tikkie-btn" target="_blank" rel="noopener">Of betaal met iDeal →</a>
+      <button type="button" class="btn-primary" id="ideal-btn">Betaal met iDeal →</button>
+      <a href="#" class="btn-outline" id="tikkie-btn" target="_blank" rel="noopener" style="margin-top: 12px;">Liever Tikkie? →</a>
       <div class="order-card" id="success-recap"></div>
       <button id="reset-btn" type="button" hidden></button>
     </section>
@@ -1639,6 +1640,38 @@
           '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
           'We sturen je updates via ' + sKLabel + ' op ' + escapeHtml(contact) + '.' +
         '</div>';
+    }
+
+    // Stripe iDeal button — creates a Checkout session on click and redirects to Stripe.
+    const idealBtn = document.getElementById('ideal-btn');
+    if (idealBtn && !idealBtn.dataset.bound) {
+      idealBtn.dataset.bound = '1';
+      idealBtn.addEventListener('click', async () => {
+        if (idealBtn.disabled) return;
+        const originalText = idealBtn.textContent;
+        idealBtn.disabled = true;
+        idealBtn.textContent = 'Even geduld…';
+        try {
+          const aantal = Math.max(1, parseInt(formData.aantal, 10) || 1);
+          const credit = (__adminMode === 'existing') ? Math.max(0, Number(formData.__statiegeld_credit) || 0) : 0;
+          const r = await fetch('/api/stripe/create-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              voornaam: formData.voornaam,
+              aantal,
+              statiegeld_credit: credit,
+            }),
+          });
+          const data = await r.json();
+          if (!r.ok || !data.url) throw new Error((data && data.error) || 'Stripe sessie aanmaken mislukt');
+          window.location.href = data.url;
+        } catch (e) {
+          idealBtn.disabled = false;
+          idealBtn.textContent = originalText;
+          alert('Betaling kon niet starten: ' + (e.message || e));
+        }
+      });
     }
 
     const qrEl = $('#qrcode');
