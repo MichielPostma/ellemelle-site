@@ -323,7 +323,8 @@
     <div class="actions-label">Activiteit</div>
     <div class="info-card" id="d-activity"></div>
 
-    <button class="btn-outline" id="delete-btn" type="button" style="margin-top: 24px;">Bestelling verwijderen</button>
+    <a class="btn-outline" id="customer-pot-btn" href="#" target="_blank" rel="noopener" hidden style="display: block; margin-top: 24px; text-align: center; line-height: 52px; text-decoration: none;">Retourpagina klant</a>
+    <button class="btn-outline" id="delete-btn" type="button" style="margin-top: 14px;">Bestelling verwijderen</button>
   </section>
 </main>
 
@@ -581,6 +582,15 @@
     dEl.style.color = isLate ? 'var(--red)' : '';
     const status = o.order_status || 'todo';
     const sb = $('#d-statusbadge'); sb.textContent = STATUS_LABELS[status] || status; sb.className = 'badge ' + status;
+    // Retourpagina klant button — visible once the order has actually been delivered
+    // (status delivered / neighbors / pickup_self_requested / picked_up) AND a pot is linked.
+    const potBtn = document.getElementById('customer-pot-btn');
+    if (potBtn) {
+      const visibleStatuses = ['delivered', 'neighbors', 'pickup_self_requested', 'picked_up'];
+      const showPot = !!o.delivered_pot && visibleStatuses.includes(status);
+      potBtn.hidden = !showPot;
+      if (showPot) potBtn.href = '/pot/' + o.delivered_pot;
+    }
     const uiterlijkeText = o.uiterlijke_bezorgdatum ? fmtDate(o.uiterlijke_bezorgdatum) : '—';
     const geplandeText = modeLabel(o);
     $('#d-uiterlijke').textContent = uiterlijkeText + (o.uiterlijke_bezorgdatum_override ? ' (handmatig)' : '');
