@@ -48,8 +48,8 @@ exports.handler = async (event) => {
   // Form-encoded payload for Stripe REST API
   const params = new URLSearchParams();
   params.set('mode', 'payment');
+  // iDeal only — sends the customer straight to the bank picker without a method-choice step.
   params.set('payment_method_types[0]', 'ideal');
-  params.set('payment_method_types[1]', 'card');
   params.set('success_url', successUrl);
   params.set('cancel_url', cancelUrl);
   // Single combined line item — clear total for the customer
