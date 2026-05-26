@@ -32,3 +32,4 @@
 /bestelling/* /bestelling.html 200
 /api/klanten/list /.netlify/functions/klanten-list 200
 /api/customer/save-rating /.netlify/functions/customer-save-rating 200
+/api/stripe/create-session /.netlify/functions/stripe-create-session 200
