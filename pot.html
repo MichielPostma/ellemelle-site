@@ -97,13 +97,13 @@
   .stars { display: flex; gap: 6px; margin: 18px 0; }
   .star { cursor: pointer; padding: 4px; background: none; border: 0; transition: transform 120ms; -webkit-tap-highlight-color: transparent; }
   .star:active { transform: scale(0.92); }
-  .star svg { display: block; width: 40px; height: 40px; transition: fill 120ms, stroke 120ms; }
-  /* Inactive: white fill + subtle grey outline, visible on cream bg */
-  .star svg { fill: var(--white); stroke: rgba(0,0,0,0.22); stroke-width: 1.5; }
-  /* Hover preview */
-  .star:hover svg, .star.hover svg { fill: rgba(217,48,30,0.18); stroke: var(--red); }
-  /* Active (selected) */
-  .star.on svg { fill: var(--red); stroke: var(--red); }
+  .star svg { display: block; width: 40px; height: 40px; transition: fill 120ms, filter 120ms; }
+  /* Inactive: white fill + subtle drop-shadow (no outline) to lift it off the cream bg */
+  .star svg { fill: var(--white); stroke: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.10)); }
+  /* Hover preview — soft red wash, same shadow */
+  .star:hover svg, .star.hover svg { fill: rgba(217,48,30,0.18); }
+  /* Active (selected) — solid red, drop a touch of red ambient shadow */
+  .star.on svg { fill: var(--red); filter: drop-shadow(0 2px 6px rgba(217,48,30,0.25)); }
 
   .step-actions {
     display: flex; align-items: stretch; gap: 10px; margin-top: 14px;
