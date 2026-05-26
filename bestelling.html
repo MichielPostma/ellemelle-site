@@ -323,7 +323,7 @@
     <div class="actions-label">Activiteit</div>
     <div class="info-card" id="d-activity"></div>
 
-    <a class="btn-outline" id="customer-pot-btn" href="#" target="_blank" rel="noopener" hidden style="display: block; margin-top: 24px; text-align: center; line-height: 52px; text-decoration: none;">Retourpagina klant</a>
+    <button class="btn-outline" id="customer-pot-btn" type="button" hidden style="display: block; margin-top: 24px; width: 100%;">Retourpagina klant</button>
     <button class="btn-outline" id="delete-btn" type="button" style="margin-top: 14px;">Bestelling verwijderen</button>
   </section>
 </main>
@@ -589,7 +589,7 @@
       const visibleStatuses = ['delivered', 'neighbors', 'pickup_self_requested', 'picked_up'];
       const showPot = !!o.delivered_pot && visibleStatuses.includes(status);
       potBtn.hidden = !showPot;
-      if (showPot) potBtn.href = '/pot/' + o.delivered_pot;
+      if (showPot) potBtn.dataset.potId = o.delivered_pot;
     }
     const uiterlijkeText = o.uiterlijke_bezorgdatum ? fmtDate(o.uiterlijke_bezorgdatum) : '—';
     const geplandeText = modeLabel(o);
