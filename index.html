@@ -965,11 +965,13 @@
       <button class="btn-primary" id="submit-btn" data-next>Betaal met iDeal →</button>
     </section>
 
-    <!-- STEP 8: Success — dynamic title + QR + iDeal CTA + order recap -->
+    <!-- STEP 8: Success — post-payment thank-you (or stripeRetry fallback with iDeal button) -->
     <section class="step success" data-step="8">
-      <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉</h1>
-      <button type="button" class="btn-primary" id="ideal-btn">Betaal met iDeal →</button>
-      <div class="order-card" id="success-recap"></div>
+      <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! We gaan aan de slag en houden je op de hoogte.</h1>
+      <p class="success-subtitle" id="success-sub" hidden>En wil je ons helpen? We willen heel graag aan nóg meer leuke kids gezonde chocopasta bezorgen.</p>
+      <button type="button" class="btn-primary" id="share-whatsapp-btn" hidden>Deel via WhatsApp →</button>
+      <button type="button" class="btn-primary" id="ideal-btn" hidden>Betaal met iDeal →</button>
+      <div class="order-card" id="success-recap" hidden></div>
       <button id="reset-btn" type="button" hidden></button>
     </section>
 
@@ -1632,8 +1634,8 @@
   }
 
   // Render the success step.
-  //   default (post-payment landing) — headline "Bedankt!", hide retry button, render recap from snapshot
-  //   { stripeRetry: true }         — Stripe call failed mid-redirect, show iDeal button so user can retry
+  //   default (post-payment landing) — "Leuk {voornaam}!" + subtitle + Deel via WhatsApp button, no recap, no iDeal
+  //   { stripeRetry: true }         — Stripe call failed mid-redirect, show iDeal retry button + order recap
   function prepareSuccessStep(opts) {
     opts = opts || {};
     const isRetry = !!opts.stripeRetry;
@@ -1660,19 +1662,38 @@
     const headline = document.getElementById('success-headline');
     const idealBtn = document.getElementById('ideal-btn');
     const recap = document.getElementById('success-recap');
+    const subEl = document.getElementById('success-sub');
+    const shareBtn = document.getElementById('share-whatsapp-btn');
 
+    // Visibility per mode: retry shows iDeal + recap; post-payment shows subtitle + share button.
     if (idealBtn) idealBtn.hidden = !isRetry;
+    if (recap)    recap.hidden    = !isRetry;
+    if (subEl)    subEl.hidden    =  isRetry;
+    if (shareBtn) shareBtn.hidden =  isRetry;
 
-    const nameTxt = (data && data.voornaam) ? data.voornaam : '';
+    // URL voornaam fallback for cross-device returns from Stripe
+    let urlVoornaam = '';
+    try { urlVoornaam = new URLSearchParams(location.search).get('voornaam') || ''; } catch {}
+    const nameTxt = (data && data.voornaam) ? data.voornaam : urlVoornaam;
     if (headline) {
       if (isRetry) {
         headline.innerHTML = 'Leuk <span id="success-name">' + escapeHtml(nameTxt) + '</span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉';
       } else {
-        headline.innerHTML = 'Bedankt' + (nameTxt ? ' ' + escapeHtml(nameTxt) : '') + '! Je bestelling staat erop — we bezorgen binnen 4 weken 🎉';
+        headline.innerHTML = 'Leuk' + (nameTxt ? ' <span id="success-name">' + escapeHtml(nameTxt) + '</span>' : '') + '! We gaan aan de slag en houden je op de hoogte.';
       }
     }
 
-    if (recap) {
+    // Bind the WhatsApp share button (post-payment only)
+    if (!isRetry && shareBtn && !shareBtn.dataset.bound) {
+      shareBtn.dataset.bound = '1';
+      shareBtn.addEventListener('click', () => {
+        const msg = 'Hi, een paar kids uit de buurt maken zelf gezonde chocopasta. Ik heb net een pot besteld, ze komen het brengen aan de deur. Jullie ook? https://ellemelle.netlify.app/';
+        const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+        window.open(url, '_blank', 'noopener');
+      });
+    }
+
+    if (recap && isRetry) {
       if (data) {
         const adres = (data.straat || '') + ' ' + (data.huisnummer || '') +
           (data.toevoeging ? '-' + data.toevoeging : '');
