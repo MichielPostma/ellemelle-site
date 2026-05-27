@@ -63,6 +63,10 @@ exports.handler = async (event) => {
       ? `${aantal}× pot (€${(productCents/100).toFixed(2)}) + statiegeld (€${(depositCents/100).toFixed(2)}) − credit (−€${(discountCents/100).toFixed(2)})`
       : `${aantal}× pot (€${(productCents/100).toFixed(2)}) + statiegeld (€${(depositCents/100).toFixed(2)})`);
   // Metadata so we can reconcile in the dashboard / webhook later
+  // Minimise friction: no Stripe Customer object, pre-fill email if we have it.
+  params.set('customer_creation', 'never');
+  const email = String(body.email || '').trim();
+  if (email && /@/.test(email)) params.set('customer_email', email);
   if (orderId)  params.set('metadata[order_id]', orderId);
   if (voornaam) params.set('metadata[voornaam]', voornaam);
   params.set('metadata[aantal]', String(aantal));
