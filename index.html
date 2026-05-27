@@ -962,7 +962,7 @@
         <span>Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
       </label>
       <div class="error" data-step-error></div>
-      <button class="btn-primary" id="submit-btn" data-next>Doe betaling →</button>
+      <button class="btn-primary" id="submit-btn" data-next>Betaal met iDeal →</button>
     </section>
 
     <!-- STEP 8: Success — dynamic title + QR + iDeal CTA + order recap -->
@@ -1550,7 +1550,7 @@
 
     if (!ok) {
       btn.disabled = false;
-      btn.textContent = 'Doe betaling →';
+      btn.textContent = 'Betaal met iDeal →';
       showError('Er ging iets mis bij opslaan. Probeer het nog eens.');
       return;
     }
@@ -1588,52 +1588,122 @@
       }
     } catch {}
 
-    // Move to success
-    currentStep = 8;
+    // Save a snapshot of the order so we can render the thank-you view after the Stripe redirect.
+    const __snap = {
+      voornaam: payload.voornaam,
+      aantal: payload.aantal,
+      straat: payload.straat, huisnummer: payload.huisnummer, toevoeging: payload.toevoeging,
+      postcode: payload.postcode, plaats: payload.plaats,
+      kanaal: payload.kanaal, telefoon: payload.telefoon, email: payload.email,
+      statiegeld_credit: (__adminMode === 'existing') ? (Number(formData.__statiegeld_credit) || 0) : 0,
+      delivery_date: __delivery_date,
+      ts: Date.now(),
+    };
+    try { localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(__snap)); } catch {}
+
+    // Clear in-progress state — the order is now filed, only the payment hop remains.
     clearState();
-    prepareSuccessStep();
-    showStep(8);
-    setTimeout(burstConfetti, 200);
+
+    // Hand off to Stripe Checkout — straight to the iDeal bank picker, no review pages between.
+    try {
+      const __aantal = Math.max(1, parseInt(payload.aantal, 10) || 1);
+      const __credit = __snap.statiegeld_credit;
+      const __r = await fetch('/api/stripe/create-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voornaam: payload.voornaam,
+          email: payload.email || '',
+          aantal: __aantal,
+          statiegeld_credit: __credit,
+        }),
+      });
+      const __data = await __r.json();
+      if (!__r.ok || !__data.url) throw new Error((__data && __data.error) || 'Stripe sessie aanmaken mislukt');
+      window.location.href = __data.url;
+      return;
+    } catch (e) {
+      // Stripe call failed — show success step with a retry iDeal button as fallback.
+      currentStep = 8;
+      prepareSuccessStep({ stripeRetry: true });
+      showStep(8);
+      setTimeout(burstConfetti, 200);
+    }
   }
 
-  function prepareSuccessStep() {
-    // Personalise headline
-    const sn = document.getElementById('success-name');
-    if (sn) sn.textContent = formData.voornaam || '';
+  // Render the success step.
+  //   default (post-payment landing) — headline "Bedankt!", hide retry button, render recap from snapshot
+  //   { stripeRetry: true }         — Stripe call failed mid-redirect, show iDeal button so user can retry
+  function prepareSuccessStep(opts) {
+    opts = opts || {};
+    const isRetry = !!opts.stripeRetry;
 
-    // Order recap on success — same .order-card structure as step 6
-    const recap = document.getElementById('success-recap');
-    if (recap) {
-      const adres = (formData.straat || '') + ' ' + formData.huisnummer +
-        (formData.toevoeging ? '-' + formData.toevoeging : '');
-      const stad  = formData.postcode + ' ' + (formData.plaats || 'Haarlem');
-      const kIcon = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'E-mail';
-      const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
-      const sn = Math.max(1, parseInt(formData.aantal, 10) || 1);
-      const sPots = sn * 500, sStat = sn * 100;
-      const sCredit = (__adminMode === 'existing')
-        ? Math.max(0, Number(formData.__statiegeld_credit) || 0)
-        : 0;
-      const sCreditDed = Math.min(sCredit, sn) * 100;
-      const sTot = sPots + sStat - sCreditDed;
-      const sCreditLine = sCreditDed > 0
-        ? '<div class="order-line"><span>Statiegeld retour (credit van vorige pot' + (sCredit===1?'':'ten') + ')</span><span>−' + fmtEuro(sCreditDed) + '</span></div>'
-        : '';
-      const sKLabel = formData.kanaal === 'whatsapp' ? 'WhatsApp' : 'e-mail';
-      recap.innerHTML =
-        '<div class="order-line"><span>' + sn + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(sPots) + '</span></div>' +
-        '<div class="order-line"><span>Statiegeld (' + sn + ' pot' + (sn===1?'':'ten') + ')</span><span>' + fmtEuro(sStat) + '</span></div>' +
-        sCreditLine +
-        '<div class="order-line total"><span>Totaal</span><span>' + fmtEuro(sTot) + '</span></div>' +
-        '<div class="order-meta">' +
-          '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
-          'We sturen je updates via ' + sKLabel + ' op ' + escapeHtml(contact) + '.' +
-        '</div>';
+    // Prefer in-memory formData (fresh in-session); fall back to localStorage snapshot (post-redirect landing)
+    let data = null;
+    const hasFormData = !!(formData && (formData.voornaam || formData.straat));
+    if (hasFormData) {
+      data = {
+        voornaam: formData.voornaam,
+        aantal: Math.max(1, parseInt(formData.aantal, 10) || 1),
+        straat: formData.straat, huisnummer: formData.huisnummer, toevoeging: formData.toevoeging,
+        postcode: formData.postcode, plaats: formData.plaats,
+        kanaal: formData.kanaal, telefoon: formData.telefoon, email: formData.email,
+        statiegeld_credit: (__adminMode === 'existing') ? (Number(formData.__statiegeld_credit) || 0) : 0,
+      };
+    } else {
+      try {
+        const raw = localStorage.getItem('ellemelle_last_order_v1');
+        if (raw) data = JSON.parse(raw);
+      } catch {}
     }
 
-    // Stripe iDeal button — creates a Checkout session on click and redirects to Stripe.
+    const headline = document.getElementById('success-headline');
     const idealBtn = document.getElementById('ideal-btn');
-    if (idealBtn && !idealBtn.dataset.bound) {
+    const recap = document.getElementById('success-recap');
+
+    if (idealBtn) idealBtn.hidden = !isRetry;
+
+    const nameTxt = (data && data.voornaam) ? data.voornaam : '';
+    if (headline) {
+      if (isRetry) {
+        headline.innerHTML = 'Leuk <span id="success-name">' + escapeHtml(nameTxt) + '</span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉';
+      } else {
+        headline.innerHTML = 'Bedankt' + (nameTxt ? ' ' + escapeHtml(nameTxt) : '') + '! Je bestelling staat erop — we bezorgen binnen 4 weken 🎉';
+      }
+    }
+
+    if (recap) {
+      if (data) {
+        const adres = (data.straat || '') + ' ' + (data.huisnummer || '') +
+          (data.toevoeging ? '-' + data.toevoeging : '');
+        const stad  = (data.postcode || '') + ' ' + (data.plaats || 'Haarlem');
+        const contact = data.kanaal === 'whatsapp' ? data.telefoon : data.email;
+        const sn = Math.max(1, parseInt(data.aantal, 10) || 1);
+        const sPots = sn * 500, sStat = sn * 100;
+        const sCredit = Math.max(0, Number(data.statiegeld_credit) || 0);
+        const sCreditDed = Math.min(sCredit, sn) * 100;
+        const sTot = sPots + sStat - sCreditDed;
+        const sCreditLine = sCreditDed > 0
+          ? '<div class="order-line"><span>Statiegeld retour (credit van vorige pot' + (sCredit===1?'':'ten') + ')</span><span>−' + fmtEuro(sCreditDed) + '</span></div>'
+          : '';
+        const sKLabel = data.kanaal === 'whatsapp' ? 'WhatsApp' : 'e-mail';
+        const totalLbl = isRetry ? 'Totaal' : 'Totaal betaald';
+        recap.innerHTML =
+          '<div class="order-line"><span>' + sn + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(sPots) + '</span></div>' +
+          '<div class="order-line"><span>Statiegeld (' + sn + ' pot' + (sn===1?'':'ten') + ')</span><span>' + fmtEuro(sStat) + '</span></div>' +
+          sCreditLine +
+          '<div class="order-line total"><span>' + totalLbl + '</span><span>' + fmtEuro(sTot) + '</span></div>' +
+          '<div class="order-meta">' +
+            '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
+            'We sturen je updates via ' + sKLabel + ' op ' + escapeHtml(contact || '') + '.' +
+          '</div>';
+      } else {
+        recap.innerHTML = '<div class="order-meta">We hebben je bestelling ontvangen en sturen je updates over de bezorging.</div>';
+      }
+    }
+
+    // Bind the retry iDeal button only when needed (Stripe-failed fallback path).
+    if (isRetry && idealBtn && !idealBtn.dataset.bound) {
       idealBtn.dataset.bound = '1';
       idealBtn.addEventListener('click', async () => {
         if (idealBtn.disabled) return;
@@ -1641,21 +1711,21 @@
         idealBtn.disabled = true;
         idealBtn.textContent = 'Even geduld…';
         try {
-          const aantal = Math.max(1, parseInt(formData.aantal, 10) || 1);
-          const credit = (__adminMode === 'existing') ? Math.max(0, Number(formData.__statiegeld_credit) || 0) : 0;
+          const aantal = data ? Math.max(1, parseInt(data.aantal, 10) || 1) : 1;
+          const credit = data ? Math.max(0, Number(data.statiegeld_credit) || 0) : 0;
           const r = await fetch('/api/stripe/create-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              voornaam: formData.voornaam,
-              email: formData.email || '',
+              voornaam: (data && data.voornaam) || '',
+              email: (data && data.email) || '',
               aantal,
               statiegeld_credit: credit,
             }),
           });
-          const data = await r.json();
-          if (!r.ok || !data.url) throw new Error((data && data.error) || 'Stripe sessie aanmaken mislukt');
-          window.location.href = data.url;
+          const j = await r.json();
+          if (!r.ok || !j.url) throw new Error((j && j.error) || 'Stripe sessie aanmaken mislukt');
+          window.location.href = j.url;
         } catch (e) {
           idealBtn.disabled = false;
           idealBtn.textContent = originalText;
@@ -1678,7 +1748,7 @@
     const ma = $('#manual-address');
     if (ma) ma.hidden = true;
     const sb = $('#submit-btn');
-    if (sb) { sb.disabled = false; sb.textContent = 'Doe betaling →'; }
+    if (sb) { sb.disabled = false; sb.textContent = 'Betaal met iDeal →'; }
     const nb3 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
     if (nb3) nb3.disabled = false;
     const nb2 = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
@@ -1920,7 +1990,15 @@
     }
     // Restore saved state if any (skipped when admin picker is forced)
     const saved = __forceAdmin ? null : loadState();
-    if (saved && saved.data && saved.step >= 1 && saved.step <= TOTAL_STEPS) {
+    if (__bootParams.get('paid') === 'stripe') {
+      // Just landed back from Stripe Checkout — render the post-payment thank-you view.
+      try { localStorage.removeItem('ellemelle_signup_state_v1'); } catch {}
+      currentStep = 8;
+      prepareSuccessStep();
+      showStep(8);
+      setTimeout(burstConfetti, 200);
+      try { history.replaceState({}, '', location.pathname); } catch {}
+    } else if (saved && saved.data && saved.step >= 1 && saved.step <= TOTAL_STEPS) {
       // Returning visitor with progress → jump to saved step (not intro)
       Object.assign(formData, saved.data);
       // Hydrate inputs
