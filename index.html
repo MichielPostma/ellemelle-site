@@ -1648,6 +1648,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               voornaam: formData.voornaam,
+              email: formData.email || '',
               aantal,
               statiegeld_credit: credit,
             }),
