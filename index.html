@@ -1665,6 +1665,37 @@
     }
   }
 
+  function resetForm() {
+    if (typeof clearState === 'function') clearState();
+    Object.keys(formData).forEach(k => formData[k] = '');
+    $$('input').forEach(i => {
+      if (i.type === 'hidden') return;
+      if (i.type === 'checkbox') i.checked = false;
+      else i.value = (i.id === 'input-plaats') ? 'Haarlem' : '';
+    });
+    const ac = $('#address-confirm');
+    if (ac) { ac.hidden = true; ac.innerHTML = ''; ac.classList.remove('loading','notfound'); }
+    const ma = $('#manual-address');
+    if (ma) ma.hidden = true;
+    const sb = $('#submit-btn');
+    if (sb) { sb.disabled = false; sb.textContent = 'Doe betaling →'; }
+    const nb3 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
+    if (nb3) nb3.disabled = false;
+    const nb2 = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
+    if (nb2) nb2.disabled = false;
+    const pCard = document.getElementById('postcode-card');
+    if (pCard) pCard.hidden = true;
+    $$('.kanaal-card[data-kanaal]').forEach(c => { c.style.borderColor = ''; c.classList.remove('selected'); });
+    const kbReset = document.getElementById('kanaal-next');
+    if (kbReset) kbReset.disabled = true;
+    const cb = document.getElementById('confirm-checkbox'); if (cb) cb.checked = false;
+    if (typeof lastLookup !== 'undefined') lastLookup = '';
+    if (typeof hideError === 'function') hideError();
+    currentStep = 0;
+    showStep(0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   // --- Top banner (levering-status) ----------------------------------------
   const NL_MAANDEN = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
   const NL_DAGEN = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
