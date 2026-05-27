@@ -420,8 +420,40 @@
     STATE.surveyStep += 1;
     if (STATE.surveyStep < SURVEY_Qs.length) { renderSurveyStep(); return; }
     await submitRatings();
-    if (STATE.surveyMode === 'reorder') openReorderReview();
-    else openPickupReview();
+    if (STATE.surveyMode === 'reorder') {
+      // Skip the bevestigingspagina — go straight to Stripe Checkout.
+      // Confirmation lives on the post-payment success page (paid=stripe).
+      await directReorderToStripe();
+    } else {
+      openPickupReview();
+    }
+  }
+  async function directReorderToStripe() {
+    // 1) Place the reorder in the backend (creates pickup-with-reorder linkage)
+    try {
+      const r = await fetch('/.netlify/functions/customer-reorder', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pot_id: STATE.potId }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { showToast(j.error || 'Bestellen mislukt', 'error'); return; }
+      STATE.reorderResp = j;
+    } catch (e) { showToast('Bestellen mislukt', 'error'); return; }
+    // 2) Create Stripe Checkout session — direct redirect to iDeal bank picker
+    try {
+      const r = await fetch('/api/stripe/create-session', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voornaam: (STATE.pot && STATE.pot.voornaam) || '',
+          aantal: 1,
+          statiegeld_credit: 0,
+          success_pot_id: STATE.potId,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.url) { showToast(j.error || 'Stripe sessie mislukt', 'error'); return; }
+      window.location.href = j.url;
+    } catch (e) { showToast('Betaling kon niet starten', 'error'); }
   }
   async function submitRatings() {
     const payload = {};
