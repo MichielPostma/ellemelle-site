@@ -42,7 +42,11 @@ exports.handler = async (event) => {
   const successPath = body.success_pot_id ? `/pot/${encodeURIComponent(body.success_pot_id)}`
                     : orderId ? `/bestelling/${encodeURIComponent(orderId)}`
                     : '/';
-  const successUrl = `${baseUrl}${successPath}?paid=stripe&session_id={CHECKOUT_SESSION_ID}`;
+  // Include voornaam in success_url so the thank-you page can greet the user even if localStorage is unavailable (different device).
+  const voornaamParam = voornaam && voornaam !== 'klant'
+    ? `&voornaam=${encodeURIComponent(voornaam)}`
+    : '';
+  const successUrl = `${baseUrl}${successPath}?paid=stripe&session_id={CHECKOUT_SESSION_ID}${voornaamParam}`;
   const cancelUrl  = `${baseUrl}/?canceled=stripe`;
 
   // Form-encoded payload for Stripe REST API
