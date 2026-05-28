@@ -269,6 +269,7 @@
   .btn-outline:hover { background: rgba(217,48,30,0.06); }
   .btn-outline:active { background: rgba(217,48,30,0.12); }
   .btn-outline[hidden] { display: none; }
+  .btn-primary[hidden] { display: none !important; }
 
   .btn-link {
     background: transparent;
@@ -1176,11 +1177,13 @@
         // Public flow — make sure the iDeal button + confirm checkbox are visible
         // (in case the admin variant left them hidden from an earlier session).
         const sb = document.getElementById('submit-btn');
-        if (sb) { sb.hidden = false; sb.disabled = false; sb.textContent = 'Betaling via iDeal →'; }
+        if (sb) { sb.hidden = false; sb.disabled = false; sb.textContent = 'Betaling via iDeal →'; sb.style.display = ''; }
         const cr = document.getElementById('confirm-row');
         if (cr) cr.hidden = false;
         const qrWrap = document.getElementById('admin-pay-qr');
         if (qrWrap) qrWrap.hidden = true;
+        const cb = document.getElementById('admin-cancel-btn');
+        if (cb) { cb.hidden = true; cb.style.display = ''; }
       }
     }
   }
@@ -1747,7 +1750,9 @@
     const qrFrame = document.getElementById('admin-pay-qr-frame');
     const cancelBtn = document.getElementById('admin-cancel-btn');
     if (!qrWrap || !qrFrame) return;
-    if (submitBtn) submitBtn.hidden = true;
+    // .btn-primary has display:block which can shadow the [hidden] attribute on some browsers.
+    // Belt + braces: set both the attribute and an inline style:none.
+    if (submitBtn) { submitBtn.hidden = true; submitBtn.style.display = 'none'; }
     if (confirmRow) confirmRow.hidden = true;
     // Slot the cancel button into the step-actions row (next to the back-pill that was wrapped
     // around submit-btn at boot). That way the visible action row becomes [back] [Annuleer bestelling].
@@ -1823,7 +1828,7 @@
     const ma = $('#manual-address');
     if (ma) ma.hidden = true;
     const sb = $('#submit-btn');
-    if (sb) { sb.disabled = false; sb.textContent = 'Betaling via iDeal →'; sb.hidden = false; }
+    if (sb) { sb.disabled = false; sb.textContent = 'Betaling via iDeal →'; sb.hidden = false; sb.style.display = ''; }
     const qrWrap2 = document.getElementById('admin-pay-qr');
     if (qrWrap2) qrWrap2.hidden = true;
     const qrFrame2 = document.getElementById('admin-pay-qr-frame');
