@@ -67,6 +67,40 @@ exports.handler = async (event) => {
   const prevStatus = existing.order_status || 'todo';
   const hist = Array.isArray(existing.history) ? existing.history.slice() : [];
   if (prevStatus !== status) hist.push({ at: now, action: 'status_changed', from: prevStatus, to: status });
-  await ordersStore.setJSON(orderId, { ...existing, order_status: status, status_updated_at: now, history: hist });
-  return { statusCode: 200, headers, body: JSON.stringify({ ok: true, order_id: orderId, order_status: status }) };
+
+  // Sync pre-coupled pots to a delivered state when the order itself is moved into a
+  // delivered-like status. This fixes the case where admin coupled a pot in advance via the
+  // bestelling-detail drawer (pot.status stays 'voorraad' until bezorger-deliver), and then
+  // marks the order as delivered without using /bezorger. Without this sync the customer-side
+  // /pot/{id} would show "pot not recognized" because pot.status was never flipped.
+  const DELIVERED_LIKE = new Set(['delivered', 'neighbors', 'picked_up']);
+  const assignedPots = Array.isArray(existing.assigned_pots) ? existing.assigned_pots : [];
+  const update = { ...existing, order_status: status, status_updated_at: now, history: hist };
+  let syncedPotId = null;
+  if (DELIVERED_LIKE.has(status) && assignedPots.length && !existing.delivered_pot) {
+    for (const pid of assignedPots) {
+      try {
+        const pot = await potsStore.get(pid, { type: 'json' });
+        if (!pot) continue;
+        // Don't downgrade pots already in a different lifecycle (e.g. returned).
+        if (pot.status === 'voorraad' || pot.status === 'available') {
+          const potHist = Array.isArray(pot.history) ? pot.history : [];
+          await potsStore.setJSON(pid, {
+            ...pot,
+            status: 'delivered',
+            order_id: orderId,
+            delivered_at: now,
+            history: potHist.concat([{ at: now, action: 'delivered', order_id: orderId, via: 'set-status' }]),
+          });
+        }
+      } catch { /* best effort */ }
+    }
+    // Record the first one as the canonical delivered_pot so the customer Retourpagina + downstream UI works.
+    syncedPotId = assignedPots[0];
+    update.delivered_pot = syncedPotId;
+    update.delivered_at = now;
+  }
+
+  await ordersStore.setJSON(orderId, update);
+  return { statusCode: 200, headers, body: JSON.stringify({ ok: true, order_id: orderId, order_status: status, delivered_pot: update.delivered_pot || null, synced_pot: syncedPotId }) };
 };
