@@ -917,7 +917,8 @@
 
   // --- Customer history ---
   function fmtEuro(n) {
-    return '€' + (Math.round(Number(n || 0) * 100) / 100).toFixed(2).replace('.', ',');
+    const v = Math.round(Number(n || 0) * 100) / 100;
+    return '€' + (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ','));
   }
   function fmtDate(iso) {
     try {
@@ -928,7 +929,7 @@
   function historyLabel(entry) {
     switch (entry.action) {
       case 'pot-delivered':     return `Pot ${entry.pot_id || ''} bezorgd`;
-      case 'pot-returned':      return `Pot ${entry.pot_id || ''} ingenomen (+€1,00)`;
+      case 'pot-returned':      return `Pot ${entry.pot_id || ''} ingenomen (+€1)`;
       case 'extra-pot-ordered': return `Extra pot besteld${entry.credit_used ? ' (−' + fmtEuro(entry.credit_used) + ')' : ''}`;
       default: return entry.action || '-';
     }
@@ -990,7 +991,7 @@
     if (!STATE.currentOrder) return;
     const name = STATE.currentOrder.voornaam || 'de klant';
     const confirmed = window.confirm(
-      `Weet je zeker dat je €1,00 terug wil storten naar ${name}'s IBAN?\n\n` +
+      `Weet je zeker dat je €1 terug wil storten naar ${name}'s IBAN?\n\n` +
       `Het geld komt binnen ~5 werkdagen op de rekening waarmee betaald is.`
     );
     if (!confirmed) return;
@@ -998,7 +999,7 @@
     if (res.ok) {
       const ibanPart = res.data.iban_last4 ? ` op IBAN ****${res.data.iban_last4}` : ' op de iDeal-rekening';
       const eta = res.data.eta_days || 5;
-      showToast(`Statiegeld €1,00 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
+      showToast(`Statiegeld €1 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
       hideReturnChoice();
       await loadCustomerHistory(STATE.currentOrder.id);
     } else {
