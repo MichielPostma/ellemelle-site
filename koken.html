@@ -702,8 +702,8 @@
   }
   function fmtDate(iso) {
     if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    return `${d}-${m}-${y.slice(2)}`;
+    const [, m, d] = iso.split('-').map(n => parseInt(n, 10));
+    return `${d}/${m}`;
   }
 
   const STATUS_LABELS_KOKEN = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
@@ -712,9 +712,8 @@
   const NL_MONTHS_SHORT = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
   function fmtNLDate(iso) {
     if (!iso) return '';
-    const [y,m,d] = iso.split('-').map(n => parseInt(n,10));
-    const dt = new Date(y, m-1, d);
-    return `${NL_DAYS[dt.getDay()]} ${d} ${NL_MONTHS_SHORT[m-1]}`;
+    const [, m, d] = iso.split('-').map(n => parseInt(n,10));
+    return `${d}/${m}`;
   }
   function daysUntil(iso) {
     if (!iso) return null;
