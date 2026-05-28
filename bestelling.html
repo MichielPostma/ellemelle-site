@@ -440,6 +440,13 @@
     if (!iso) return '—';
     const [y, m, d] = iso.split('-'); return `${d}-${m}-${y}`;
   }
+  // Short numeric format for the Bezorging section — drops leading zeroes and the year.
+  // "2026-06-13" → "13/6".
+  function fmtDateShort(iso) {
+    if (!iso) return '—';
+    const [, m, d] = iso.split('-');
+    return `${parseInt(d, 10)}/${parseInt(m, 10)}`;
+  }
   function deliveryCountdown(deliveryIsoDate) {
     if (!deliveryIsoDate) return { label: '—', overdue: false };
     const [y, m, d] = deliveryIsoDate.split('-').map(Number);
@@ -694,10 +701,11 @@
       const hasFollowers = (potDisplay.length > 0) || showCouple;
       besteldatumDetail.style.borderBottom = hasFollowers ? '' : 'none';
     }
-    const uiterlijkeText = o.uiterlijke_bezorgdatum ? fmtDate(o.uiterlijke_bezorgdatum) : '—';
-    const geplandeText = modeLabel(o);
-    $('#d-uiterlijke').textContent = uiterlijkeText + (o.uiterlijke_bezorgdatum_override ? ' (handmatig)' : '');
-    $('#d-geplande').textContent = geplandeText
+    const uiterlijkeText = fmtDateShort(o.uiterlijke_bezorgdatum);
+    const geplandeText = fmtDateShort(o.delivery_date);
+    const gepBewerkt = !!o.delivery_date_override;
+    $('#d-uiterlijke').textContent = uiterlijkeText + (o.uiterlijke_bezorgdatum_override ? ' (bijgewerkt)' : '');
+    $('#d-geplande').textContent   = geplandeText   + (gepBewerkt ? ' (bijgewerkt)' : '');
     $('#d-voornaam').textContent = o.voornaam || '—';
     $('#d-adres').textContent = `${o.straat || ''} ${o.huisnummer || ''}${o.toevoeging ? '-' + o.toevoeging : ''}`.trim() || '—';
     $('#d-postcode').textContent = o.postcode || '—';
