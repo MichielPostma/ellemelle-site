@@ -156,6 +156,8 @@
   @keyframes qr-wiggle { 0%{transform:rotate(0)} 4%{transform:rotate(-4deg)} 8%{transform:rotate(4deg)} 12%{transform:rotate(-3deg)} 16%{transform:rotate(3deg)} 20%{transform:rotate(0)} 100%{transform:rotate(0)} }
   @media (prefers-reduced-motion: reduce) { #qrcode { animation: none; } }
   .success-subtitle { color: #666; font-size: 15px; line-height: 1.45; text-align: center; margin: 6px auto 0; max-width: 360px; }
+  .confetti { position: fixed; width: 8px; height: 14px; border-radius: 2px; pointer-events: none; will-change: transform; z-index: 9999; }
+  .success-help { color: #666; font-size: 14.5px; line-height: 1.5; text-align: center; margin: 28px auto 10px; max-width: 340px; }
 
 </style>
 </head>
@@ -277,6 +279,14 @@
   <section id="reorder-bank-view" hidden class="step">
     <p style="text-align:center; padding: 60px 0; color:#666;">Naar iDeal…</p>
   </section>
+
+  <section id="reorder-success-view" hidden>
+    <h1 class="step-question" id="reorder-success-headline">Leuk, we gaan aan de slag!</h1>
+    <p class="success-subtitle" id="reorder-success-sub">We bezorgen je nieuwe pot binnen 4 weken — de lege pot halen we tegelijk op.</p>
+    <div class="order-card" id="reorder-success-card"></div>
+    <p class="success-help">En wil je ons helpen? We willen heel graag aan nóg meer leuke kids gezonde chocopasta bezorgen.</p>
+    <button type="button" class="btn-primary" id="reorder-share-whatsapp-btn">Deel via WhatsApp →</button>
+  </section>
 </main>
 
 <div class="toast" id="toast"></div>
@@ -297,7 +307,7 @@
     { key: 'texture', q: 'Wat vond je van de textuur?', sub: 'Romig, smeuïg, klonterig — geef je oordeel.' },
     { key: 'kids',    q: 'Wat vonden de kids ervan?',   sub: 'Als die er zijn — anders sla je over.' },
   ];
-  const VIEWS = ['loading-view','notfound-view','available-view','delivered-view','pickup-view','reordered-view','survey-view','reorder-review-view','pickup-review-view','pickup-confirm-view','reorder-bank-view'];
+  const VIEWS = ['loading-view','notfound-view','available-view','delivered-view','pickup-view','reordered-view','survey-view','reorder-review-view','pickup-review-view','pickup-confirm-view','reorder-bank-view','reorder-success-view'];
 
   function showToast(msg, type) {
     const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + (type || '') + ' show';
@@ -427,15 +437,9 @@
   }
   async function reorderAndPay() {
     showView('reorder-bank-view');
-    try {
-      const r = await fetch('/.netlify/functions/customer-reorder', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pot_id: STATE.potId }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) { showToast(j.error || 'Bestellen mislukt', 'error'); return; }
-      STATE.reorderResp = j;
-    } catch (e) { showToast('Bestellen mislukt', 'error'); return; }
+    // Order-after-payment: do NOT call customer-reorder here. The Stripe webhook reads
+    // reorder_pot_id from PaymentIntent metadata and calls customer-reorder server-to-server
+    // ONLY after the iDeal payment succeeds. Abandoned payments leave no order behind.
     try {
       const r = await fetch('/api/stripe/create-payment-intent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -444,6 +448,7 @@
           aantal: 1,
           statiegeld_credit: 0,
           success_pot_id: STATE.potId,
+          reorder_pot_id: STATE.potId,
         }),
       });
       const j = await r.json();
@@ -514,10 +519,7 @@
   }
   async function submitReorder() {
     const btn = $('#reorder-submit-btn'); btn.disabled = true; btn.textContent = 'Bezig…';
-    const r = await fetch('/.netlify/functions/customer-reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pot_id: STATE.potId }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) { btn.disabled = false; btn.textContent = 'Doe betaling →'; showToast(j.error || 'Bestellen mislukt', 'error'); return; }
-    STATE.reorderResp = j; STATE.pot.status = 'pickup-with-reorder';
+    // Skip pre-payment customer-reorder call — handled by the Stripe webhook after payment_intent.succeeded.
     reorderAndPay();
   }
 
@@ -539,9 +541,68 @@
   $('#reorder-confirm').addEventListener('change', () => { $('#reorder-submit-btn').disabled = !$('#reorder-confirm').checked; });
   $('#reorder-submit-btn').addEventListener('click', submitReorder);
 
+  // Confetti — used after a successful reorder payment.
+  function burstConfetti() {
+    const colors = ['#D9301E', '#8B1A0E', '#FFD24A', '#F5EFE6'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.top = '20%'; c.style.left = '50%';
+      c.style.background = colors[i % colors.length];
+      c.style.transition = 'transform 1.6s cubic-bezier(.18,.7,.4,1), opacity 1.6s ease-out';
+      document.body.appendChild(c);
+      requestAnimationFrame(() => {
+        const x = (Math.random() - 0.5) * window.innerWidth * 0.9;
+        const y = (Math.random() * 0.6 + 0.2) * window.innerHeight;
+        const r = Math.random() * 720 - 360;
+        c.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + r + 'deg)';
+        c.style.opacity = '0';
+      });
+      setTimeout(() => c.remove(), 1700);
+    }
+  }
+
+  function renderReorderSuccessRecap(pot, voornaam) {
+    const adres = pot && pot.adres ? escapeHtml(pot.adres) : '(adres onbekend)';
+    const stad  = pot && pot.stad  ? escapeHtml(pot.stad)  : '';
+    const recap = $('#reorder-success-card');
+    if (!recap) return;
+    recap.innerHTML =
+      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
+      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
+      '<div class="order-line total"><span>Totaal betaald</span><span>€6,00</span></div>' +
+      '<div class="order-meta">' +
+        '<strong>Bezorgadres</strong><br>' + adres + '<br>' + stad + '<br><br>' +
+        'Lege pot ' + escapeHtml(STATE.potId || '') + ' nemen we tegelijk mee.' +
+      '</div>';
+  }
+
+  $('#reorder-share-whatsapp-btn').addEventListener('click', () => {
+    const msg = 'Hi, een paar kids uit de buurt maken zelf gezonde chocopasta. Ik heb net een pot besteld, ze komen het brengen aan de deur. Jullie ook? https://ellemelle.netlify.app/';
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+  });
+
   (async () => {
     STATE.potId = getPotIdFromURL();
     if (!STATE.potId) { showView('notfound-view'); return; }
+
+    // Post-payment landing — Stripe just redirected the customer back here after a successful reorder.
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('paid') === 'stripe') {
+      const p = await fetchPot(STATE.potId);
+      STATE.pot = p || {};
+      const urlVoornaam = qs.get('voornaam') || '';
+      const voornaam = urlVoornaam || (p && p.voornaam) || '';
+      $('#reorder-success-headline').textContent = voornaam
+        ? 'Leuk ' + voornaam + ', we gaan aan de slag!'
+        : 'Leuk, we gaan aan de slag!';
+      renderReorderSuccessRecap(STATE.pot, voornaam);
+      showView('reorder-success-view');
+      setTimeout(burstConfetti, 200);
+      try { history.replaceState({}, '', location.pathname); } catch {}
+      return;
+    }
+
     const p = await fetchPot(STATE.potId);
     if (!p || p.error) { showView('notfound-view'); return; }
     STATE.pot = p;
