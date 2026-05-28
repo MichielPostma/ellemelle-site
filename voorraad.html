@@ -547,14 +547,14 @@
 
     function fmtDate(iso) {
     if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    return `${d}-${m}-${y.slice(2)}`;
+    const [, m, d] = iso.split('-').map(n => parseInt(n, 10));
+    return `${d}/${m}`;
   }
   const MONTHS_NL = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
   function fmtDateNL(iso) {
     if (!iso) return '';
-    const [y, m, d] = iso.split('-').map(n => parseInt(n, 10));
-    return `${d} ${MONTHS_NL[m-1]} ${y}`;
+    const [, m, d] = iso.split('-').map(n => parseInt(n, 10));
+    return `${d}/${m}`;
   }
   function drawerSubFor(pot) {
     const status = pot.status || 'uninitialized';
