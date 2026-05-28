@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ELLEMELLE — Betalen</title>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#FFF9F0">
+  <style>
+    :root { --cream:#FFF9F0; --red:#c52828; --red-dark:#8b1a1a; --ink:#000; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin:0; background: var(--cream); color: var(--ink); font: 400 16px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+    .wrap { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; }
+    .product-hero { text-align: center; margin: 12px 0 22px; }
+    .product-img { width: 100%; max-width: 240px; height: auto; }
+    h1 { font-size: 26px; margin: 0 0 16px; line-height: 1.25; text-align: left; }
+    .order-card { background: #fff; border-radius: 14px; padding: 16px 18px; }
+    .order-line { display:flex; justify-content: space-between; padding: 6px 0; font-size: 15px; }
+    .order-line.total { border-top: 1px solid rgba(0,0,0,0.08); padding-top: 10px; margin-top: 6px; font-weight: 700; }
+    .order-meta { font-size: 13px; color: rgba(0,0,0,0.6); margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.08); }
+    .btn-primary {
+      display:block; width:100%; background: var(--red); color:#fff; border:none; border-radius: 12px;
+      padding: 16px 18px; font-size: 17px; font-weight: 700; cursor: pointer; margin-top: 20px; font-family: inherit;
+    }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .err { color: var(--red); text-align: center; padding: 40px 20px; }
+    .success-headline { font-size: 26px; line-height: 1.25; margin: 0 0 8px; text-align: left; }
+    .success-subtitle { color:#666; font-size:15px; line-height:1.45; margin: 0 0 18px; text-align: left; }
+    .success-help { color:#666; font-size:14px; line-height:1.45; margin: 18px auto 8px; max-width: 360px; text-align: center; }
+    /* Bank drawer */
+    .bank-drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1099; opacity: 0; transition: opacity 200ms ease; }
+    .bank-drawer-backdrop.open { opacity: 1; }
+    .bank-drawer-backdrop[hidden] { display: none; }
+    .bank-drawer { position: fixed; left:0; right:0; bottom:0; background: var(--cream); border-radius: 22px 22px 0 0; padding: 14px 20px 24px; max-height: 90vh; overflow-y: auto; z-index: 1100; box-shadow: 0 -8px 32px rgba(0,0,0,0.18); transform: translateY(100%); transition: transform 280ms cubic-bezier(.2,.7,.2,1); max-width: 480px; margin: 0 auto; }
+    .bank-drawer.open { transform: translateY(0); }
+    .bank-drawer[hidden] { display: none; }
+    .bank-drawer-handle { width: 44px; height: 5px; background: rgba(0,0,0,0.18); border-radius: 4px; margin: 0 auto 12px; }
+    .bank-drawer-title { font-size: 22px; margin: 0 0 4px; text-align: center; }
+    .bank-drawer-sub { font-size: 14px; color: rgba(0,0,0,0.6); text-align: center; margin: 0 0 16px; }
+    .bank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+    .bank-tile { appearance: none; background:#fff; border: 2px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 14px 6px; min-height: 64px; display:flex; align-items:center; justify-content:center; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .bank-tile.selected { border-color: var(--red); background: rgba(217,48,30,0.04); }
+    /* Confetti */
+    .confetti { position: fixed; width: 8px; height: 14px; border-radius: 2px; pointer-events: none; will-change: transform; z-index: 9999; }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #222; color:#fff; padding: 10px 14px; border-radius: 10px; opacity: 0; transition: opacity 200ms ease; pointer-events: none; z-index: 2000; max-width: 90vw; }
+    .toast.show { opacity: 1; }
+    .toast.error { background: var(--red); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section id="loading-view"><p style="text-align:center; color:#666; padding: 60px 0;">Even laden…</p></section>
+
+    <section id="notfound-view" hidden>
+      <div class="err">
+        <h1>Deze betaallink bestaat niet meer.</h1>
+        <p>Vraag een nieuwe code aan Ellis of Melle.</p>
+      </div>
+    </section>
+
+    <section id="pay-view" hidden>
+      <h1>Klopt dit, <span id="pay-name">…</span>?</h1>
+      <div class="product-hero">
+        <img class="product-img" src="/Images/koken-pot.jpg" alt="ELLEMELLE chocopasta pot">
+      </div>
+      <div class="order-card" id="pay-recap"></div>
+      <button type="button" class="btn-primary" id="pay-btn">Betaling via iDeal →</button>
+    </section>
+
+    <section id="success-view" hidden>
+      <h1 class="success-headline" id="success-headline">Leuk!</h1>
+      <p class="success-subtitle" id="success-sub">We bezorgen je pot binnen 4 weken.</p>
+      <div class="order-card" id="success-recap"></div>
+      <p class="success-help">En wil je ons helpen? We willen heel graag aan nóg meer leuke kids gezonde chocopasta bezorgen.</p>
+      <button type="button" class="btn-primary" id="share-whatsapp-btn">Deel via WhatsApp →</button>
+    </section>
+  </div>
+
+  <!-- Bank picker bottom drawer -->
+  <div id="bank-drawer-backdrop" class="bank-drawer-backdrop" hidden></div>
+  <div id="bank-drawer" class="bank-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="bank-drawer-title">
+    <div class="bank-drawer-handle"></div>
+    <h2 id="bank-drawer-title" class="bank-drawer-title">Kies je bank</h2>
+    <p class="bank-drawer-sub">Tik op je bank — daarna gaan we naar iDeal.</p>
+    <div class="bank-grid" id="bank-grid">
+      <button type="button" class="bank-tile" data-bank="abn_amro"><span>ABN AMRO</span></button>
+      <button type="button" class="bank-tile" data-bank="ing"><span>ING</span></button>
+      <button type="button" class="bank-tile" data-bank="rabobank"><span>Rabobank</span></button>
+      <button type="button" class="bank-tile" data-bank="sns_bank"><span>SNS</span></button>
+      <button type="button" class="bank-tile" data-bank="asn_bank"><span>ASN</span></button>
+      <button type="button" class="bank-tile" data-bank="knab"><span>Knab</span></button>
+      <button type="button" class="bank-tile" data-bank="bunq"><span>bunq</span></button>
+      <button type="button" class="bank-tile" data-bank="triodos_bank"><span>Triodos</span></button>
+      <button type="button" class="bank-tile" data-bank="regiobank"><span>RegioBank</span></button>
+      <button type="button" class="bank-tile" data-bank="revolut"><span>Revolut</span></button>
+      <button type="button" class="bank-tile" data-bank="van_lanschot"><span>Van Lanschot</span></button>
+      <button type="button" class="bank-tile" data-bank="yoursafe"><span>Yoursafe</span></button>
+      <button type="button" class="bank-tile" data-bank="n26"><span>N26</span></button>
+    </div>
+    <button type="button" class="btn-primary" id="bank-drawer-pay" disabled>Start iDeal betaling →</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  const $ = sel => document.querySelector(sel);
+  const STATE = { tempId: '', order: null, selectedBank: '' };
+
+  function fmtEuro(cents) { return '€' + (cents/100).toFixed(2).replace('.', ','); }
+  function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function showView(id) {
+    ['loading-view','notfound-view','pay-view','success-view'].forEach(v => {
+      const el = document.getElementById(v); if (el) el.hidden = (v !== id);
+    });
+  }
+  function showToast(msg, type) {
+    const t = $('#toast'); if (!t) return;
+    t.textContent = msg; t.classList.add('show'); if (type === 'error') t.classList.add('error'); else t.classList.remove('error');
+    setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  function renderRecap(targetId, order) {
+    const el = document.getElementById(targetId); if (!el) return;
+    const aantal = Math.max(1, parseInt(order.aantal, 10) || 1);
+    const credit = Math.max(0, parseInt(order.statiegeld_credit, 10) || 0);
+    const sPots = aantal * 500, sStat = aantal * 100;
+    const sCreditDed = Math.min(credit, aantal) * 100;
+    const sTot = sPots + sStat - sCreditDed;
+    const adres = (order.straat || '') + ' ' + (order.huisnummer || '') + (order.toevoeging ? '-' + order.toevoeging : '');
+    const stad  = (order.postcode || '') + ' ' + (order.plaats || 'Haarlem');
+    const sCreditLine = sCreditDed > 0 ? '<div class="order-line"><span>Statiegeld retour</span><span>−' + fmtEuro(sCreditDed) + '</span></div>' : '';
+    el.innerHTML =
+      '<div class="order-line"><span>' + aantal + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(sPots) + '</span></div>' +
+      '<div class="order-line"><span>Statiegeld (' + aantal + ' pot' + (aantal===1?'':'ten') + ')</span><span>' + fmtEuro(sStat) + '</span></div>' +
+      sCreditLine +
+      '<div class="order-line total"><span>Totaal</span><span>' + fmtEuro(sTot) + '</span></div>' +
+      (adres.trim() ? '<div class="order-meta"><strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '</div>' : '');
+  }
+
+  function burstConfetti() {
+    const colors = ['#D9301E', '#8B1A0E', '#FFD24A', '#F5EFE6'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.top = '20%'; c.style.left = '50%';
+      c.style.background = colors[i % colors.length];
+      c.style.transition = 'transform 1.6s cubic-bezier(.18,.7,.4,1), opacity 1.6s ease-out';
+      document.body.appendChild(c);
+      requestAnimationFrame(() => {
+        const x = (Math.random() - 0.5) * window.innerWidth * 0.9;
+        const y = (Math.random() * 0.6 + 0.2) * window.innerHeight;
+        const r = Math.random() * 720 - 360;
+        c.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + r + 'deg)';
+        c.style.opacity = '0';
+      });
+      setTimeout(() => c.remove(), 1700);
+    }
+  }
+
+  // --- Drawer wiring ---
+  function openBankDrawer() {
+    const bd = $('#bank-drawer'), bp = $('#bank-drawer-backdrop'), pay = $('#bank-drawer-pay');
+    document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
+    STATE.selectedBank = '';
+    if (pay) pay.disabled = true;
+    bp.hidden = false; bd.hidden = false;
+    requestAnimationFrame(() => { bp.classList.add('open'); bd.classList.add('open'); });
+    document.body.style.overflow = 'hidden';
+  }
+  function closeBankDrawer() {
+    const bd = $('#bank-drawer'), bp = $('#bank-drawer-backdrop');
+    bp.classList.remove('open'); bd.classList.remove('open');
+    setTimeout(() => { bp.hidden = true; bd.hidden = true; document.body.style.overflow = ''; }, 240);
+  }
+  document.querySelectorAll('.bank-tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
+      tile.classList.add('selected');
+      STATE.selectedBank = tile.dataset.bank || '';
+      const pay = $('#bank-drawer-pay'); if (pay) pay.disabled = !STATE.selectedBank;
+    });
+  });
+  $('#bank-drawer-backdrop').addEventListener('click', closeBankDrawer);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const bd = $('#bank-drawer'); if (bd && !bd.hidden) closeBankDrawer(); } });
+  $('#bank-drawer-pay').addEventListener('click', startPayment);
+
+  async function startPayment() {
+    if (!STATE.selectedBank) { showToast('Kies eerst je bank', 'error'); return; }
+    const payBtn = $('#bank-drawer-pay');
+    payBtn.disabled = true; payBtn.textContent = 'Even geduld…';
+    const order = STATE.order || {};
+    // 1) Submit order to Netlify signup (idempotency: ok if it has been submitted before)
+    try {
+      const sr = await fetch('/.netlify/functions/signup', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+      });
+      if (!sr.ok) {
+        // fall back to direct Netlify Forms POST
+        const fd = Object.entries(Object.assign({'form-name':'ellemelle-signup','bot-field':''}, order)).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v||'')).join('&');
+        await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd });
+      }
+    } catch (e) { /* swallow — payment is still the goal */ }
+    // 2) Create payment intent + redirect
+    try {
+      const r = await fetch('/api/stripe/create-payment-intent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voornaam: order.voornaam || '',
+          email: order.email || '',
+          aantal: Math.max(1, parseInt(order.aantal, 10) || 1),
+          statiegeld_credit: Math.max(0, parseInt(order.statiegeld_credit, 10) || 0),
+          bank: STATE.selectedBank,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.url) {
+        payBtn.disabled = false; payBtn.textContent = 'Start iDeal betaling →';
+        showToast(j.error || 'Stripe sessie mislukt', 'error');
+        return;
+      }
+      // Save snapshot so success view can render after the redirect
+      try { localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(Object.assign({}, order, { ts: Date.now() }))); } catch {}
+      window.location.href = j.url;
+    } catch (e) {
+      payBtn.disabled = false; payBtn.textContent = 'Start iDeal betaling →';
+      showToast('Betaling kon niet starten', 'error');
+    }
+  }
+
+  // --- WhatsApp share ---
+  $('#share-whatsapp-btn').addEventListener('click', () => {
+    const msg = 'Hi, een paar kids uit de buurt maken zelf gezonde chocopasta. Ik heb net een pot besteld, ze komen het brengen aan de deur. Jullie ook? https://ellemelle.netlify.app/';
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+  });
+
+  // --- Boot ---
+  function getTempIdFromPath() {
+    const m = location.pathname.match(/^\/pay\/([a-zA-Z0-9_-]+)/);
+    return m ? m[1] : '';
+  }
+
+  async function boot() {
+    // Post-payment landing?
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('paid') === 'stripe') {
+      let snap = null;
+      try { snap = JSON.parse(localStorage.getItem('ellemelle_last_order_v1') || 'null'); } catch {}
+      const voornaam = qs.get('voornaam') || (snap && snap.voornaam) || '';
+      $('#success-headline').textContent = 'Leuk' + (voornaam ? ' ' + voornaam : '') + '!';
+      if (snap) renderRecap('success-recap', snap);
+      showView('success-view');
+      setTimeout(burstConfetti, 200);
+      try { history.replaceState({}, '', location.pathname); } catch {}
+      return;
+    }
+    STATE.tempId = getTempIdFromPath();
+    if (!STATE.tempId) { showView('notfound-view'); return; }
+    try {
+      const r = await fetch('/api/order/get-temp?id=' + encodeURIComponent(STATE.tempId));
+      if (!r.ok) { showView('notfound-view'); return; }
+      const data = await r.json();
+      STATE.order = data.order || {};
+      $('#pay-name').textContent = STATE.order.voornaam || '';
+      renderRecap('pay-recap', STATE.order);
+      showView('pay-view');
+      $('#pay-btn').addEventListener('click', openBankDrawer);
+    } catch (e) {
+      showView('notfound-view');
+    }
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
