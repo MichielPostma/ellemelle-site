@@ -118,6 +118,7 @@
     background: var(--red); color: var(--white);
     font-size: 13px; line-height: 22px; text-align: center; font-weight: 700;
   }
+  .pot-card .pot-img { width: 100%; height: 80px; object-fit: contain; display: block; margin-bottom: 6px; mix-blend-mode: multiply; }
   .pot-card .pid { font-weight: 700; font-size: 15px; color: var(--black); }
   .pot-card .meta { color: #888; font-size: 11px; margin-top: 6px; line-height: 1.3; }
   .pot-card.expired .meta { color: var(--red); }
@@ -1012,7 +1013,8 @@
       card.className = 'pot-card' + (selected.has(p.id) ? ' sel' : '');
       const meta = fmtExpiryMeta(p.expiry_date);
       if (meta.expired) card.classList.add('expired');
-      card.innerHTML = '<div class="pid">' + p.id + '</div>' +
+      card.innerHTML = '<img class="pot-img" src="/Images/pot-bezorgd.png" alt="">' +
+        '<div class="pid">' + p.id + '</div>' +
         (meta.text ? '<div class="meta">' + meta.text + '</div>' : '');
       card.addEventListener('click', () => {
         if (selected.has(p.id)) selected.delete(p.id);
