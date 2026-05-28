@@ -1398,16 +1398,17 @@
     const n = Math.max(1, parseInt(formData.aantal, 10) || 1);
     const potsTotal = n * 500; // €5.00 per pot in cents
     const stat = n * 100;       // €1.00 statiegeld per pot
-    // Outstanding deposit from previous pots (admin reorder for an existing klant).
-    // Cap the deduction at the new statiegeld so totals never go negative — extra credit
-    // simply rolls onto the next order.
+    // Outstanding deposit credit from previous pots (admin reorder for an existing klant).
+    // Per Michiel: show + apply the FULL credit, regardless of the new-order pot count.
+    // The credit represents pots the klant still has out at home; it's the klant's money,
+    // not something we cap to this order.
     const credit = (__adminMode === 'existing')
       ? Math.max(0, Number(formData.__statiegeld_credit) || 0)
       : 0;
-    const creditDeduction = Math.min(credit, n) * 100;
+    const creditDeduction = credit * 100;
     const total = potsTotal + stat - creditDeduction;
     const creditLine = creditDeduction > 0
-      ? '<div class="order-line"><span>Statiegeld retour (credit van vorige pot' + (credit===1?'':'ten') + ')</span><span>−' + fmtEuro(creditDeduction) + '</span></div>'
+      ? '<div class="order-line"><span>Statiegeld retour (jouw credit)</span><span>−' + fmtEuro(creditDeduction) + '</span></div>'
       : '';
     // Admin variant: continue the contact sentence with a refund note — same text style, no break.
     // This replaces the checkbox confirmation block on that view.
@@ -1727,10 +1728,10 @@
         const sn = Math.max(1, parseInt(data.aantal, 10) || 1);
         const sPots = sn * 500, sStat = sn * 100;
         const sCredit = Math.max(0, Number(data.statiegeld_credit) || 0);
-        const sCreditDed = Math.min(sCredit, sn) * 100;
+        const sCreditDed = sCredit * 100;
         const sTot = sPots + sStat - sCreditDed;
         const sCreditLine = sCreditDed > 0
-          ? '<div class="order-line"><span>Statiegeld retour (credit van vorige pot' + (sCredit===1?'':'ten') + ')</span><span>−' + fmtEuro(sCreditDed) + '</span></div>'
+          ? '<div class="order-line"><span>Statiegeld retour (jouw credit)</span><span>−' + fmtEuro(sCreditDed) + '</span></div>'
           : '';
         const sKLabel = data.kanaal === 'whatsapp' ? 'WhatsApp' : 'e-mail';
         const totalLbl = isRetry ? 'Totaal' : 'Totaal betaald';
