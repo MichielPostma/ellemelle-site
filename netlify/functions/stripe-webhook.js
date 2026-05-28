@@ -101,7 +101,9 @@ exports.handler = async (event) => {
   const pi = (evt.data && evt.data.object) || {};
   const piId = pi.id;
   const meta = pi.metadata || {};
-  const tempOrderId = meta.temp_order_id || '';
+  const tempOrderId  = meta.temp_order_id || '';
+  const reorderPotId = (meta.reorder_pot_id || '').toUpperCase();
+  const baseUrl = process.env.URL || 'https://ellemelle.netlify.app';
 
   // Idempotency: if we've already processed this PI, short-circuit.
   let paidStore, pendingStore;
@@ -118,6 +120,28 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true, idempotent: true }) };
     }
   } catch { /* not-found is fine */ }
+
+  // Reorder branch — pot scan flow. customer-reorder owns the full reorder side-effects
+  // (fetches original customer fields, files a new Netlify Forms entry with is_reorder=true,
+  // flips pot.status to pickup-with-reorder, mails Michiel). It's idempotent on pot.status.
+  if (/^POT-\d{3}$/.test(reorderPotId)) {
+    try {
+      const r = await fetch(baseUrl + '/.netlify/functions/customer-reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pot_id: reorderPotId }),
+      });
+      const j = await r.json().catch(() => ({}));
+      await paidStore.setJSON(piId, {
+        piId, status: r.ok ? 'reorder_created' : 'reorder_failed',
+        reorderPotId, response: j, at: new Date().toISOString(),
+      }).catch(() => {});
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: r.ok, reorder: true, reorderPotId, detail: j }) };
+    } catch (e) {
+      await paidStore.setJSON(piId, { piId, status: 'reorder_call_failed', reorderPotId, error: String(e && e.message || e), at: new Date().toISOString() }).catch(() => {});
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: false, warning: 'reorder_call_failed' }) };
+    }
+  }
 
   // Fetch the pending order payload from blob storage.
   if (!tempOrderId) {
@@ -138,7 +162,6 @@ exports.handler = async (event) => {
   }
 
   const order = pending.order;
-  const baseUrl = process.env.URL || 'https://ellemelle.netlify.app';
 
   // 1. Submit to Netlify Forms (root POST) — the source of truth.
   try {
