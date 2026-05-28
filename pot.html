@@ -452,7 +452,7 @@
       });
       const j = await r.json();
       if (!r.ok || !j.url) { showToast(j.error || 'Stripe sessie mislukt', 'error'); return; }
-      window.location.href = j.url;
+      (window.top || window).location.href = j.url;
     } catch (e) { showToast('Betaling kon niet starten', 'error'); }
   }
   async function submitRatings() {
