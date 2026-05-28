@@ -394,6 +394,8 @@
   .pay-card .pc-label { font-size: 12.5px; color: var(--red-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
   .pay-card .pc-sub { font-size: 12px; color: rgba(0,0,0,0.6); }
   /* === Admin QR (stap 7, admin-mode) ======================================= */
+  .admin-confirm-note { color: rgba(0,0,0,0.55); font-size: 13.5px; line-height: 1.5; margin: -4px 4px 18px; }
+  .admin-confirm-note[hidden] { display: none; }
   #admin-pay-qr { margin-top: 14px; text-align: center; }
   /* QR frame stretches to match the order-card width so it doesn't look cramped in admin. */
   .admin-pay-qr-frame {
@@ -978,6 +980,8 @@
     <section class="step" data-step="7">
       <h1 class="step-question">Klopt dit, <span data-name-slot>…</span>?</h1>
       <div class="order-card" id="order-summary-content"></div>
+      <!-- Admin variant: no checkbox needed — just an informational note below the recap. -->
+      <p class="admin-confirm-note" id="admin-confirm-note" hidden>Je bestelling wordt thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</p>
       <label class="check-row" id="confirm-row">
         <input type="checkbox" id="confirm-checkbox">
         <span>Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
@@ -1184,6 +1188,8 @@
         if (qrWrap) qrWrap.hidden = true;
         const cb = document.getElementById('admin-cancel-btn');
         if (cb) { cb.hidden = true; cb.style.display = ''; }
+        const adminNote = document.getElementById('admin-confirm-note');
+        if (adminNote) adminNote.hidden = true;
       }
     }
   }
@@ -1754,6 +1760,9 @@
     // Belt + braces: set both the attribute and an inline style:none.
     if (submitBtn) { submitBtn.hidden = true; submitBtn.style.display = 'none'; }
     if (confirmRow) confirmRow.hidden = true;
+    // Show the grey admin note (replacement for the checkbox block on this view).
+    const adminNote = document.getElementById('admin-confirm-note');
+    if (adminNote) adminNote.hidden = false;
     // Slot the cancel button into the step-actions row (next to the back-pill that was wrapped
     // around submit-btn at boot). That way the visible action row becomes [back] [Annuleer bestelling].
     if (cancelBtn) {
