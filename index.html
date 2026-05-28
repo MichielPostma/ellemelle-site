@@ -399,45 +399,6 @@
   .admin-pay-qr-frame img, .admin-pay-qr-frame canvas { display: block; margin: 0 auto; }
   .admin-pay-qr-hint { font-size: 13px; color: rgba(0,0,0,0.5); margin: 14px 0 0; word-break: break-all; }
 
-  /* === Bank-picker bottom drawer ============================================ */
-  .bank-drawer-backdrop {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
-    z-index: 1099; opacity: 0; transition: opacity 200ms ease;
-  }
-  .bank-drawer-backdrop.open { opacity: 1; }
-  .bank-drawer-backdrop[hidden] { display: none; }
-  .bank-drawer {
-    position: fixed; left: 0; right: 0; bottom: 0;
-    background: var(--cream, #FFF9F0); border-radius: 22px 22px 0 0;
-    padding: 14px 20px 24px; max-height: 90vh; overflow-y: auto;
-    z-index: 1100; box-shadow: 0 -8px 32px rgba(0,0,0,0.18);
-    transform: translateY(100%); transition: transform 280ms cubic-bezier(.2,.7,.2,1);
-    max-width: 480px; margin: 0 auto;
-  }
-  .bank-drawer.open { transform: translateY(0); }
-  .bank-drawer[hidden] { display: none; }
-  .bank-drawer-handle {
-    width: 44px; height: 5px; background: rgba(0,0,0,0.18); border-radius: 4px;
-    margin: 0 auto 12px;
-  }
-  .bank-drawer-title { font-size: 22px; margin: 0 0 4px; text-align: center; color: var(--ink, #000); }
-  .bank-drawer-sub { font-size: 14px; color: rgba(0,0,0,0.6); text-align: center; margin: 0 0 16px; }
-  .bank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
-  .bank-tile {
-    appearance: none; -webkit-appearance: none; cursor: pointer;
-    background: #fff; border: 2px solid rgba(0,0,0,0.08); border-radius: 12px;
-    padding: 14px 6px; min-height: 64px;
-    display: flex; align-items: center; justify-content: center; text-align: center;
-    font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink, #000);
-    transition: border-color 140ms ease, transform 100ms ease;
-  }
-  .bank-tile:hover { border-color: rgba(0,0,0,0.18); }
-  .bank-tile.selected { border-color: var(--red, #c52828); background: rgba(217,48,30,0.04); }
-  .bank-tile:active { transform: scale(0.97); }
-  .bank-tile-name { display: inline-block; }
-  #bank-drawer-pay { margin: 0; }
-  #bank-drawer-pay:disabled { opacity: 0.45; cursor: not-allowed; }
-
   /* Help-text under the recap on the success view */
   .success-help {
     color: #666; font-size: 14px; line-height: 1.45; text-align: center;
@@ -1037,30 +998,6 @@
 
 </main>
 
-<!-- Bank picker bottom drawer (opens after confirming on step 7) -->
-<div id="bank-drawer-backdrop" class="bank-drawer-backdrop" hidden></div>
-<div id="bank-drawer" class="bank-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="bank-drawer-title">
-  <div class="bank-drawer-handle"></div>
-  <h2 id="bank-drawer-title" class="bank-drawer-title">Kies je bank</h2>
-  <p class="bank-drawer-sub">Tik op je bank — daarna gaan we naar iDeal.</p>
-  <div class="bank-grid" id="bank-grid">
-    <button type="button" class="bank-tile" data-bank="abn_amro"><span class="bank-tile-name">ABN AMRO</span></button>
-    <button type="button" class="bank-tile" data-bank="ing"><span class="bank-tile-name">ING</span></button>
-    <button type="button" class="bank-tile" data-bank="rabobank"><span class="bank-tile-name">Rabobank</span></button>
-    <button type="button" class="bank-tile" data-bank="sns_bank"><span class="bank-tile-name">SNS</span></button>
-    <button type="button" class="bank-tile" data-bank="asn_bank"><span class="bank-tile-name">ASN</span></button>
-    <button type="button" class="bank-tile" data-bank="knab"><span class="bank-tile-name">Knab</span></button>
-    <button type="button" class="bank-tile" data-bank="bunq"><span class="bank-tile-name">bunq</span></button>
-    <button type="button" class="bank-tile" data-bank="triodos_bank"><span class="bank-tile-name">Triodos</span></button>
-    <button type="button" class="bank-tile" data-bank="regiobank"><span class="bank-tile-name">RegioBank</span></button>
-    <button type="button" class="bank-tile" data-bank="revolut"><span class="bank-tile-name">Revolut</span></button>
-    <button type="button" class="bank-tile" data-bank="van_lanschot"><span class="bank-tile-name">Van Lanschot</span></button>
-    <button type="button" class="bank-tile" data-bank="yoursafe"><span class="bank-tile-name">Yoursafe</span></button>
-    <button type="button" class="bank-tile" data-bank="n26"><span class="bank-tile-name">N26</span></button>
-  </div>
-  <button type="button" class="btn-primary" id="bank-drawer-pay" disabled>Start iDeal betaling →</button>
-</div>
-
 <!-- Pot photo, edge-to-edge under the form -->
 <section class="product-hero">
   <img class="product-img" src="Images/koken-pot.jpg" alt="ELLEMELLE chocopasta pot" loading="eager" fetchpriority="high">
@@ -1182,10 +1119,10 @@
     }
     if (!validateStep(currentStep)) return;
     if (currentStep === TOTAL_STEPS) {
-      // Admin variant: skip the bank-drawer and instead show a QR for the klant to scan.
-      // Public variant: open the bottom-drawer bank picker. submitOrder() fires from there.
+      // Admin variant: show a QR for the klant to scan (no Stripe call on admin device).
+      // Public variant: submit + go straight to Stripe — Stripe shows its own bank picker.
       if (__adminMode) { startAdminPayQR(); return; }
-      openBankDrawer();
+      submitOrder();
       return;
     }
     currentStep = nextStepAfter(currentStep);
@@ -1697,12 +1634,6 @@
     try {
       const __aantal = Math.max(1, parseInt(payload.aantal, 10) || 1);
       const __credit = __snap.statiegeld_credit;
-      const __bank = window.__selectedBank || '';
-      if (!__bank) {
-        const e2 = new Error('no_bank_selected');
-        e2.code = 'no_bank_selected';
-        throw e2;
-      }
       const __r = await fetch('/api/stripe/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1711,7 +1642,6 @@
           email: payload.email || '',
           aantal: __aantal,
           statiegeld_credit: __credit,
-          bank: __bank,
         }),
       });
       const __data = await __r.json();
@@ -1719,14 +1649,7 @@
       (window.top || window).location.href = __data.url;
       return;
     } catch (e) {
-      if (e && (e.code === 'no_bank_selected' || (e.message || '').includes('no_bank_selected'))) {
-        btn.disabled = false;
-        btn.textContent = 'Betaling via iDeal →';
-        showError('Kies eerst je bank.');
-        openBankDrawer();
-        return;
-      }
-      // Other Stripe error — show success step with a retry iDeal button as fallback.
+      // Stripe error — show success step with a retry iDeal button as fallback.
       currentStep = 8;
       prepareSuccessStep({ stripeRetry: true });
       showStep(8);
@@ -1923,55 +1846,6 @@
     tryRender();
   }
 
-  // ---- Bank-picker bottom drawer ----------------------------------------
-  function openBankDrawer() {
-    const bd = document.getElementById('bank-drawer');
-    const bp = document.getElementById('bank-drawer-backdrop');
-    const payBtn = document.getElementById('bank-drawer-pay');
-    if (!bd || !bp) return;
-    // Reset any prior selection
-    document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
-    window.__selectedBank = '';
-    if (payBtn) payBtn.disabled = true;
-    bp.hidden = false; bd.hidden = false;
-    requestAnimationFrame(() => { bp.classList.add('open'); bd.classList.add('open'); });
-    document.body.style.overflow = 'hidden';
-  }
-  function closeBankDrawer() {
-    const bd = document.getElementById('bank-drawer');
-    const bp = document.getElementById('bank-drawer-backdrop');
-    if (!bd || !bp) return;
-    bp.classList.remove('open'); bd.classList.remove('open');
-    setTimeout(() => { bp.hidden = true; bd.hidden = true; document.body.style.overflow = ''; }, 240);
-  }
-  // Bind tiles + pay button + backdrop close once on page load
-  function wireBankDrawer() {
-    document.querySelectorAll('.bank-tile').forEach(tile => {
-      tile.addEventListener('click', () => {
-        document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
-        tile.classList.add('selected');
-        window.__selectedBank = tile.dataset.bank || '';
-        const payBtn = document.getElementById('bank-drawer-pay');
-        if (payBtn) payBtn.disabled = !window.__selectedBank;
-      });
-    });
-    const payBtn = document.getElementById('bank-drawer-pay');
-    if (payBtn) payBtn.addEventListener('click', () => {
-      if (!window.__selectedBank) return;
-      closeBankDrawer();
-      submitOrder();
-    });
-    const bp = document.getElementById('bank-drawer-backdrop');
-    if (bp) bp.addEventListener('click', closeBankDrawer);
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const bd = document.getElementById('bank-drawer');
-        if (bd && !bd.hidden) closeBankDrawer();
-      }
-    });
-  }
-  wireBankDrawer();
-
   function resetForm() {
     if (typeof clearState === 'function') clearState();
     Object.keys(formData).forEach(k => formData[k] = '');
@@ -1986,8 +1860,6 @@
     if (ma) ma.hidden = true;
     const sb = $('#submit-btn');
     if (sb) { sb.disabled = false; sb.textContent = 'Betaling via iDeal →'; sb.hidden = false; }
-    window.__selectedBank = '';
-    document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
     const qrWrap2 = document.getElementById('admin-pay-qr');
     if (qrWrap2) qrWrap2.hidden = true;
     const qrFrame2 = document.getElementById('admin-pay-qr-frame');
