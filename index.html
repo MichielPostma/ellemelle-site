@@ -1622,7 +1622,7 @@
       });
       const __data = await __r.json();
       if (!__r.ok || !__data.url) throw new Error((__data && __data.error) || 'Stripe sessie aanmaken mislukt');
-      window.location.href = __data.url;
+      (window.top || window).location.href = __data.url;
       return;
     } catch (e) {
       // Stripe call failed — show success step with a retry iDeal button as fallback.
@@ -1746,7 +1746,7 @@
           });
           const j = await r.json();
           if (!r.ok || !j.url) throw new Error((j && j.error) || 'Stripe sessie aanmaken mislukt');
-          window.location.href = j.url;
+          (window.top || window).location.href = j.url;
         } catch (e) {
           idealBtn.disabled = false;
           idealBtn.textContent = originalText;
