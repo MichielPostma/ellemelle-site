@@ -178,6 +178,61 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify({ ok: false, warning: 'forms_submit_failed' }) };
   }
 
+  // 1b. Find the newly-created Netlify Forms submission and write payment_intent_id to its
+  // order blob. We need this link so refund-deposit can later find the PI for a given order.
+  // Netlify Forms is eventually consistent — give it a couple of seconds, then poll.
+  let netlifyOrderId = '';
+  try {
+    const netlifyToken = process.env.NETLIFY_API_TOKEN;
+    const siteId      = process.env.NETLIFY_SITE_ID;
+    if (netlifyToken && siteId) {
+      // Fetch the form id for ellemelle-signup
+      const fl = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/forms`, {
+        headers: { Authorization: `Bearer ${netlifyToken}` },
+      });
+      const forms = fl.ok ? await fl.json() : [];
+      const form = Array.isArray(forms) ? forms.find(f => f.name === 'ellemelle-signup') : null;
+      if (form) {
+        // Wait up to ~4s, retrying because the submission might not be indexed yet.
+        const matchVN  = String(order.voornaam   || '').trim().toLowerCase();
+        const matchPC  = String(order.postcode   || '').trim().toUpperCase().replace(/\s+/g, '');
+        const matchHN  = String(order.huisnummer || '').trim();
+        const cutoff   = Date.now() - 5 * 60 * 1000; // ignore anything older than 5 min
+        for (let i = 0; i < 4; i++) {
+          await new Promise(r => setTimeout(r, 1200));
+          const sl = await fetch(`https://api.netlify.com/api/v1/forms/${form.id}/submissions?per_page=10`, {
+            headers: { Authorization: `Bearer ${netlifyToken}` },
+          });
+          const subs = sl.ok ? await sl.json() : [];
+          if (!Array.isArray(subs)) continue;
+          const match = subs.find(s => {
+            if (!s || !s.data) return false;
+            const created = new Date(s.created_at || 0).getTime();
+            if (created < cutoff) return false;
+            const d = s.data;
+            const dVN = String(d.voornaam   || '').trim().toLowerCase();
+            const dPC = String(d.postcode   || '').trim().toUpperCase().replace(/\s+/g, '');
+            const dHN = String(d.huisnummer || '').trim();
+            return dVN === matchVN && dPC === matchPC && dHN === matchHN;
+          });
+          if (match) { netlifyOrderId = match.id; break; }
+        }
+      }
+    }
+  } catch { /* best effort */ }
+
+  // Write the PI id to the order blob so refund-deposit (admin-side) can look it up later.
+  if (netlifyOrderId) {
+    try {
+      const ordersStore = getStore(storeOpts('ellemelle-orders'));
+      const existing = (await ordersStore.get(netlifyOrderId, { type: 'json' })) || {};
+      await ordersStore.setJSON(netlifyOrderId, Object.assign({}, existing, {
+        payment_intent_id: piId,
+        paid_at: new Date().toISOString(),
+      }));
+    } catch { /* non-critical */ }
+  }
+
   // 2. Fire-and-forget: confirmation email + admin push notification.
   try {
     fetch(baseUrl + '/.netlify/functions/notify', {
