@@ -127,19 +127,10 @@
     const payBtn = $('#pay-btn');
     if (payBtn) { payBtn.disabled = true; payBtn.textContent = 'Even geduld…'; }
     const order = STATE.order || {};
-    // 1) Submit order to Netlify signup (idempotency: ok if it has been submitted before)
-    try {
-      const sr = await fetch('/.netlify/functions/signup', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order),
-      });
-      if (!sr.ok) {
-        // fall back to direct Netlify Forms POST
-        const fd = Object.entries(Object.assign({'form-name':'ellemelle-signup','bot-field':''}, order)).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v||'')).join('&');
-        await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd });
-      }
-    } catch (e) { /* swallow — payment is still the goal */ }
-    // 2) Create payment intent + redirect
+    // Order-after-payment: DO NOT submit to signup here — the Stripe webhook will create the
+    // Netlify Forms entry only after payment_intent.succeeded. We pass full_order so the webhook
+    // has the payload to file. The pending-orders blob is keyed by a fresh temp_order_id (returned
+    // from create-payment-intent), separate from STATE.tempId which is the QR-handoff blob.
     try {
       const r = await fetch('/api/stripe/create-payment-intent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -148,6 +139,7 @@
           email: order.email || '',
           aantal: Math.max(1, parseInt(order.aantal, 10) || 1),
           statiegeld_credit: Math.max(0, parseInt(order.statiegeld_credit, 10) || 0),
+          full_order: order,
         }),
       });
       const j = await r.json();
