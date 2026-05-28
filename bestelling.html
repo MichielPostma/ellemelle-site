@@ -100,6 +100,29 @@
   .drawer h2 { font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
   .drawer .sub { color: #666; font-size: 14px; margin-bottom: 14px; }
 
+  /* Pot tile grid — used in the couple-pot drawer (mirrors voorraad page styling) */
+  .pot-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 6px 0 18px; }
+  .pot-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 12px 14px;
+    cursor: pointer; text-align: left;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 90ms, border-color 90ms, background 90ms;
+    position: relative;
+  }
+  .pot-card:active { transform: scale(0.98); }
+  .pot-card.sel { border-color: var(--red); background: rgba(217,48,30,0.04); }
+  .pot-card.sel::after {
+    content: '✓'; position: absolute; top: 8px; right: 10px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    font-size: 13px; line-height: 22px; text-align: center; font-weight: 700;
+  }
+  .pot-card .pid { font-weight: 700; font-size: 15px; color: var(--black); }
+  .pot-card .meta { color: #888; font-size: 11px; margin-top: 6px; line-height: 1.3; }
+  .pot-card.expired .meta { color: var(--red); }
+  .pot-empty-msg { padding: 18px 0; color: #888; font-size: 14px; text-align: center; }
+
   /* Sections */
   .info-card { background: var(--white); border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 14px; line-height: 1.45; }
   .info-card strong { display: block; color: var(--black); font-weight: 700; font-size: 16px; margin-bottom: 4px; }
@@ -295,6 +318,8 @@
       <div class="detail-row"><span class="k">Aantal potten</span><span class="v" id="d-aantal">1</span></div>
       <div class="detail-row"><span class="k">Prijs</span><span class="v" id="d-prijs">€6,00</span></div>
       <div class="detail-row"><span class="k">Besteldatum</span><span class="v" id="d-created">—</span></div>
+      <div class="detail-row" id="d-pot-row" hidden><span class="k">Pot</span><span class="v" id="d-pot-ids">—</span></div>
+      <button class="btn-outline" id="couple-pot-btn" type="button" hidden style="margin-top: 14px;">Koppel pot(ten)</button>
     </div>
 
     <div class="actions-label">Klant</div>
@@ -595,6 +620,31 @@
       if (showPot) potBtn.dataset.potId = o.delivered_pot;
       else delete potBtn.dataset.potId;
     }
+    // Pot row + Koppel-knop in Bestelling-kaart.
+    // The "Pot" row reflects whichever id list is meaningful: delivered_pot wins (post-delivery),
+    // assigned_pots (pre-delivery coupling). Hidden when neither is set.
+    const potRow = document.getElementById('d-pot-row');
+    const potIdsEl = document.getElementById('d-pot-ids');
+    const assigned = Array.isArray(o.assigned_pots) ? o.assigned_pots : [];
+    const potDisplay = o.delivered_pot ? [o.delivered_pot] : assigned;
+    if (potRow && potIdsEl) {
+      if (potDisplay.length) {
+        potIdsEl.textContent = potDisplay.join(', ');
+        potRow.hidden = false;
+        potRow.style.display = '';
+      } else {
+        potRow.hidden = true;
+        potRow.style.display = 'none';
+      }
+    }
+    // Koppel-knop only on couple-eligible statuses (pre-delivery).
+    const coupleBtn = document.getElementById('couple-pot-btn');
+    if (coupleBtn) {
+      const coupleStatuses = ['todo', 'confirmed', 'retry'];
+      const showCouple = coupleStatuses.includes(status);
+      coupleBtn.hidden = !showCouple;
+      coupleBtn.style.display = showCouple ? 'block' : 'none';
+    }
     const uiterlijkeText = o.uiterlijke_bezorgdatum ? fmtDate(o.uiterlijke_bezorgdatum) : '—';
     const geplandeText = modeLabel(o);
     $('#d-uiterlijke').textContent = uiterlijkeText + (o.uiterlijke_bezorgdatum_override ? ' (handmatig)' : '');
@@ -800,6 +850,17 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </button>
 
+<!-- Koppel pot(ten) drawer — admin multi-selects in-voorraad pots and links them to this order -->
+<div class="drawer-backdrop" id="couple-pot-backdrop"></div>
+<div class="drawer" id="couple-pot-drawer" role="dialog" aria-modal="true" aria-labelledby="couple-pot-title">
+  <div class="drawer-handle"></div>
+  <h2 id="couple-pot-title">Koppel je pot aan …</h2>
+  <p class="sub">Tap één of meerdere potten om te selecteren.</p>
+  <div class="pot-grid" id="couple-pot-grid"></div>
+  <div class="pot-empty-msg" id="couple-pot-empty" hidden>Geen potten in voorraad.</div>
+  <button class="btn-primary" id="couple-pot-save" type="button">Bewaar</button>
+</div>
+
 <!-- Retourpagina klant drawer -->
 <div class="admin-drawer-backdrop" id="customer-pot-backdrop"></div>
 <div class="admin-drawer" id="customer-pot-drawer" role="dialog" aria-modal="true">
@@ -897,6 +958,128 @@
   btn.addEventListener('click', openDrawer);
   backdrop.addEventListener('click', closeDrawer);
   closeBtn.addEventListener('click', closeDrawer);
+})();
+
+// "Koppel pot(ten)" drawer — admin multi-selects pots in voorraad and saves the link to the order.
+(function(){
+  const btn      = document.getElementById('couple-pot-btn');
+  const drawer   = document.getElementById('couple-pot-drawer');
+  const backdrop = document.getElementById('couple-pot-backdrop');
+  const grid     = document.getElementById('couple-pot-grid');
+  const titleEl  = document.getElementById('couple-pot-title');
+  const emptyMsg = document.getElementById('couple-pot-empty');
+  const saveBtn  = document.getElementById('couple-pot-save');
+  const toastEl  = document.getElementById('toast');
+  if (!btn || !drawer || !grid) return;
+
+  // Minimal toast — same look as the main app, but local to this IIFE since showToast is scoped to the main script.
+  function toast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.style.opacity = '1';
+    clearTimeout(window.__coupleToast);
+    window.__coupleToast = setTimeout(() => { toastEl.style.opacity = '0'; }, 2200);
+  }
+
+  let selected = new Set();
+  let pots = [];
+
+  function open() { backdrop.classList.add('open'); drawer.classList.add('open'); }
+  function close() { backdrop.classList.remove('open'); drawer.classList.remove('open'); }
+
+  function fmtExpiryMeta(expiryDate) {
+    if (!expiryDate) return { text: '', expired: false };
+    const d = new Date(expiryDate);
+    if (isNaN(d.getTime())) return { text: '', expired: false };
+    const now = new Date();
+    const days = Math.round((d.getTime() - now.getTime()) / 86400000);
+    if (days < 0) return { text: 'Verlopen', expired: true };
+    if (days === 0) return { text: 'Verloopt vandaag', expired: false };
+    if (days === 1) return { text: 'Nog 1 dag houdbaar', expired: false };
+    return { text: 'Nog ' + days + ' dagen houdbaar', expired: false };
+  }
+
+  function renderTiles() {
+    grid.innerHTML = '';
+    if (pots.length === 0) {
+      emptyMsg.hidden = false;
+      return;
+    }
+    emptyMsg.hidden = true;
+    pots.forEach(p => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'pot-card' + (selected.has(p.id) ? ' sel' : '');
+      const meta = fmtExpiryMeta(p.expiry_date);
+      if (meta.expired) card.classList.add('expired');
+      card.innerHTML = '<div class="pid">' + p.id + '</div>' +
+        (meta.text ? '<div class="meta">' + meta.text + '</div>' : '');
+      card.addEventListener('click', () => {
+        if (selected.has(p.id)) selected.delete(p.id);
+        else selected.add(p.id);
+        card.classList.toggle('sel');
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  async function loadAndOpen() {
+    const o = window.STATE && window.STATE.order;
+    if (!o) return;
+    const voornaam = o.voornaam || 'deze klant';
+    titleEl.textContent = 'Koppel je pot aan ' + voornaam;
+    // Pre-select pots already linked to this order.
+    selected = new Set(Array.isArray(o.assigned_pots) ? o.assigned_pots : []);
+    open();
+    grid.innerHTML = '<div class="pot-empty-msg">Even kijken…</div>';
+    try {
+      const pwd = (window.STATE && window.STATE.password) || '';
+      const r = await fetch('/.netlify/functions/voorraad-list', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd }),
+      });
+      const j = await r.json();
+      if (!r.ok) { grid.innerHTML = '<div class="pot-empty-msg">Kon voorraad niet laden.</div>'; return; }
+      // Only voorraad-state pots; include ones already linked to THIS order so admin can uncheck.
+      pots = (j.pots || []).filter(p => p.status === 'voorraad' && (!p.order_id || p.order_id === o.id));
+      // Sort: already-selected first, then by id
+      pots.sort((a, b) => {
+        const sa = selected.has(a.id) ? 0 : 1;
+        const sb = selected.has(b.id) ? 0 : 1;
+        if (sa !== sb) return sa - sb;
+        return String(a.id).localeCompare(String(b.id));
+      });
+      renderTiles();
+    } catch (e) {
+      grid.innerHTML = '<div class="pot-empty-msg">Kon voorraad niet laden.</div>';
+    }
+  }
+
+  async function save() {
+    const o = window.STATE && window.STATE.order;
+    if (!o) return;
+    saveBtn.disabled = true; saveBtn.textContent = 'Bezig…';
+    try {
+      const pwd = (window.STATE && window.STATE.password) || '';
+      const r = await fetch('/.netlify/functions/assign-pots-to-order', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd, order_id: o.id, pot_ids: Array.from(selected) }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(j.error || 'Bewaren mislukt'); return; }
+      close();
+      // Reload the order so the Pot row reflects fresh state.
+      setTimeout(() => location.reload(), 200);
+    } catch (e) {
+      toast('Bewaren mislukt');
+    } finally {
+      saveBtn.disabled = false; saveBtn.textContent = 'Bewaar';
+    }
+  }
+
+  btn.addEventListener('click', loadAndOpen);
+  backdrop.addEventListener('click', close);
+  saveBtn.addEventListener('click', save);
 })();
 </script>
 
