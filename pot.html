@@ -320,8 +320,8 @@
   function getPotIdFromURL() { const m = location.pathname.match(/POT-\d{3}/i); return m ? m[0].toUpperCase() : null; }
   function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   const NL_MAANDEN = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-  function fmtDateLong(input) { if(!input) return '—'; const d=new Date(input); if(isNaN(d.getTime())) return String(input); return d.getDate()+' '+NL_MAANDEN[d.getMonth()]; }
-  function fmtDateTime(input) { if(!input) return ''; const d=new Date(input); if(isNaN(d.getTime())) return String(input); const dd=String(d.getDate()).padStart(2,'0'); const mm=String(d.getMonth()+1).padStart(2,'0'); const hh=String(d.getHours()).padStart(2,'0'); const mi=String(d.getMinutes()).padStart(2,'0'); return dd+'-'+mm+' '+hh+':'+mi; }
+  function fmtDateLong(input) { if(!input) return '—'; const d=new Date(input); if(isNaN(d.getTime())) return String(input); return d.getDate()+'/'+(d.getMonth()+1); }
+  function fmtDateTime(input) { if(!input) return ''; const d=new Date(input); if(isNaN(d.getTime())) return String(input); const hh=String(d.getHours()).padStart(2,'0'); const mi=String(d.getMinutes()).padStart(2,'0'); return d.getDate()+'/'+(d.getMonth()+1)+' '+hh+':'+mi; }
 
   async function fetchPot(potId) {
     const r = await fetch('/.netlify/functions/pot-get?pot_id=' + encodeURIComponent(potId), { cache: 'no-store' });
