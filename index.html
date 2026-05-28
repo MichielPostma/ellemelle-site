@@ -392,7 +392,20 @@
   }
   .pay-card .pc-label { font-size: 12.5px; color: var(--red-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
   .pay-card .pc-sub { font-size: 12px; color: rgba(0,0,0,0.6); }
-  .success-subtitle {
+  .bank-picker { display: block; margin: 16px 0 4px; }
+  .bank-picker-label { display: block; font-size: 13px; color: rgba(0,0,0,0.7); margin: 0 0 6px 2px; font-weight: 600; }
+  .bank-select {
+    width: 100%; padding: 14px 44px 14px 16px;
+    border: 2px solid var(--red); border-radius: 12px; background-color: #fff; color: var(--ink, #000);
+    font-size: 16px; font-family: inherit; line-height: 1.2;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c52828' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center;
+    box-shadow: none;
+  }
+  .bank-select:focus { outline: none; border-color: var(--red-dark, #8b1a1a); }
+  .bank-select option { color: var(--ink, #000); }
+    .success-subtitle {
     color: #666;
     font-size: 15px;
     line-height: 1.45;
@@ -953,7 +966,7 @@
       <button class="btn-primary" data-next>Volgende →</button>
     </section>
 
-    <!-- STEP 7: Bevestig -->
+    <!-- STEP 7: Bevestig + bank-keuze -->
     <section class="step" data-step="7">
       <h1 class="step-question">Klopt dit, <span data-name-slot>…</span>?</h1>
       <div class="order-card" id="order-summary-content"></div>
@@ -961,6 +974,25 @@
         <input type="checkbox" id="confirm-checkbox">
         <span>Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
       </label>
+      <div class="bank-picker">
+        <label class="bank-picker-label" for="bank-select">Kies je bank</label>
+        <select id="bank-select" class="bank-select" required>
+          <option value="" disabled selected>— Selecteer je bank —</option>
+          <option value="abn_amro">ABN AMRO</option>
+          <option value="ing">ING</option>
+          <option value="rabobank">Rabobank</option>
+          <option value="sns_bank">SNS</option>
+          <option value="asn_bank">ASN</option>
+          <option value="knab">Knab</option>
+          <option value="bunq">bunq</option>
+          <option value="triodos_bank">Triodos</option>
+          <option value="regiobank">RegioBank</option>
+          <option value="revolut">Revolut</option>
+          <option value="van_lanschot">Van Lanschot</option>
+          <option value="yoursafe">Yoursafe</option>
+          <option value="n26">N26</option>
+        </select>
+      </div>
       <div class="error" data-step-error></div>
       <button class="btn-primary" id="submit-btn" data-next>Betaal met iDeal →</button>
     </section>
@@ -1606,11 +1638,19 @@
     // Clear in-progress state — the order is now filed, only the payment hop remains.
     clearState();
 
-    // Hand off to Stripe Checkout — straight to the iDeal bank picker, no review pages between.
+    // Hand off straight to the customer's iDeal bank — no Stripe Checkout page, no email/name field,
+    // no Wero choice. We use the Payment Intents API with server-side confirm and pre-selected bank.
     try {
       const __aantal = Math.max(1, parseInt(payload.aantal, 10) || 1);
       const __credit = __snap.statiegeld_credit;
-      const __r = await fetch('/api/stripe/create-session', {
+      const __bankSel = document.getElementById('bank-select');
+      const __bank = __bankSel ? __bankSel.value : '';
+      if (!__bank) {
+        const e2 = new Error('no_bank_selected');
+        e2.code = 'no_bank_selected';
+        throw e2;
+      }
+      const __r = await fetch('/api/stripe/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1618,6 +1658,7 @@
           email: payload.email || '',
           aantal: __aantal,
           statiegeld_credit: __credit,
+          bank: __bank,
         }),
       });
       const __data = await __r.json();
@@ -1625,7 +1666,15 @@
       (window.top || window).location.href = __data.url;
       return;
     } catch (e) {
-      // Stripe call failed — show success step with a retry iDeal button as fallback.
+      if (e && (e.code === 'no_bank_selected' || (e.message || '').includes('no_bank_selected'))) {
+        btn.disabled = false;
+        btn.textContent = 'Betaal met iDeal →';
+        showError('Kies eerst je bank.');
+        const sel = document.getElementById('bank-select');
+        if (sel) sel.focus();
+        return;
+      }
+      // Other Stripe error — show success step with a retry iDeal button as fallback.
       currentStep = 8;
       prepareSuccessStep({ stripeRetry: true });
       showStep(8);
@@ -1731,27 +1780,11 @@
         const originalText = idealBtn.textContent;
         idealBtn.disabled = true;
         idealBtn.textContent = 'Even geduld…';
-        try {
-          const aantal = data ? Math.max(1, parseInt(data.aantal, 10) || 1) : 1;
-          const credit = data ? Math.max(0, Number(data.statiegeld_credit) || 0) : 0;
-          const r = await fetch('/api/stripe/create-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              voornaam: (data && data.voornaam) || '',
-              email: (data && data.email) || '',
-              aantal,
-              statiegeld_credit: credit,
-            }),
-          });
-          const j = await r.json();
-          if (!r.ok || !j.url) throw new Error((j && j.error) || 'Stripe sessie aanmaken mislukt');
-          (window.top || window).location.href = j.url;
-        } catch (e) {
-          idealBtn.disabled = false;
-          idealBtn.textContent = originalText;
-          alert('Betaling kon niet starten: ' + (e.message || e));
-        }
+        // The retry path needs a bank choice. Easiest: send user back to step 7 to pick again.
+        idealBtn.disabled = false;
+        idealBtn.textContent = originalText;
+        try { history.replaceState({}, '', location.pathname); } catch {}
+        location.reload();
       });
     }
   }
