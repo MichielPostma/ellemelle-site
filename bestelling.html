@@ -42,6 +42,20 @@
   }
   /* Match Safari date picker rendering */
   input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+  /* Date field wrapper with a revert icon button sitting just left of the native calendar indicator. */
+  .date-field { position: relative; }
+  .date-field input[type="date"] { padding-right: 88px; }
+  .date-field .revert-btn {
+    position: absolute; top: 50%; right: 44px; transform: translateY(-50%);
+    width: 36px; height: 36px; border-radius: 10px; border: 0;
+    background: transparent; color: var(--black);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .date-field .revert-btn:hover { background: rgba(0,0,0,0.04); }
+  .date-field .revert-btn:active { background: rgba(0,0,0,0.08); }
+  .date-field .revert-btn svg { width: 20px; height: 20px; display: block; }
   input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card); }
 
   .btn-primary {
@@ -363,13 +377,21 @@
   <div class="actions-label" style="margin-top: 12px;">Status</div>
   <div id="status-options" style="display:grid; gap:8px;"></div>
 
-  <div class="actions-label" style="margin-top: 18px;">Uiterlijke bezorgdatum (belofte aan klant)</div>
-  <input type="date" id="date-uiterlijke">
-  <button class="btn-outline" id="date-uiterlijke-clear" type="button" style="margin-top: 6px;">Wissen (auto)</button>
+  <div class="actions-label" style="margin-top: 18px;">Uiterlijke bezorgdatum</div>
+  <div class="date-field">
+    <input type="date" id="date-uiterlijke">
+    <button type="button" class="revert-btn" id="date-uiterlijke-revert" aria-label="Reset naar de datum die de klant zag">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+    </button>
+  </div>
 
-  <div class="actions-label" style="margin-top: 18px;">Geplande bezorgweek (handmatig forceren)</div>
-  <input type="date" id="date-geplande">
-  <button class="btn-outline" id="date-geplande-clear" type="button" style="margin-top: 6px;">Wissen (auto)</button>
+  <div class="actions-label" style="margin-top: 18px;">Geplande bezorgweek</div>
+  <div class="date-field">
+    <input type="date" id="date-geplande">
+    <button type="button" class="revert-btn" id="date-geplande-revert" aria-label="Reset naar de datum die de klant zag">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+    </button>
+  </div>
 
   <div class="error" id="wijzigen-err"></div>
   <button class="btn-primary" id="wijzigen-save" type="button">Opslaan</button>
@@ -732,8 +754,29 @@
     renderDetail();
   }
 
-  function clearUiterlijke() { __uitAction = 'clear'; $('#date-uiterlijke').value = ''; }
-  function clearGeplande()   { __gepAction = 'clear'; $('#date-geplande').value   = ''; }
+  // Reset a date override back to what the customer saw at order time.
+  //   - Uiterlijke: clear the override → enriched output recomputes to the original `uiterlijke_bezorgdatum_computed`.
+  //   - Geplande:  set the override to `snapshot_delivery_date` so it stays locked to what the klant saw,
+  //                regardless of how the auto-allocator would re-rank this order today.
+  async function revertUiterlijke() {
+    if (!confirm('Wil je de datum resetten naar de datum die de klant zag bij de bestelling?')) return;
+    const r = await api('bestellingen-update-delivery-date', { order_id: STATE.order.id, uiterlijke_bezorgdatum: '' });
+    if (!r.ok) { showToast(r.data.error || 'Reset mislukt', 'error'); return; }
+    showToast('Uiterlijke bezorgdatum gereset', 'success');
+    closeWijzigenDrawer();
+    load();
+  }
+  async function revertGeplande() {
+    if (!confirm('Wil je de datum resetten naar de datum die de klant zag bij de bestelling?')) return;
+    const snap = (STATE.order && STATE.order.snapshot_delivery_date) || '';
+    // No snapshot? Fall back to clearing the override (auto-recompute).
+    const payload = { order_id: STATE.order.id, delivery_date: snap || '' };
+    const r = await api('bestellingen-update-delivery-date', payload);
+    if (!r.ok) { showToast(r.data.error || 'Reset mislukt', 'error'); return; }
+    showToast('Geplande bezorgweek gereset', 'success');
+    closeWijzigenDrawer();
+    load();
+  }
   // --- Wijzigen drawer (merged Status + Datum) ---
   const STATUS_OPTS = [
     { val: 'todo',                  label: 'Nieuw' },
@@ -838,8 +881,8 @@
   $('#edit-wijzigen-btn').addEventListener('click', openWijzigenDrawer);
   $('#wijzigen-save').addEventListener('click', saveWijzigen);
   $('#drawer-backdrop').addEventListener('click', closeWijzigenDrawer);
-  $('#date-uiterlijke-clear').addEventListener('click', clearUiterlijke);
-  $('#date-geplande-clear').addEventListener('click', clearGeplande);
+  $('#date-uiterlijke-revert').addEventListener('click', revertUiterlijke);
+  $('#date-geplande-revert').addEventListener('click', revertGeplande);
   $('#delete-btn').addEventListener('click', deleteOrder);
 
   $('#menu-open').addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
