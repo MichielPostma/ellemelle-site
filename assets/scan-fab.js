@@ -42,16 +42,14 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
   }
   function fmtDateNL(iso) {
     if (!iso) return '';
-    const M = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-    const [y, m, d] = iso.split('-').map(n => parseInt(n, 10));
-    return `${d} ${M[m-1]} ${y}`;
+    const [, m, d] = iso.split('-').map(n => parseInt(n, 10));
+    return `${d}/${m}`;
   }
   function fmtDateShort(iso) {
     if (!iso) return '';
-    const M = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
     const d = new Date(iso);
     if (isNaN(d.getTime())) return '';
-    return `${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()}`;
+    return `${d.getDate()}/${d.getMonth()+1}`;
   }
   function daysUntil(iso) {
     if (!iso) return null;
