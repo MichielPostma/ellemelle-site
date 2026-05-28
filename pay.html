@@ -28,19 +28,6 @@
     .success-headline { font-size: 26px; line-height: 1.25; margin: 0 0 8px; text-align: left; }
     .success-subtitle { color:#666; font-size:15px; line-height:1.45; margin: 0 0 18px; text-align: left; }
     .success-help { color:#666; font-size:14px; line-height:1.45; margin: 18px auto 8px; max-width: 360px; text-align: center; }
-    /* Bank drawer */
-    .bank-drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1099; opacity: 0; transition: opacity 200ms ease; }
-    .bank-drawer-backdrop.open { opacity: 1; }
-    .bank-drawer-backdrop[hidden] { display: none; }
-    .bank-drawer { position: fixed; left:0; right:0; bottom:0; background: var(--cream); border-radius: 22px 22px 0 0; padding: 14px 20px 24px; max-height: 90vh; overflow-y: auto; z-index: 1100; box-shadow: 0 -8px 32px rgba(0,0,0,0.18); transform: translateY(100%); transition: transform 280ms cubic-bezier(.2,.7,.2,1); max-width: 480px; margin: 0 auto; }
-    .bank-drawer.open { transform: translateY(0); }
-    .bank-drawer[hidden] { display: none; }
-    .bank-drawer-handle { width: 44px; height: 5px; background: rgba(0,0,0,0.18); border-radius: 4px; margin: 0 auto 12px; }
-    .bank-drawer-title { font-size: 22px; margin: 0 0 4px; text-align: center; }
-    .bank-drawer-sub { font-size: 14px; color: rgba(0,0,0,0.6); text-align: center; margin: 0 0 16px; }
-    .bank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
-    .bank-tile { appearance: none; background:#fff; border: 2px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 14px 6px; min-height: 64px; display:flex; align-items:center; justify-content:center; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .bank-tile.selected { border-color: var(--red); background: rgba(217,48,30,0.04); }
     /* Confetti */
     .confetti { position: fixed; width: 8px; height: 14px; border-radius: 2px; pointer-events: none; will-change: transform; z-index: 9999; }
     .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #222; color:#fff; padding: 10px 14px; border-radius: 10px; opacity: 0; transition: opacity 200ms ease; pointer-events: none; z-index: 2000; max-width: 90vw; }
@@ -75,30 +62,6 @@
       <p class="success-help">En wil je ons helpen? We willen heel graag aan nóg meer leuke kids gezonde chocopasta bezorgen.</p>
       <button type="button" class="btn-primary" id="share-whatsapp-btn">Deel via WhatsApp →</button>
     </section>
-  </div>
-
-  <!-- Bank picker bottom drawer -->
-  <div id="bank-drawer-backdrop" class="bank-drawer-backdrop" hidden></div>
-  <div id="bank-drawer" class="bank-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="bank-drawer-title">
-    <div class="bank-drawer-handle"></div>
-    <h2 id="bank-drawer-title" class="bank-drawer-title">Kies je bank</h2>
-    <p class="bank-drawer-sub">Tik op je bank — daarna gaan we naar iDeal.</p>
-    <div class="bank-grid" id="bank-grid">
-      <button type="button" class="bank-tile" data-bank="abn_amro"><span>ABN AMRO</span></button>
-      <button type="button" class="bank-tile" data-bank="ing"><span>ING</span></button>
-      <button type="button" class="bank-tile" data-bank="rabobank"><span>Rabobank</span></button>
-      <button type="button" class="bank-tile" data-bank="sns_bank"><span>SNS</span></button>
-      <button type="button" class="bank-tile" data-bank="asn_bank"><span>ASN</span></button>
-      <button type="button" class="bank-tile" data-bank="knab"><span>Knab</span></button>
-      <button type="button" class="bank-tile" data-bank="bunq"><span>bunq</span></button>
-      <button type="button" class="bank-tile" data-bank="triodos_bank"><span>Triodos</span></button>
-      <button type="button" class="bank-tile" data-bank="regiobank"><span>RegioBank</span></button>
-      <button type="button" class="bank-tile" data-bank="revolut"><span>Revolut</span></button>
-      <button type="button" class="bank-tile" data-bank="van_lanschot"><span>Van Lanschot</span></button>
-      <button type="button" class="bank-tile" data-bank="yoursafe"><span>Yoursafe</span></button>
-      <button type="button" class="bank-tile" data-bank="n26"><span>N26</span></button>
-    </div>
-    <button type="button" class="btn-primary" id="bank-drawer-pay" disabled>Start iDeal betaling →</button>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -160,37 +123,9 @@
     }
   }
 
-  // --- Drawer wiring ---
-  function openBankDrawer() {
-    const bd = $('#bank-drawer'), bp = $('#bank-drawer-backdrop'), pay = $('#bank-drawer-pay');
-    document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
-    STATE.selectedBank = '';
-    if (pay) pay.disabled = true;
-    bp.hidden = false; bd.hidden = false;
-    requestAnimationFrame(() => { bp.classList.add('open'); bd.classList.add('open'); });
-    document.body.style.overflow = 'hidden';
-  }
-  function closeBankDrawer() {
-    const bd = $('#bank-drawer'), bp = $('#bank-drawer-backdrop');
-    bp.classList.remove('open'); bd.classList.remove('open');
-    setTimeout(() => { bp.hidden = true; bd.hidden = true; document.body.style.overflow = ''; }, 240);
-  }
-  document.querySelectorAll('.bank-tile').forEach(tile => {
-    tile.addEventListener('click', () => {
-      document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
-      tile.classList.add('selected');
-      STATE.selectedBank = tile.dataset.bank || '';
-      const pay = $('#bank-drawer-pay'); if (pay) pay.disabled = !STATE.selectedBank;
-    });
-  });
-  $('#bank-drawer-backdrop').addEventListener('click', closeBankDrawer);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const bd = $('#bank-drawer'); if (bd && !bd.hidden) closeBankDrawer(); } });
-  $('#bank-drawer-pay').addEventListener('click', startPayment);
-
   async function startPayment() {
-    if (!STATE.selectedBank) { showToast('Kies eerst je bank', 'error'); return; }
-    const payBtn = $('#bank-drawer-pay');
-    payBtn.disabled = true; payBtn.textContent = 'Even geduld…';
+    const payBtn = $('#pay-btn');
+    if (payBtn) { payBtn.disabled = true; payBtn.textContent = 'Even geduld…'; }
     const order = STATE.order || {};
     // 1) Submit order to Netlify signup (idempotency: ok if it has been submitted before)
     try {
@@ -213,12 +148,11 @@
           email: order.email || '',
           aantal: Math.max(1, parseInt(order.aantal, 10) || 1),
           statiegeld_credit: Math.max(0, parseInt(order.statiegeld_credit, 10) || 0),
-          bank: STATE.selectedBank,
         }),
       });
       const j = await r.json();
       if (!r.ok || !j.url) {
-        payBtn.disabled = false; payBtn.textContent = 'Start iDeal betaling →';
+        if (payBtn) { payBtn.disabled = false; payBtn.textContent = 'Betaling via iDeal →'; }
         showToast(j.error || 'Stripe sessie mislukt', 'error');
         return;
       }
@@ -226,7 +160,7 @@
       try { localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(Object.assign({}, order, { ts: Date.now() }))); } catch {}
       window.location.href = j.url;
     } catch (e) {
-      payBtn.disabled = false; payBtn.textContent = 'Start iDeal betaling →';
+      if (payBtn) { payBtn.disabled = false; payBtn.textContent = 'Betaling via iDeal →'; }
       showToast('Betaling kon niet starten', 'error');
     }
   }
@@ -267,7 +201,7 @@
       $('#pay-name').textContent = STATE.order.voornaam || '';
       renderRecap('pay-recap', STATE.order);
       showView('pay-view');
-      $('#pay-btn').addEventListener('click', openBankDrawer);
+      $('#pay-btn').addEventListener('click', startPayment);
     } catch (e) {
       showView('notfound-view');
     }
