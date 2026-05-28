@@ -101,12 +101,16 @@ exports.handler = async (event) => {
   const reorderPotId = String(body.reorder_pot_id || '').toUpperCase().trim();
   const isReorder = /^POT-\d{3}$/.test(reorderPotId);
 
-  // Build the return URL. Prefer order_id (admin path) → success_pot_id → tempOrderId for confirmation lookup.
-  const successPath = body.success_pot_id
-    ? `/pot/${encodeURIComponent(body.success_pot_id)}`
-    : orderId
-      ? `/bestelling/${encodeURIComponent(orderId)}`
-      : '/';
+  // Build the return URL. Prefer success_pay_id (pay.html QR-handoff) → success_pot_id (reorder) →
+  // orderId (admin direct) → '/'.
+  const successPayId = String(body.success_pay_id || '').trim();
+  const successPath = successPayId
+    ? `/pay/${encodeURIComponent(successPayId)}`
+    : body.success_pot_id
+      ? `/pot/${encodeURIComponent(body.success_pot_id)}`
+      : orderId
+        ? `/bestelling/${encodeURIComponent(orderId)}`
+        : '/';
   const params = new URLSearchParams();
   params.set('paid', 'stripe');
   if (voornaam && voornaam !== 'klant') params.set('voornaam', voornaam);
