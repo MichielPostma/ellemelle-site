@@ -36,4 +36,5 @@
 /api/stripe/create-payment-intent /.netlify/functions/stripe-create-payment-intent 200
 /api/order/create-temp /.netlify/functions/create-temp-order 200
 /api/order/get-temp /.netlify/functions/get-temp-order 200
+/api/order/get-pending /.netlify/functions/get-pending-order 200
 /pay/* /pay.html 200
