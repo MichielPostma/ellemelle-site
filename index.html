@@ -392,6 +392,13 @@
   }
   .pay-card .pc-label { font-size: 12.5px; color: var(--red-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
   .pay-card .pc-sub { font-size: 12px; color: rgba(0,0,0,0.6); }
+  /* === Admin QR (stap 7, admin-mode) ======================================= */
+  #admin-pay-qr { margin-top: 10px; text-align: center; }
+  .admin-pay-qr-sub { font-size: 14px; color: rgba(0,0,0,0.7); margin: 0 0 14px; }
+  .admin-pay-qr-frame { background: #fff; border-radius: 14px; padding: 18px; display: inline-block; min-width: 280px; min-height: 280px; }
+  .admin-pay-qr-frame img, .admin-pay-qr-frame canvas { display: block; margin: 0 auto; }
+  .admin-pay-qr-hint { font-size: 13px; color: rgba(0,0,0,0.5); margin: 14px 0 0; word-break: break-all; }
+
   /* === Bank-picker bottom drawer ============================================ */
   .bank-drawer-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.45);
@@ -997,16 +1004,22 @@
       <button class="btn-primary" data-next>Volgende →</button>
     </section>
 
-    <!-- STEP 7: Bevestig — opens the bank-drawer on submit -->
+    <!-- STEP 7: Bevestig — public: opens the bank-drawer; admin: shows a QR for the klant -->
     <section class="step" data-step="7">
       <h1 class="step-question">Klopt dit, <span data-name-slot>…</span>?</h1>
       <div class="order-card" id="order-summary-content"></div>
-      <label class="check-row">
+      <label class="check-row" id="confirm-row">
         <input type="checkbox" id="confirm-checkbox">
         <span>Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
       </label>
       <div class="error" data-step-error></div>
       <button class="btn-primary" id="submit-btn" data-next>Betaling via iDeal →</button>
+      <!-- Admin variant: QR voor klant -->
+      <div id="admin-pay-qr" hidden>
+        <p class="admin-pay-qr-sub">Laat de klant deze QR scannen om de betaling op de eigen telefoon af te ronden.</p>
+        <div class="admin-pay-qr-frame" id="admin-pay-qr-frame"></div>
+        <p class="admin-pay-qr-hint" id="admin-pay-qr-hint">Wachten op QR…</p>
+      </div>
     </section>
 
     <!-- STEP 8: Success — post-payment thank-you (or stripeRetry fallback with iDeal button) -->
@@ -1169,7 +1182,9 @@
     }
     if (!validateStep(currentStep)) return;
     if (currentStep === TOTAL_STEPS) {
-      // Step 7 — open the bottom-drawer bank picker. submitOrder() fires from there.
+      // Admin variant: skip the bank-drawer and instead show a QR for the klant to scan.
+      // Public variant: open the bottom-drawer bank picker. submitOrder() fires from there.
+      if (__adminMode) { startAdminPayQR(); return; }
       openBankDrawer();
       return;
     }
@@ -1843,6 +1858,71 @@
     }
   }
 
+  // ---- Admin variant: show QR on step 7 for the klant to scan -----------
+  async function startAdminPayQR() {
+    const submitBtn = document.getElementById('submit-btn');
+    const confirmRow = document.getElementById('confirm-row');
+    const qrWrap = document.getElementById('admin-pay-qr');
+    const qrFrame = document.getElementById('admin-pay-qr-frame');
+    const hint = document.getElementById('admin-pay-qr-hint');
+    if (!qrWrap || !qrFrame) return;
+    if (submitBtn) submitBtn.hidden = true;
+    if (confirmRow) confirmRow.hidden = true;
+    qrWrap.hidden = false;
+    qrFrame.innerHTML = '';
+    if (hint) hint.textContent = 'QR maken…';
+
+    // Build the order payload (same shape as submitOrder uses)
+    const __n = Math.max(1, parseInt(formData.aantal, 10) || 1);
+    let __lev = window.__leveringCached || null;
+    if (__lev && __lev.this_order_qty !== __n) __lev = null;
+    if (!__lev) {
+      try {
+        const lr = await fetch(`/.netlify/functions/levering-info?aantal=${__n}&ts=${Date.now()}`);
+        if (lr.ok) __lev = await lr.json();
+      } catch {}
+    }
+    const __delivery_date = (__lev && __lev.delivery_date) ? __lev.delivery_date : computeNoScheduleDeadline();
+    const __delivery_mode = (__lev && __lev.mode) ? __lev.mode : 'no_schedule';
+    const payload = Object.assign({}, formData, {
+      delivery_date: __delivery_date,
+      delivery_mode: __delivery_mode,
+      is_admin_order: 'true',
+      customer_identifier: formData.__customer_identifier || '',
+    });
+    delete payload.__customer_identifier;
+
+    let payUrl = '';
+    try {
+      const r = await fetch('/api/order/create-temp', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.url) throw new Error(j.error || 'create-temp failed');
+      payUrl = j.url;
+    } catch (e) {
+      if (hint) hint.textContent = 'Kon QR niet maken: ' + (e.message || e);
+      return;
+    }
+    if (hint) hint.textContent = payUrl;
+
+    // Render QR — uses existing QRCode library (loaded with `defer` in <head>)
+    function tryRender() {
+      if (typeof QRCode === 'undefined') { setTimeout(tryRender, 80); return; }
+      try {
+        new QRCode(qrFrame, {
+          text: payUrl, width: 280, height: 280,
+          colorDark: '#000000', colorLight: '#FFFFFF',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {
+        if (hint) hint.textContent = 'QR-render mislukt: ' + (e.message || e);
+      }
+    }
+    tryRender();
+  }
+
   // ---- Bank-picker bottom drawer ----------------------------------------
   function openBankDrawer() {
     const bd = document.getElementById('bank-drawer');
@@ -1905,9 +1985,15 @@
     const ma = $('#manual-address');
     if (ma) ma.hidden = true;
     const sb = $('#submit-btn');
-    if (sb) { sb.disabled = false; sb.textContent = 'Betaling via iDeal →'; }
+    if (sb) { sb.disabled = false; sb.textContent = 'Betaling via iDeal →'; sb.hidden = false; }
     window.__selectedBank = '';
     document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
+    const qrWrap2 = document.getElementById('admin-pay-qr');
+    if (qrWrap2) qrWrap2.hidden = true;
+    const qrFrame2 = document.getElementById('admin-pay-qr-frame');
+    if (qrFrame2) qrFrame2.innerHTML = '';
+    const confirmRow2 = document.getElementById('confirm-row');
+    if (confirmRow2) confirmRow2.hidden = false;
     const nb3 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
     if (nb3) nb3.disabled = false;
     const nb2 = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
