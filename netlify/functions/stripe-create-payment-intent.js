@@ -9,7 +9,8 @@
 // Pricing (cents):
 //   product:  aantal × 500
 //   deposit:  aantal × 100
-//   discount: min(statiegeld_credit, aantal) × 100   (capped at deposit)
+//   discount: statiegeld_credit × 100   (FULL outstanding credit — not capped to new-order deposit;
+//             total is floored at the Stripe minimum of 50 cents so payment intents stay valid)
 //
 // Why server-side confirm? With `confirm=true` and `payment_method_data.ideal.bank`, Stripe creates and
 // confirms the intent in one call, returning next_action.redirect_to_url.url — the bank's iDeal page.
@@ -79,7 +80,7 @@ exports.handler = async (event) => {
 
   const productCents  = aantal * 500;
   const depositCents  = aantal * 100;
-  const discountCents = Math.min(credit, aantal) * 100;
+  const discountCents = credit * 100;
   const totalCents    = Math.max(50, productCents + depositCents - discountCents); // Stripe min: 50 cents
 
   const voornaam = String(body.voornaam || '').trim() || 'klant';
