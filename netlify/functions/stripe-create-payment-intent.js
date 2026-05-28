@@ -32,7 +32,7 @@ exports.handler = async (event) => {
   const aantal = Math.max(1, parseInt(body.aantal, 10) || 1);
   const credit = Math.max(0, parseInt(body.statiegeld_credit, 10) || 0);
   const bank = String(body.bank || '').trim();
-  if (!VALID_BANKS.has(bank)) {
+  if (bank && !VALID_BANKS.has(bank)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid_bank', bank }) };
   }
 
@@ -52,6 +52,44 @@ exports.handler = async (event) => {
     : '';
   const returnUrl = `${baseUrl}${successPath}?paid=stripe${voornaamParam}`;
 
+  // When no bank is given, fall back to Stripe Checkout (Stripe shows its own bank picker).
+  if (!bank) {
+    const cParams = new URLSearchParams();
+    cParams.set('mode', 'payment');
+    cParams.set('payment_method_types[0]', 'ideal');
+    cParams.set('success_url', returnUrl + '&session_id={CHECKOUT_SESSION_ID}');
+    cParams.set('cancel_url', `${baseUrl}/?canceled=stripe`);
+    cParams.set('line_items[0][quantity]', '1');
+    cParams.set('line_items[0][price_data][currency]', 'eur');
+    cParams.set('line_items[0][price_data][unit_amount]', String(totalCents));
+    cParams.set('line_items[0][price_data][product_data][name]',
+      `ELLEMELLE chocopasta — ${aantal} pot${aantal === 1 ? '' : 'ten'}`);
+    cParams.set('customer_creation', 'if_required');
+    const email = String(body.email || '').trim();
+    if (email && /@/.test(email)) cParams.set('customer_email', email);
+    if (orderId)  cParams.set('metadata[order_id]', orderId);
+    if (voornaam) cParams.set('metadata[voornaam]', voornaam);
+    cParams.set('metadata[aantal]', String(aantal));
+    cParams.set('metadata[statiegeld_credit]', String(credit));
+    try {
+      const cr = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + Buffer.from(secret + ':').toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: cParams.toString(),
+      });
+      const cd = await cr.json();
+      if (!cr.ok || !cd.url) {
+        return { statusCode: 502, headers, body: JSON.stringify({ error: 'stripe_error', detail: cd }) };
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ url: cd.url, checkout_session_id: cd.id }) };
+    } catch (e) {
+      return { statusCode: 500, headers, body: JSON.stringify({ error: String(e && e.message || e) }) };
+    }
+  }
+  // Bank pre-selected: use Payment Intents with confirm=true → direct bank redirect (skip Stripe Checkout)
   const params = new URLSearchParams();
   params.set('amount', String(totalCents));
   params.set('currency', 'eur');
