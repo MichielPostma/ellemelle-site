@@ -37,4 +37,5 @@
 /api/order/create-temp /.netlify/functions/create-temp-order 200
 /api/order/get-temp /.netlify/functions/get-temp-order 200
 /api/order/get-pending /.netlify/functions/get-pending-order 200
+/api/bestellingen/assign-pots /.netlify/functions/assign-pots-to-order 200
 /pay/* /pay.html 200
