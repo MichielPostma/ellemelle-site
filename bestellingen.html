@@ -429,7 +429,7 @@
         <div id="orders-list-new"></div>
       </div>
       <div id="orders-section-other" style="margin-top: 22px;">
-        <div class="section-eyebrow">Bestellingen</div>
+        <div class="section-eyebrow">Lopend</div>
         <div id="orders-list-other"></div>
       </div>
     </div>
@@ -629,8 +629,10 @@
     card.className = 'order-card';
     const status = o.order_status || 'todo';
     const hasStock = (o.delivery_mode === 'stock');
-    const showMsgBtn = opts.allowMsgBtn !== false && (status === 'todo' || status === 'confirmed');
-    const confirmedCls = (status === 'confirmed') ? ' confirmed' : '';
+    // Only render the action button for orders that still need to be confirmed (todo).
+    // Confirmed orders no longer need a follow-up icon — the status badge already says "Bevestigd".
+    const showMsgBtn = opts.allowMsgBtn !== false && status === 'todo';
+    const confirmedCls = '';
     const iconChat  = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
     const iconCheck = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     const dl = shortDeadline(o);
