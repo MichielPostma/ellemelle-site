@@ -473,12 +473,10 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     else if (status === 'delivered') {
       const name = pot.voornaam || 'klant';
       titleEl.textContent = `Deze pot is bij ${name}, wat wil je doen?`;
-      // Primary action: credit for next order (internal balance — same as before).
+      // Two options for closing this pot's loop with the klant. For a wisselen-flow the
+      // admin starts a new order via the floating + button after either action lands.
       wrap.appendChild(actionButton('Crediet voor volgende bestelling →', { variant: 'primary', onClick: () => returnPot() }));
-      // Outline action: refund deposit directly to the customer's IBAN via Stripe.
       wrap.appendChild(actionButton('Direct terugstorten naar IBAN →', { variant: 'outline', onClick: () => refundDeposit() }));
-      // Tertiary: swap (was the second option before).
-      wrap.appendChild(actionButton('Wisselen voor nieuwe pot →', { variant: 'outline', onClick: () => returnPot({ swap: true }) }));
     }
     else if (status === 'returned') {
       titleEl.textContent = 'Deze pot heb je eerder teruggenomen, wat wil je doen?';
