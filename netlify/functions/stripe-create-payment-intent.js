@@ -1,6 +1,10 @@
 // Create + immediately confirm a Stripe Payment Intent for an iDeal payment with a pre-selected bank.
-// POST { voornaam, aantal, statiegeld_credit?, bank, email?, order_id?, success_pot_id?, full_order? }
+// POST { voornaam, aantal, statiegeld_credit?, bank, email?, order_id?, success_pot_id?, full_order?, reorder_pot_id? }
 // Returns { url, payment_intent_id, temp_order_id? } where `url` is the iDeal bank redirect (skips Stripe Checkout entirely).
+//
+// Reorder flow (klant scant pot → wil nieuwe pot): caller supplies `reorder_pot_id` instead of `full_order`.
+// The webhook will read that id from metadata on payment success and call customer-reorder server-to-server,
+// which derives the customer fields from the original order and files the new entry.
 //
 // Pricing (cents):
 //   product:  aantal × 500
@@ -93,6 +97,10 @@ exports.handler = async (event) => {
     }
   }
 
+  // Reorder context: just a pot id — webhook fetches original customer fields via customer-reorder.
+  const reorderPotId = String(body.reorder_pot_id || '').toUpperCase().trim();
+  const isReorder = /^POT-\d{3}$/.test(reorderPotId);
+
   // Build the return URL. Prefer order_id (admin path) → success_pot_id → tempOrderId for confirmation lookup.
   const successPath = body.success_pot_id
     ? `/pot/${encodeURIComponent(body.success_pot_id)}`
@@ -125,6 +133,7 @@ exports.handler = async (event) => {
     pParams.set('return_url', returnUrl);
     if (orderId)      pParams.set('metadata[order_id]', orderId);
     if (tempOrderId)  pParams.set('metadata[temp_order_id]', tempOrderId);
+    if (isReorder)    pParams.set('metadata[reorder_pot_id]', reorderPotId);
     if (voornaam)     pParams.set('metadata[voornaam]', voornaam);
     pParams.set('metadata[aantal]', String(aantal));
     pParams.set('metadata[statiegeld_credit]', String(credit));
@@ -168,6 +177,7 @@ exports.handler = async (event) => {
   params2.set('return_url', returnUrl);
   if (orderId)      params2.set('metadata[order_id]', orderId);
   if (tempOrderId)  params2.set('metadata[temp_order_id]', tempOrderId);
+  if (isReorder)    params2.set('metadata[reorder_pot_id]', reorderPotId);
   if (voornaam)     params2.set('metadata[voornaam]', voornaam);
   params2.set('metadata[aantal]', String(aantal));
   params2.set('metadata[statiegeld_credit]', String(credit));
