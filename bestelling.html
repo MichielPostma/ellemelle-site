@@ -323,7 +323,7 @@
     <div class="actions-label">Activiteit</div>
     <div class="info-card" id="d-activity"></div>
 
-    <button class="btn-outline" id="customer-pot-btn" type="button" hidden style="display: block; margin-top: 24px; width: 100%;">Retourpagina klant</button>
+    <button class="btn-outline" id="customer-pot-btn" type="button" hidden style="margin-top: 24px; width: 100%;">Retourpagina klant</button>
     <button class="btn-outline" id="delete-btn" type="button" style="margin-top: 14px;">Bestelling verwijderen</button>
   </section>
 </main>
@@ -584,12 +584,16 @@
     const sb = $('#d-statusbadge'); sb.textContent = STATUS_LABELS[status] || status; sb.className = 'badge ' + status;
     // Retourpagina klant button — visible once the order has actually been delivered
     // (status delivered / neighbors / pickup_self_requested / picked_up) AND a pot is linked.
+    // Note: `hidden` attribute alone isn't enough — buttons get an inline display style that can
+    // override it. Use style.display directly so the button truly disappears when not eligible.
     const potBtn = document.getElementById('customer-pot-btn');
     if (potBtn) {
       const visibleStatuses = ['delivered', 'neighbors', 'pickup_self_requested', 'picked_up'];
       const showPot = !!o.delivered_pot && visibleStatuses.includes(status);
       potBtn.hidden = !showPot;
+      potBtn.style.display = showPot ? 'block' : 'none';
       if (showPot) potBtn.dataset.potId = o.delivered_pot;
+      else delete potBtn.dataset.potId;
     }
     const uiterlijkeText = o.uiterlijke_bezorgdatum ? fmtDate(o.uiterlijke_bezorgdatum) : '—';
     const geplandeText = modeLabel(o);
