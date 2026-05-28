@@ -1408,7 +1408,7 @@
     const creditDeduction = credit * 100;
     const total = potsTotal + stat - creditDeduction;
     const creditLine = creditDeduction > 0
-      ? '<div class="order-line"><span>Statiegeld retour (jouw credit)</span><span>−' + fmtEuro(creditDeduction) + '</span></div>'
+      ? '<div class="order-line"><span>Statiegeld crediet</span><span>−' + fmtEuro(creditDeduction) + '</span></div>'
       : '';
     // Admin variant: continue the contact sentence with a refund note — same text style, no break.
     // This replaces the checkbox confirmation block on that view.
@@ -1731,7 +1731,7 @@
         const sCreditDed = sCredit * 100;
         const sTot = sPots + sStat - sCreditDed;
         const sCreditLine = sCreditDed > 0
-          ? '<div class="order-line"><span>Statiegeld retour (jouw credit)</span><span>−' + fmtEuro(sCreditDed) + '</span></div>'
+          ? '<div class="order-line"><span>Statiegeld crediet</span><span>−' + fmtEuro(sCreditDed) + '</span></div>'
           : '';
         const sKLabel = data.kanaal === 'whatsapp' ? 'WhatsApp' : 'e-mail';
         const totalLbl = isRetry ? 'Totaal' : 'Totaal betaald';
