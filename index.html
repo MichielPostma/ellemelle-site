@@ -392,19 +392,50 @@
   }
   .pay-card .pc-label { font-size: 12.5px; color: var(--red-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
   .pay-card .pc-sub { font-size: 12px; color: rgba(0,0,0,0.6); }
-  .bank-picker { display: block; margin: 16px 0 4px; }
-  .bank-picker-label { display: block; font-size: 13px; color: rgba(0,0,0,0.7); margin: 0 0 6px 2px; font-weight: 600; }
-  .bank-select {
-    width: 100%; padding: 14px 44px 14px 16px;
-    border: 2px solid var(--red); border-radius: 12px; background-color: #fff; color: var(--ink, #000);
-    font-size: 16px; font-family: inherit; line-height: 1.2;
-    appearance: none; -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c52828' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 16px center;
-    box-shadow: none;
+  /* === Bank-picker bottom drawer ============================================ */
+  .bank-drawer-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    z-index: 1099; opacity: 0; transition: opacity 200ms ease;
   }
-  .bank-select:focus { outline: none; border-color: var(--red-dark, #8b1a1a); }
-  .bank-select option { color: var(--ink, #000); }
+  .bank-drawer-backdrop.open { opacity: 1; }
+  .bank-drawer-backdrop[hidden] { display: none; }
+  .bank-drawer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--cream, #FFF9F0); border-radius: 22px 22px 0 0;
+    padding: 14px 20px 24px; max-height: 90vh; overflow-y: auto;
+    z-index: 1100; box-shadow: 0 -8px 32px rgba(0,0,0,0.18);
+    transform: translateY(100%); transition: transform 280ms cubic-bezier(.2,.7,.2,1);
+    max-width: 480px; margin: 0 auto;
+  }
+  .bank-drawer.open { transform: translateY(0); }
+  .bank-drawer[hidden] { display: none; }
+  .bank-drawer-handle {
+    width: 44px; height: 5px; background: rgba(0,0,0,0.18); border-radius: 4px;
+    margin: 0 auto 12px;
+  }
+  .bank-drawer-title { font-size: 22px; margin: 0 0 4px; text-align: center; color: var(--ink, #000); }
+  .bank-drawer-sub { font-size: 14px; color: rgba(0,0,0,0.6); text-align: center; margin: 0 0 16px; }
+  .bank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+  .bank-tile {
+    appearance: none; -webkit-appearance: none; cursor: pointer;
+    background: #fff; border: 2px solid rgba(0,0,0,0.08); border-radius: 12px;
+    padding: 14px 6px; min-height: 64px;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink, #000);
+    transition: border-color 140ms ease, transform 100ms ease;
+  }
+  .bank-tile:hover { border-color: rgba(0,0,0,0.18); }
+  .bank-tile.selected { border-color: var(--red, #c52828); background: rgba(217,48,30,0.04); }
+  .bank-tile:active { transform: scale(0.97); }
+  .bank-tile-name { display: inline-block; }
+  #bank-drawer-pay { margin: 0; }
+  #bank-drawer-pay:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* Help-text under the recap on the success view */
+  .success-help {
+    color: #666; font-size: 14px; line-height: 1.45; text-align: center;
+    margin: 18px auto 8px; max-width: 360px;
+  }
     .success-subtitle {
     color: #666;
     font-size: 15px;
@@ -966,7 +997,7 @@
       <button class="btn-primary" data-next>Volgende →</button>
     </section>
 
-    <!-- STEP 7: Bevestig + bank-keuze -->
+    <!-- STEP 7: Bevestig — opens the bank-drawer on submit -->
     <section class="step" data-step="7">
       <h1 class="step-question">Klopt dit, <span data-name-slot>…</span>?</h1>
       <div class="order-card" id="order-summary-content"></div>
@@ -974,42 +1005,48 @@
         <input type="checkbox" id="confirm-checkbox">
         <span>Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
       </label>
-      <div class="bank-picker">
-        <label class="bank-picker-label" for="bank-select">Kies je bank</label>
-        <select id="bank-select" class="bank-select" required>
-          <option value="" disabled selected>— Selecteer je bank —</option>
-          <option value="abn_amro">ABN AMRO</option>
-          <option value="ing">ING</option>
-          <option value="rabobank">Rabobank</option>
-          <option value="sns_bank">SNS</option>
-          <option value="asn_bank">ASN</option>
-          <option value="knab">Knab</option>
-          <option value="bunq">bunq</option>
-          <option value="triodos_bank">Triodos</option>
-          <option value="regiobank">RegioBank</option>
-          <option value="revolut">Revolut</option>
-          <option value="van_lanschot">Van Lanschot</option>
-          <option value="yoursafe">Yoursafe</option>
-          <option value="n26">N26</option>
-        </select>
-      </div>
       <div class="error" data-step-error></div>
-      <button class="btn-primary" id="submit-btn" data-next>Betaal met iDeal →</button>
+      <button class="btn-primary" id="submit-btn" data-next>Betaling via iDeal →</button>
     </section>
 
     <!-- STEP 8: Success — post-payment thank-you (or stripeRetry fallback with iDeal button) -->
     <section class="step success" data-step="8">
       <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! We gaan aan de slag en houden je op de hoogte.</h1>
-      <p class="success-subtitle" id="success-sub" hidden>En wil je ons helpen? We willen heel graag aan nóg meer leuke kids gezonde chocopasta bezorgen.</p>
+      <p class="success-subtitle" id="success-sub" hidden>We bezorgen je pot binnen 4 weken.</p>
+      <div class="order-card" id="success-recap" hidden></div>
+      <p class="success-help" id="success-help" hidden>En wil je ons helpen? We willen heel graag aan nóg meer leuke kids gezonde chocopasta bezorgen.</p>
       <button type="button" class="btn-primary" id="share-whatsapp-btn" hidden>Deel via WhatsApp →</button>
       <button type="button" class="btn-primary" id="ideal-btn" hidden>Betaal met iDeal →</button>
-      <div class="order-card" id="success-recap" hidden></div>
       <button id="reset-btn" type="button" hidden></button>
     </section>
 
   </div>
 
 </main>
+
+<!-- Bank picker bottom drawer (opens after confirming on step 7) -->
+<div id="bank-drawer-backdrop" class="bank-drawer-backdrop" hidden></div>
+<div id="bank-drawer" class="bank-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="bank-drawer-title">
+  <div class="bank-drawer-handle"></div>
+  <h2 id="bank-drawer-title" class="bank-drawer-title">Kies je bank</h2>
+  <p class="bank-drawer-sub">Tik op je bank — daarna gaan we naar iDeal.</p>
+  <div class="bank-grid" id="bank-grid">
+    <button type="button" class="bank-tile" data-bank="abn_amro"><span class="bank-tile-name">ABN AMRO</span></button>
+    <button type="button" class="bank-tile" data-bank="ing"><span class="bank-tile-name">ING</span></button>
+    <button type="button" class="bank-tile" data-bank="rabobank"><span class="bank-tile-name">Rabobank</span></button>
+    <button type="button" class="bank-tile" data-bank="sns_bank"><span class="bank-tile-name">SNS</span></button>
+    <button type="button" class="bank-tile" data-bank="asn_bank"><span class="bank-tile-name">ASN</span></button>
+    <button type="button" class="bank-tile" data-bank="knab"><span class="bank-tile-name">Knab</span></button>
+    <button type="button" class="bank-tile" data-bank="bunq"><span class="bank-tile-name">bunq</span></button>
+    <button type="button" class="bank-tile" data-bank="triodos_bank"><span class="bank-tile-name">Triodos</span></button>
+    <button type="button" class="bank-tile" data-bank="regiobank"><span class="bank-tile-name">RegioBank</span></button>
+    <button type="button" class="bank-tile" data-bank="revolut"><span class="bank-tile-name">Revolut</span></button>
+    <button type="button" class="bank-tile" data-bank="van_lanschot"><span class="bank-tile-name">Van Lanschot</span></button>
+    <button type="button" class="bank-tile" data-bank="yoursafe"><span class="bank-tile-name">Yoursafe</span></button>
+    <button type="button" class="bank-tile" data-bank="n26"><span class="bank-tile-name">N26</span></button>
+  </div>
+  <button type="button" class="btn-primary" id="bank-drawer-pay" disabled>Start iDeal betaling →</button>
+</div>
 
 <!-- Pot photo, edge-to-edge under the form -->
 <section class="product-hero">
@@ -1132,7 +1169,8 @@
     }
     if (!validateStep(currentStep)) return;
     if (currentStep === TOTAL_STEPS) {
-      submitOrder();
+      // Step 7 — open the bottom-drawer bank picker. submitOrder() fires from there.
+      openBankDrawer();
       return;
     }
     currentStep = nextStepAfter(currentStep);
@@ -1631,6 +1669,7 @@
       kanaal: payload.kanaal, telefoon: payload.telefoon, email: payload.email,
       statiegeld_credit: (__adminMode === 'existing') ? (Number(formData.__statiegeld_credit) || 0) : 0,
       delivery_date: __delivery_date,
+      delivery_mode: __delivery_mode,
       ts: Date.now(),
     };
     try { localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(__snap)); } catch {}
@@ -1643,8 +1682,7 @@
     try {
       const __aantal = Math.max(1, parseInt(payload.aantal, 10) || 1);
       const __credit = __snap.statiegeld_credit;
-      const __bankSel = document.getElementById('bank-select');
-      const __bank = __bankSel ? __bankSel.value : '';
+      const __bank = window.__selectedBank || '';
       if (!__bank) {
         const e2 = new Error('no_bank_selected');
         e2.code = 'no_bank_selected';
@@ -1668,10 +1706,9 @@
     } catch (e) {
       if (e && (e.code === 'no_bank_selected' || (e.message || '').includes('no_bank_selected'))) {
         btn.disabled = false;
-        btn.textContent = 'Betaal met iDeal →';
+        btn.textContent = 'Betaling via iDeal →';
         showError('Kies eerst je bank.');
-        const sel = document.getElementById('bank-select');
-        if (sel) sel.focus();
+        openBankDrawer();
         return;
       }
       // Other Stripe error — show success step with a retry iDeal button as fallback.
@@ -1714,10 +1751,14 @@
     const subEl = document.getElementById('success-sub');
     const shareBtn = document.getElementById('share-whatsapp-btn');
 
-    // Visibility per mode: retry shows iDeal + recap; post-payment shows subtitle + share button.
+    // Visibility per mode:
+    //   retry        — show iDeal retry button + recap, hide subtitle/help/share
+    //   post-payment — show subtitle/recap/help/share, hide iDeal retry button
+    const helpEl = document.getElementById('success-help');
     if (idealBtn) idealBtn.hidden = !isRetry;
-    if (recap)    recap.hidden    = !isRetry;
+    if (recap)    recap.hidden    = false; // always show recap on success step
     if (subEl)    subEl.hidden    =  isRetry;
+    if (helpEl)   helpEl.hidden   =  isRetry;
     if (shareBtn) shareBtn.hidden =  isRetry;
 
     // URL voornaam fallback for cross-device returns from Stripe
@@ -1728,8 +1769,21 @@
       if (isRetry) {
         headline.innerHTML = 'Leuk <span id="success-name">' + escapeHtml(nameTxt) + '</span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉';
       } else {
-        headline.innerHTML = 'Leuk' + (nameTxt ? ' <span id="success-name">' + escapeHtml(nameTxt) + '</span>' : '') + '! We gaan aan de slag en houden je op de hoogte.';
+        headline.innerHTML = 'Leuk' + (nameTxt ? ' <span id="success-name">' + escapeHtml(nameTxt) + '</span>' : '') + '!';
       }
+    }
+    // Delivery subtitle for post-payment view — uses snapshot delivery_date if known.
+    if (subEl && !isRetry) {
+      let subText = 'We bezorgen je pot binnen 4 weken.';
+      const dd = data && data.delivery_date;
+      const dm = data && data.delivery_mode;
+      if (dd) {
+        const dateNL = fmtDayDateLong ? fmtDayDateLong(dd) : dd;
+        if (dm === 'in_voorraad')         subText = 'We hebben deze week potten op voorraad — we bezorgen uiterlijk ' + dateNL + '.';
+        else if (dm === 'op_kookplanning') subText = 'We koken vers — we bezorgen rond ' + dateNL + '.';
+        else                              subText = 'We bezorgen je pot uiterlijk ' + dateNL + '.';
+      }
+      subEl.textContent = subText;
     }
 
     // Bind the WhatsApp share button (post-payment only)
@@ -1789,6 +1843,55 @@
     }
   }
 
+  // ---- Bank-picker bottom drawer ----------------------------------------
+  function openBankDrawer() {
+    const bd = document.getElementById('bank-drawer');
+    const bp = document.getElementById('bank-drawer-backdrop');
+    const payBtn = document.getElementById('bank-drawer-pay');
+    if (!bd || !bp) return;
+    // Reset any prior selection
+    document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
+    window.__selectedBank = '';
+    if (payBtn) payBtn.disabled = true;
+    bp.hidden = false; bd.hidden = false;
+    requestAnimationFrame(() => { bp.classList.add('open'); bd.classList.add('open'); });
+    document.body.style.overflow = 'hidden';
+  }
+  function closeBankDrawer() {
+    const bd = document.getElementById('bank-drawer');
+    const bp = document.getElementById('bank-drawer-backdrop');
+    if (!bd || !bp) return;
+    bp.classList.remove('open'); bd.classList.remove('open');
+    setTimeout(() => { bp.hidden = true; bd.hidden = true; document.body.style.overflow = ''; }, 240);
+  }
+  // Bind tiles + pay button + backdrop close once on page load
+  function wireBankDrawer() {
+    document.querySelectorAll('.bank-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
+        tile.classList.add('selected');
+        window.__selectedBank = tile.dataset.bank || '';
+        const payBtn = document.getElementById('bank-drawer-pay');
+        if (payBtn) payBtn.disabled = !window.__selectedBank;
+      });
+    });
+    const payBtn = document.getElementById('bank-drawer-pay');
+    if (payBtn) payBtn.addEventListener('click', () => {
+      if (!window.__selectedBank) return;
+      closeBankDrawer();
+      submitOrder();
+    });
+    const bp = document.getElementById('bank-drawer-backdrop');
+    if (bp) bp.addEventListener('click', closeBankDrawer);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const bd = document.getElementById('bank-drawer');
+        if (bd && !bd.hidden) closeBankDrawer();
+      }
+    });
+  }
+  wireBankDrawer();
+
   function resetForm() {
     if (typeof clearState === 'function') clearState();
     Object.keys(formData).forEach(k => formData[k] = '');
@@ -1802,7 +1905,9 @@
     const ma = $('#manual-address');
     if (ma) ma.hidden = true;
     const sb = $('#submit-btn');
-    if (sb) { sb.disabled = false; sb.textContent = 'Betaal met iDeal →'; }
+    if (sb) { sb.disabled = false; sb.textContent = 'Betaling via iDeal →'; }
+    window.__selectedBank = '';
+    document.querySelectorAll('.bank-tile.selected').forEach(t => t.classList.remove('selected'));
     const nb3 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
     if (nb3) nb3.disabled = false;
     const nb2 = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
