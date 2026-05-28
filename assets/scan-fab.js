@@ -321,7 +321,29 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       order_id: __currentPot.order_id, pot_id: __currentPot.id,
     }));
     if (!data) return;
-    toast(`${__currentPot.id} teruggenomen — statiegeld terug`, 'success');
+    toast(`${__currentPot.id} teruggenomen — statiegeld als crediet`, 'success');
+    closeDrawer();
+    softRefreshPage();
+  }
+
+  // Refund the €1 statiegeld back to the customer's IBAN via Stripe (instead of internal credit).
+  // Uses a native confirm() so the admin gets a hard "are you sure" before triggering the API call.
+  async function refundDeposit() {
+    if (!__currentPot || !__currentPot.order_id) return;
+    const name = __currentPot.voornaam || 'de klant';
+    const confirmed = window.confirm(
+      `Weet je zeker dat je €1,00 terug wil storten naar ${name}'s IBAN?\n\n` +
+      `Het geld komt binnen ~5 werkdagen op de rekening waarmee betaald is. ` +
+      `Daarna staat de bestelling op "Opgehaald".`
+    );
+    if (!confirmed) return;
+    const data = await withGuard(() => api('refund-deposit', {
+      order_id: __currentPot.order_id, pot_id: __currentPot.id,
+    }));
+    if (!data) return;
+    const ibanPart = data.iban_last4 ? ` op IBAN ****${data.iban_last4}` : ' op je iDeal-rekening';
+    const eta = data.eta_days || 5;
+    toast(`Statiegeld €1,00 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
     closeDrawer();
     softRefreshPage();
   }
@@ -451,7 +473,11 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     else if (status === 'delivered') {
       const name = pot.voornaam || 'klant';
       titleEl.textContent = `Deze pot is bij ${name}, wat wil je doen?`;
-      wrap.appendChild(actionButton('Statiegeld terug geven →', { variant: 'primary', onClick: () => returnPot() }));
+      // Primary action: credit for next order (internal balance — same as before).
+      wrap.appendChild(actionButton('Crediet voor volgende bestelling →', { variant: 'primary', onClick: () => returnPot() }));
+      // Outline action: refund deposit directly to the customer's IBAN via Stripe.
+      wrap.appendChild(actionButton('Direct terugstorten naar IBAN →', { variant: 'outline', onClick: () => refundDeposit() }));
+      // Tertiary: swap (was the second option before).
       wrap.appendChild(actionButton('Wisselen voor nieuwe pot →', { variant: 'outline', onClick: () => returnPot({ swap: true }) }));
     }
     else if (status === 'returned') {
