@@ -1119,9 +1119,9 @@
     }
     if (!validateStep(currentStep)) return;
     if (currentStep === TOTAL_STEPS) {
-      // Admin variant: show a QR for the klant to scan (no Stripe call on admin device).
+      // Admin variant: button is hidden, QR was rendered on step-7 entry — nothing to do here.
       // Public variant: submit + go straight to Stripe — Stripe shows its own bank picker.
-      if (__adminMode) { startAdminPayQR(); return; }
+      if (__adminMode) return;
       submitOrder();
       return;
     }
@@ -1160,7 +1160,23 @@
       $('#field-email').hidden = isWA;
       $('#contact-noun').textContent = isWA ? '06-nummer' : 'e-mailadres';
     }
-    if (n === 7) renderOrderSummary();
+    if (n === 7) {
+      renderOrderSummary();
+      if (__adminMode) {
+        // Admin variant — kick off the QR generation right when stap 7 renders,
+        // so the klant can scan immediately without the admin clicking iDeal first.
+        startAdminPayQR();
+      } else {
+        // Public flow — make sure the iDeal button + confirm checkbox are visible
+        // (in case the admin variant left them hidden from an earlier session).
+        const sb = document.getElementById('submit-btn');
+        if (sb) { sb.hidden = false; sb.disabled = false; sb.textContent = 'Betaling via iDeal →'; }
+        const cr = document.getElementById('confirm-row');
+        if (cr) cr.hidden = false;
+        const qrWrap = document.getElementById('admin-pay-qr');
+        if (qrWrap) qrWrap.hidden = true;
+      }
+    }
   }
 
   // --- Validation --------------------------------------------------------
