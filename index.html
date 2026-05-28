@@ -990,7 +990,6 @@
       <div class="order-card" id="success-recap" hidden></div>
       <p class="success-help" id="success-help" hidden>En wil je ons helpen? We willen heel graag aan nóg meer leuke kids gezonde chocopasta bezorgen.</p>
       <button type="button" class="btn-primary" id="share-whatsapp-btn" hidden>Deel via WhatsApp →</button>
-      <button type="button" class="btn-primary" id="ideal-btn" hidden>Betaal met iDeal →</button>
       <button id="reset-btn" type="button" hidden></button>
     </section>
 
@@ -1700,16 +1699,14 @@
     }
 
     const headline = document.getElementById('success-headline');
-    const idealBtn = document.getElementById('ideal-btn');
     const recap = document.getElementById('success-recap');
     const subEl = document.getElementById('success-sub');
     const shareBtn = document.getElementById('share-whatsapp-btn');
 
     // Visibility per mode:
-    //   retry        — show iDeal retry button + recap, hide subtitle/help/share
-    //   post-payment — show subtitle/recap/help/share, hide iDeal retry button
+    //   retry        — show recap, hide subtitle/help/share (no iDeal retry button anymore)
+    //   post-payment — show subtitle/recap/help/share
     const helpEl = document.getElementById('success-help');
-    if (idealBtn) idealBtn.hidden = !isRetry;
     if (recap)    recap.hidden    = false; // always show recap on success step
     if (subEl)    subEl.hidden    =  isRetry;
     if (helpEl)   helpEl.hidden   =  isRetry;
@@ -1750,7 +1747,7 @@
       });
     }
 
-    if (recap && isRetry) {
+    if (recap) {
       if (data) {
         const adres = (data.straat || '') + ' ' + (data.huisnummer || '') +
           (data.toevoeging ? '-' + data.toevoeging : '');
@@ -1766,6 +1763,9 @@
           : '';
         const sKLabel = data.kanaal === 'whatsapp' ? 'WhatsApp' : 'e-mail';
         const totalLbl = isRetry ? 'Totaal' : 'Totaal betaald';
+        const contactLine = contact
+          ? 'We sturen je updates via ' + sKLabel + ' op ' + escapeHtml(contact) + '.'
+          : 'We sturen je updates over de bezorging.';
         recap.innerHTML =
           '<div class="order-line"><span>' + sn + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(sPots) + '</span></div>' +
           '<div class="order-line"><span>Statiegeld (' + sn + ' pot' + (sn===1?'':'ten') + ')</span><span>' + fmtEuro(sStat) + '</span></div>' +
@@ -1773,27 +1773,11 @@
           '<div class="order-line total"><span>' + totalLbl + '</span><span>' + fmtEuro(sTot) + '</span></div>' +
           '<div class="order-meta">' +
             '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
-            'We sturen je updates via ' + sKLabel + ' op ' + escapeHtml(contact || '') + '.' +
+            contactLine +
           '</div>';
       } else {
         recap.innerHTML = '<div class="order-meta">We hebben je bestelling ontvangen en sturen je updates over de bezorging.</div>';
       }
-    }
-
-    // Bind the retry iDeal button only when needed (Stripe-failed fallback path).
-    if (isRetry && idealBtn && !idealBtn.dataset.bound) {
-      idealBtn.dataset.bound = '1';
-      idealBtn.addEventListener('click', async () => {
-        if (idealBtn.disabled) return;
-        const originalText = idealBtn.textContent;
-        idealBtn.disabled = true;
-        idealBtn.textContent = 'Even geduld…';
-        // The retry path needs a bank choice. Easiest: send user back to step 7 to pick again.
-        idealBtn.disabled = false;
-        idealBtn.textContent = originalText;
-        try { history.replaceState({}, '', location.pathname); } catch {}
-        location.reload();
-      });
     }
   }
 
