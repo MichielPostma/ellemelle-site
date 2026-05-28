@@ -205,6 +205,8 @@ async function listEnrichedOrders() {
       // Delivery progress
       delivered_pot: state.delivered_pot || null,
       delivered_at:  state.delivered_at  || null,
+      // Pots admin manually pre-coupled to this order (separate from `delivered_pot` which is set on actual delivery).
+      assigned_pots: Array.isArray(state.assigned_pots) ? state.assigned_pots : [],
       order_status:  state.order_status  || (state.delivered_pot ? 'delivered' : 'todo'),
       deleted: !!state.deleted,
       history: Array.isArray(state.history) ? state.history : [],
