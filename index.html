@@ -312,7 +312,7 @@
 
   /* Order summary */
   .order-card {
-    background: var(--white);
+    background: #ffffff;
     border-radius: var(--radius-md);
     padding: 18px 18px;
     box-shadow: var(--shadow-card);
@@ -398,9 +398,10 @@
   #admin-pay-qr { margin-top: 14px; text-align: center; }
   /* QR frame stretches to match the order-card width so it doesn't look cramped in admin. */
   .admin-pay-qr-frame {
-    background: #fff; border-radius: 14px; padding: 18px;
+    background: #ffffff; border-radius: 14px; padding: 18px;
     display: block; width: 100%; box-sizing: border-box;
     aspect-ratio: 1 / 1; max-width: none;
+    box-shadow: var(--shadow-card);
   }
   .admin-pay-qr-frame img, .admin-pay-qr-frame canvas {
     display: block; margin: 0 auto;
