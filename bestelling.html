@@ -574,6 +574,11 @@
     if (a === 'backfill_uiterlijke') {
       return `Uiterlijke bezorgdatum vastgezet op ${entry.value}`;
     }
+    if (a === 'deposit_refunded') {
+      const eur = ((entry.amount_cents || 100) / 100).toFixed(2).replace('.', ',');
+      const iban = entry.iban_last4 ? ` naar IBAN ****${entry.iban_last4}` : '';
+      return `Statiegeld €${eur} teruggestort${iban} (pot ${entry.pot_id || ''})`.trim();
+    }
     return a;
   }
   function renderActivity() {
