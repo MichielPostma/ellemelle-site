@@ -774,6 +774,7 @@
   /* Step actions row: back-pill + primary button */
   .step-actions { display: flex; gap: 10px; align-items: stretch; margin-top: 22px; }
   .step-actions .btn-primary { flex: 1; margin-top: 0; }
+  .step-actions .btn-outline { flex: 1; margin-top: 0; }
   .back-pill {
     flex-shrink: 0;
     width: 60px; min-height: 60px;
@@ -1748,7 +1749,14 @@
     if (!qrWrap || !qrFrame) return;
     if (submitBtn) submitBtn.hidden = true;
     if (confirmRow) confirmRow.hidden = true;
-    if (cancelBtn) cancelBtn.hidden = false;
+    // Slot the cancel button into the step-actions row (next to the back-pill that was wrapped
+    // around submit-btn at boot). That way the visible action row becomes [back] [Annuleer bestelling].
+    if (cancelBtn) {
+      cancelBtn.hidden = false;
+      const actions = submitBtn && submitBtn.parentNode && submitBtn.parentNode.classList && submitBtn.parentNode.classList.contains('step-actions')
+        ? submitBtn.parentNode : null;
+      if (actions && cancelBtn.parentNode !== actions) actions.appendChild(cancelBtn);
+    }
     qrWrap.hidden = false;
     qrFrame.innerHTML = '';
 
