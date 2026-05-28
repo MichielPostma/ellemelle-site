@@ -42,19 +42,27 @@
   }
   /* Match Safari date picker rendering */
   input[type="date"]::-webkit-date-and-time-value { text-align: left; }
-  /* Date field wrapper with a revert icon button sitting just left of the native calendar indicator. */
+  /* Hide the native calendar icon — we draw a red chevron via background-image to match selects. */
+  input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; }
+  /* Date field wrapper: red chevron arrow on the right (matches selects); revert icon left of it. */
   .date-field { position: relative; }
-  .date-field input[type="date"] { padding-right: 88px; }
+  .date-field input[type="date"] {
+    padding-right: 88px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%23D9301E' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 18px center;
+    background-size: 16px 16px;
+  }
   .date-field .revert-btn {
     position: absolute; top: 50%; right: 44px; transform: translateY(-50%);
     width: 36px; height: 36px; border-radius: 10px; border: 0;
-    background: transparent; color: var(--black);
+    background: transparent; color: var(--red);
     display: inline-flex; align-items: center; justify-content: center;
-    cursor: pointer; padding: 0;
+    cursor: pointer; padding: 0; z-index: 2;
     -webkit-tap-highlight-color: transparent;
   }
-  .date-field .revert-btn:hover { background: rgba(0,0,0,0.04); }
-  .date-field .revert-btn:active { background: rgba(0,0,0,0.08); }
+  .date-field .revert-btn:hover { background: rgba(217,48,30,0.06); }
+  .date-field .revert-btn:active { background: rgba(217,48,30,0.12); }
   .date-field .revert-btn svg { width: 20px; height: 20px; display: block; }
   input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card); }
 
