@@ -1671,7 +1671,7 @@
       if (isRetry) {
         headline.innerHTML = 'Leuk <span id="success-name">' + escapeHtml(nameTxt) + '</span>! Doe je betaling, dan bezorgen we binnen 4 weken 🎉';
       } else {
-        headline.innerHTML = 'Leuk' + (nameTxt ? ' <span id="success-name">' + escapeHtml(nameTxt) + '</span>' : '') + '!';
+        headline.innerHTML = 'Leuk' + (nameTxt ? ' <span id="success-name">' + escapeHtml(nameTxt) + '</span>' : '') + ', we gaan aan de slag!';
       }
     }
     // Delivery subtitle for post-payment view — uses snapshot delivery_date if known.
@@ -2070,7 +2070,7 @@
       const __orderRef = __bootParams.get('order_ref') || '';
       if (__urlVoornaam) {
         const __h = document.getElementById('success-headline');
-        if (__h) __h.innerHTML = 'Leuk <span id="success-name">' + (__urlVoornaam.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))) + '</span>!';
+        if (__h) __h.innerHTML = 'Leuk <span id="success-name">' + (__urlVoornaam.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))) + '</span>, we gaan aan de slag!';
       }
 
       // If we have an order_ref, fetch the fresh server-side order so the recap reflects this payment
