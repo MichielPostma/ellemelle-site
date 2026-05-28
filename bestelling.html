@@ -608,17 +608,21 @@
     dEl.style.color = isLate ? 'var(--red)' : '';
     const status = o.order_status || 'todo';
     const sb = $('#d-statusbadge'); sb.textContent = STATUS_LABELS[status] || status; sb.className = 'badge ' + status;
-    // Retourpagina klant button — visible once the order has actually been delivered
-    // (status delivered / neighbors / pickup_self_requested / picked_up) AND a pot is linked.
+    // Retourpagina klant button — visible once the order is delivered/post-delivery AND there's
+    // a pot we can link the customer to. Use `delivered_pot` (set by the bezorger flow) first,
+    // and fall back to the manually-coupled `assigned_pots[0]` so the button works for orders
+    // whose pot was attached via the coupling drawer without going through /bezorger.
     // Note: `hidden` attribute alone isn't enough — buttons get an inline display style that can
     // override it. Use style.display directly so the button truly disappears when not eligible.
     const potBtn = document.getElementById('customer-pot-btn');
     if (potBtn) {
       const visibleStatuses = ['delivered', 'neighbors', 'pickup_self_requested', 'picked_up'];
-      const showPot = !!o.delivered_pot && visibleStatuses.includes(status);
+      const linkedPot = o.delivered_pot
+        || (Array.isArray(o.assigned_pots) && o.assigned_pots.length ? o.assigned_pots[0] : null);
+      const showPot = !!linkedPot && visibleStatuses.includes(status);
       potBtn.hidden = !showPot;
       potBtn.style.display = showPot ? 'block' : 'none';
-      if (showPot) potBtn.dataset.potId = o.delivered_pot;
+      if (showPot) potBtn.dataset.potId = linkedPot;
       else delete potBtn.dataset.potId;
     }
     // Pot row + Koppel-knop in Bestelling-kaart.
