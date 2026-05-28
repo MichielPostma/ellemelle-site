@@ -1563,71 +1563,11 @@
     });
     delete payload.__customer_identifier;
 
-    // Strategy: try our signup function first (Supabase if configured, else forwards to Netlify Forms).
-    // Fall back to direct Netlify Forms POST if the function is unreachable.
-    let ok = false;
-    try {
-      const r = await fetch('/.netlify/functions/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      ok = r.ok;
-    } catch (e) { ok = false; }
+    // Order-after-payment architecture: do NOT submit to Netlify Forms / signup here.
+    // The Stripe webhook will create the actual order on payment_intent.succeeded, using the full
+    // payload that we hand to create-payment-intent (stored in a pending-orders blob keyed by temp_order_id).
 
-    if (!ok) {
-      try {
-        const body = encodeForm(Object.assign({ 'form-name': 'ellemelle-signup', 'bot-field': '' }, payload));
-        const r2 = await fetch('/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body
-        });
-        ok = r2.ok;
-      } catch (e) { ok = false; }
-    }
-
-    if (!ok) {
-      btn.disabled = false;
-      btn.textContent = 'Betaal met iDeal →';
-      showError('Er ging iets mis bij opslaan. Probeer het nog eens.');
-      return;
-    }
-
-    // Refresh banner after submit
-    setTimeout(loadBanner, 500);
-
-    // Fire-and-forget notify (sends Resend confirmation if RESEND_API_KEY is set + kanaal=email)
-    try {
-      fetch('/.netlify/functions/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(() => {});
-    } catch (e) { /* swallow */ }
-
-    // Fire-and-forget web-push to admin subscribers
-    try {
-      fetch('/.netlify/functions/push-send-new-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          voornaam: payload.voornaam,
-          aantal: payload.aantal,
-          straat: payload.straat,
-          huisnummer: payload.huisnummer,
-        }),
-      }).catch(() => {});
-    } catch (e) { /* swallow */ }
-
-    // Notify parent (admin drawer) on success
-    try {
-      if (window.__isEmbed && window.parent !== window) {
-        window.parent.postMessage({ type: 'admin-order-success' }, '*');
-      }
-    } catch {}
-
-    // Save a snapshot of the order so we can render the thank-you view after the Stripe redirect.
+    // Save a snapshot locally so we can render the thank-you view after the Stripe redirect.
     const __snap = {
       voornaam: payload.voornaam,
       aantal: payload.aantal,
@@ -1641,7 +1581,14 @@
     };
     try { localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(__snap)); } catch {}
 
-    // Clear in-progress state — the order is now filed, only the payment hop remains.
+    // Notify parent (admin drawer) that customer is being handed off to iDeal.
+    try {
+      if (window.__isEmbed && window.parent !== window) {
+        window.parent.postMessage({ type: 'admin-order-success' }, '*');
+      }
+    } catch {}
+
+    // Clear in-progress state — payment hop is next, and if the user abandons we shouldn't keep their form data.
     clearState();
 
     // Hand off straight to the customer's iDeal bank — no Stripe Checkout page, no email/name field,
@@ -1657,6 +1604,7 @@
           email: payload.email || '',
           aantal: __aantal,
           statiegeld_credit: __credit,
+          full_order: payload,
         }),
       });
       const __data = await __r.json();
