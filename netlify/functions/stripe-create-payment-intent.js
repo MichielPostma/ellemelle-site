@@ -52,39 +52,46 @@ exports.handler = async (event) => {
     : '';
   const returnUrl = `${baseUrl}${successPath}?paid=stripe${voornaamParam}`;
 
-  // When no bank is given, fall back to Stripe Checkout (Stripe shows its own bank picker).
+  // No-bank path: try Payment Intents API with confirm=true and iDEAL without specifying a bank.
+  // For iDEAL 2.0/Wero this typically returns a redirect URL to pay.ideal.nl where the customer picks a bank.
+  // Skips the Stripe Checkout hosted page (no email/name/Wero choice step).
   if (!bank) {
-    const cParams = new URLSearchParams();
-    cParams.set('mode', 'payment');
-    cParams.set('payment_method_types[0]', 'ideal');
-    cParams.set('success_url', returnUrl + '&session_id={CHECKOUT_SESSION_ID}');
-    cParams.set('cancel_url', `${baseUrl}/?canceled=stripe`);
-    cParams.set('line_items[0][quantity]', '1');
-    cParams.set('line_items[0][price_data][currency]', 'eur');
-    cParams.set('line_items[0][price_data][unit_amount]', String(totalCents));
-    cParams.set('line_items[0][price_data][product_data][name]',
-      `ELLEMELLE chocopasta — ${aantal} pot${aantal === 1 ? '' : 'ten'}`);
-    cParams.set('customer_creation', 'if_required');
+    const pParams = new URLSearchParams();
+    pParams.set('amount', String(totalCents));
+    pParams.set('currency', 'eur');
+    pParams.set('payment_method_types[0]', 'ideal');
+    pParams.set('payment_method_data[type]', 'ideal');
+    pParams.set('payment_method_data[billing_details][name]', voornaam);
     const email = String(body.email || '').trim();
-    if (email && /@/.test(email)) cParams.set('customer_email', email);
-    if (orderId)  cParams.set('metadata[order_id]', orderId);
-    if (voornaam) cParams.set('metadata[voornaam]', voornaam);
-    cParams.set('metadata[aantal]', String(aantal));
-    cParams.set('metadata[statiegeld_credit]', String(credit));
+    if (email && /@/.test(email)) {
+      pParams.set('payment_method_data[billing_details][email]', email);
+      pParams.set('receipt_email', email);
+    }
+    pParams.set('description', `ELLEMELLE chocopasta — ${aantal} pot${aantal === 1 ? '' : 'ten'}`);
+    pParams.set('confirm', 'true');
+    pParams.set('return_url', returnUrl);
+    if (orderId)  pParams.set('metadata[order_id]', orderId);
+    if (voornaam) pParams.set('metadata[voornaam]', voornaam);
+    pParams.set('metadata[aantal]', String(aantal));
+    pParams.set('metadata[statiegeld_credit]', String(credit));
     try {
-      const cr = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      const pr = await fetch('https://api.stripe.com/v1/payment_intents', {
         method: 'POST',
         headers: {
           'Authorization': 'Basic ' + Buffer.from(secret + ':').toString('base64'),
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: cParams.toString(),
+        body: pParams.toString(),
       });
-      const cd = await cr.json();
-      if (!cr.ok || !cd.url) {
-        return { statusCode: 502, headers, body: JSON.stringify({ error: 'stripe_error', detail: cd }) };
+      const pd = await pr.json();
+      if (!pr.ok) {
+        return { statusCode: 502, headers, body: JSON.stringify({ error: 'stripe_error_pi_no_bank', detail: pd }) };
       }
-      return { statusCode: 200, headers, body: JSON.stringify({ url: cd.url, checkout_session_id: cd.id }) };
+      const redirectUrl = pd.next_action && pd.next_action.redirect_to_url && pd.next_action.redirect_to_url.url;
+      if (!redirectUrl) {
+        return { statusCode: 500, headers, body: JSON.stringify({ error: 'no_redirect_url_no_bank', status: pd.status }) };
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ url: redirectUrl, payment_intent_id: pd.id }) };
     } catch (e) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: String(e && e.message || e) }) };
     }
