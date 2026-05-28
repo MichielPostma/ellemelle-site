@@ -393,11 +393,18 @@
   .pay-card .pc-label { font-size: 12.5px; color: var(--red-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
   .pay-card .pc-sub { font-size: 12px; color: rgba(0,0,0,0.6); }
   /* === Admin QR (stap 7, admin-mode) ======================================= */
-  #admin-pay-qr { margin-top: 10px; text-align: center; }
-  .admin-pay-qr-sub { font-size: 14px; color: rgba(0,0,0,0.7); margin: 0 0 14px; }
-  .admin-pay-qr-frame { background: #fff; border-radius: 14px; padding: 18px; display: inline-block; min-width: 280px; min-height: 280px; }
-  .admin-pay-qr-frame img, .admin-pay-qr-frame canvas { display: block; margin: 0 auto; }
-  .admin-pay-qr-hint { font-size: 13px; color: rgba(0,0,0,0.5); margin: 14px 0 0; word-break: break-all; }
+  #admin-pay-qr { margin-top: 14px; text-align: center; }
+  /* QR frame stretches to match the order-card width so it doesn't look cramped in admin. */
+  .admin-pay-qr-frame {
+    background: #fff; border-radius: 14px; padding: 18px;
+    display: block; width: 100%; box-sizing: border-box;
+    aspect-ratio: 1 / 1; max-width: none;
+  }
+  .admin-pay-qr-frame img, .admin-pay-qr-frame canvas {
+    display: block; margin: 0 auto;
+    width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+    image-rendering: pixelated;
+  }
 
   /* Help-text under the recap on the success view */
   .success-help {
@@ -974,13 +981,12 @@
         <span>Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
       </label>
       <div class="error" data-step-error></div>
-      <button class="btn-primary" id="submit-btn" data-next>Betaling via iDeal →</button>
-      <!-- Admin variant: QR voor klant -->
+      <!-- Admin variant: QR voor klant — placed BEFORE the action button so QR sits right under the recap -->
       <div id="admin-pay-qr" hidden>
-        <p class="admin-pay-qr-sub">Laat de klant deze QR scannen om de betaling op de eigen telefoon af te ronden.</p>
         <div class="admin-pay-qr-frame" id="admin-pay-qr-frame"></div>
-        <p class="admin-pay-qr-hint" id="admin-pay-qr-hint">Wachten op QR…</p>
       </div>
+      <button class="btn-primary" id="submit-btn" data-next>Betaling via iDeal →</button>
+      <button class="btn-outline" id="admin-cancel-btn" type="button" hidden>Annuleer bestelling</button>
     </section>
 
     <!-- STEP 8: Success — post-payment thank-you (or stripeRetry fallback with iDeal button) -->
@@ -1738,13 +1744,13 @@
     const confirmRow = document.getElementById('confirm-row');
     const qrWrap = document.getElementById('admin-pay-qr');
     const qrFrame = document.getElementById('admin-pay-qr-frame');
-    const hint = document.getElementById('admin-pay-qr-hint');
+    const cancelBtn = document.getElementById('admin-cancel-btn');
     if (!qrWrap || !qrFrame) return;
     if (submitBtn) submitBtn.hidden = true;
     if (confirmRow) confirmRow.hidden = true;
+    if (cancelBtn) cancelBtn.hidden = false;
     qrWrap.hidden = false;
     qrFrame.innerHTML = '';
-    if (hint) hint.textContent = 'QR maken…';
 
     // Build the order payload (same shape as submitOrder uses)
     const __n = Math.max(1, parseInt(formData.aantal, 10) || 1);
@@ -1776,23 +1782,22 @@
       if (!r.ok || !j.url) throw new Error(j.error || 'create-temp failed');
       payUrl = j.url;
     } catch (e) {
-      if (hint) hint.textContent = 'Kon QR niet maken: ' + (e.message || e);
+      // Silent failure path — without a hint paragraph we just leave the QR area blank.
+      // Admin can close the drawer via the cancel button and retry.
       return;
     }
-    if (hint) hint.textContent = payUrl;
 
-    // Render QR — uses existing QRCode library (loaded with `defer` in <head>)
+    // Render QR — uses existing QRCode library (loaded with `defer` in <head>).
+    // The 560×560 internal canvas is scaled by CSS to whatever width the order-card has.
     function tryRender() {
       if (typeof QRCode === 'undefined') { setTimeout(tryRender, 80); return; }
       try {
         new QRCode(qrFrame, {
-          text: payUrl, width: 280, height: 280,
+          text: payUrl, width: 560, height: 560,
           colorDark: '#000000', colorLight: '#FFFFFF',
           correctLevel: QRCode.CorrectLevel.M
         });
-      } catch (e) {
-        if (hint) hint.textContent = 'QR-render mislukt: ' + (e.message || e);
-      }
+      } catch (e) { /* render failure: leave blank, admin can cancel */ }
     }
     tryRender();
   }
@@ -1817,6 +1822,8 @@
     if (qrFrame2) qrFrame2.innerHTML = '';
     const confirmRow2 = document.getElementById('confirm-row');
     if (confirmRow2) confirmRow2.hidden = false;
+    const cancelBtn2 = document.getElementById('admin-cancel-btn');
+    if (cancelBtn2) cancelBtn2.hidden = true;
     const nb3 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
     if (nb3) nb3.disabled = false;
     const nb2 = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
@@ -1978,6 +1985,22 @@
     });
 
     $('#reset-btn').addEventListener('click', resetForm);
+
+    // Admin existing-customer flow: "Annuleer bestelling" closes the surrounding admin drawer.
+    // Inside an iframe → postMessage to the parent so it can call closeDrawer() without reload.
+    // Outside an iframe (rare; admin testing direct URL) → just navigate to /bestellingen.
+    const __cancelBtn = document.getElementById('admin-cancel-btn');
+    if (__cancelBtn) {
+      __cancelBtn.addEventListener('click', () => {
+        try {
+          if (window.__isEmbed && window.parent !== window) {
+            window.parent.postMessage({ type: 'admin-order-cancel' }, '*');
+            return;
+          }
+        } catch {}
+        try { location.href = '/bestellingen'; } catch {}
+      });
+    }
 
     // Postcode autoformat (4 digits + 2 letters) + live whitelist validation
     const pc = $('#input-postcode');
