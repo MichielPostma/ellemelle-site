@@ -1580,6 +1580,9 @@
       ts: Date.now(),
     };
     try { localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(__snap)); } catch {}
+    // Also persist to the TOP window — when running inside an admin iframe, the post-payment
+    // landing is on the top frame and would otherwise see stale data from a prior test.
+    try { if (window.top && window.top !== window) window.top.localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(__snap)); } catch {}
 
     // Notify parent (admin drawer) that customer is being handed off to iDeal.
     try {
@@ -2056,9 +2059,47 @@
     // Restore saved state if any (skipped when admin picker is forced)
     const saved = __forceAdmin ? null : loadState();
     if (__bootParams.get('paid') === 'stripe') {
-      // Just landed back from Stripe Checkout — render the post-payment thank-you view.
+      // Just landed back from Stripe — render the post-payment thank-you view.
+      // Body class set immediately so we don't briefly flash the intro screen.
+      document.body.classList.add('on-success');
       try { localStorage.removeItem('ellemelle_signup_state_v1'); } catch {}
       currentStep = 8;
+
+      // Hard-render the URL voornaam first so the headline is correct even if blob fetch is slow / fails.
+      const __urlVoornaam = __bootParams.get('voornaam') || '';
+      const __orderRef = __bootParams.get('order_ref') || '';
+      if (__urlVoornaam) {
+        const __h = document.getElementById('success-headline');
+        if (__h) __h.innerHTML = 'Leuk <span id="success-name">' + (__urlVoornaam.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))) + '</span>!';
+      }
+
+      // If we have an order_ref, fetch the fresh server-side order so the recap reflects this payment
+      // (not a stale localStorage snapshot from a previous test).
+      if (__orderRef) {
+        fetch('/api/order/get-pending?id=' + encodeURIComponent(__orderRef))
+          .then(r => r.ok ? r.json() : null)
+          .then(rec => {
+            if (!rec || !rec.order) return;
+            const o = rec.order;
+            const fresh = {
+              voornaam: o.voornaam,
+              aantal: o.aantal,
+              straat: o.straat, huisnummer: o.huisnummer, toevoeging: o.toevoeging,
+              postcode: o.postcode, plaats: o.plaats,
+              kanaal: o.kanaal, telefoon: o.telefoon, email: o.email,
+              statiegeld_credit: Number(o.statiegeld_credit) || 0,
+              delivery_date: o.delivery_date, delivery_mode: o.delivery_mode,
+              ts: Date.now(),
+            };
+            try { localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(fresh)); } catch {}
+            try { if (window.top && window.top !== window) window.top.localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(fresh)); } catch {}
+            // Re-render success step with fresh data — assign formData so prepareSuccessStep uses it.
+            Object.assign(formData, fresh);
+            prepareSuccessStep();
+          })
+          .catch(() => { /* fallback to whatever localStorage had */ });
+      }
+
       prepareSuccessStep();
       showStep(8);
       setTimeout(burstConfetti, 200);
