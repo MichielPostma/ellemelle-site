@@ -496,6 +496,13 @@
       </div>
       <button class="btn-outline" id="return-scan-cancel-btn" type="button">Annuleer</button>
     </div>
+    <!-- After a successful scan we don't auto-submit — admin picks credit OR refund. -->
+    <div id="return-choice-view" hidden style="margin-top: 10px;">
+      <p style="font-size: 14px; color: #555; margin-bottom: 10px;">Pot <strong id="return-choice-potid">POT-…</strong> herkend. Hoe wil je het statiegeld afhandelen?</p>
+      <button class="btn-primary" id="return-choice-credit-btn" type="button" style="margin-top: 0;">Crediet voor volgende bestelling →</button>
+      <button class="btn-outline" id="return-choice-refund-btn" type="button">Direct terugstorten naar IBAN →</button>
+      <button class="btn-outline" id="return-choice-cancel-btn" type="button" style="margin-top: 6px;">Annuleer</button>
+    </div>
     <div class="info-card" id="history-card" style="margin-top: 14px;">
       <div class="detail-row"><span class="k">Statiegeld</span><span class="v" id="d-credit">…</span></div>
       <div id="history-list" style="margin-top: 4px;"></div>
@@ -953,24 +960,56 @@
   }
 
   // --- Lege pot innemen (return) ---
-  async function returnPot(potId) {
+  // Two routes, admin picks after the scan:
+  //   1. Crediet (internal balance, oude flow) → bezorger-pot-return → klant.statiegeld_credit -= 1
+  //   2. Direct terugstorten naar IBAN → refund-deposit → Stripe refund van €1
+  function showReturnChoice(potId) {
+    STATE.returnChoicePotId = potId;
+    $('#return-choice-potid').textContent = potId;
+    $('#return-scan-view').hidden = true;
+    $('#return-choice-view').hidden = false;
+  }
+  function hideReturnChoice() {
+    STATE.returnChoicePotId = null;
+    $('#return-choice-view').hidden = true;
+  }
+  async function returnPotAsCredit(potId) {
     if (!STATE.currentOrder) return;
     const res = await api('bezorger-pot-return', { order_id: STATE.currentOrder.id, pot_id: potId });
     if (res.ok) {
       const wasSwap = !!(res.data && res.data.was_swap);
       const msg = wasSwap
         ? `Pot ${res.data.pot_id} ingenomen — swap (statiegeld blijft staan)`
-        : `Pot ${res.data.pot_id} ingenomen — statiegeld terug`;
+        : `Pot ${res.data.pot_id} ingenomen — statiegeld als crediet`;
       showToast(msg, 'success');
-      stopReturnScanner();
-      $('#return-scan-view').hidden = true;
+      hideReturnChoice();
       await loadCustomerHistory(STATE.currentOrder.id);
     } else {
       showToast(res.data.error || 'Innemen mislukt', 'error');
     }
   }
+  async function returnPotAsRefund(potId) {
+    if (!STATE.currentOrder) return;
+    const name = STATE.currentOrder.voornaam || 'de klant';
+    const confirmed = window.confirm(
+      `Weet je zeker dat je €1,00 terug wil storten naar ${name}'s IBAN?\n\n` +
+      `Het geld komt binnen ~5 werkdagen op de rekening waarmee betaald is.`
+    );
+    if (!confirmed) return;
+    const res = await api('refund-deposit', { order_id: STATE.currentOrder.id, pot_id: potId });
+    if (res.ok) {
+      const ibanPart = res.data.iban_last4 ? ` op IBAN ****${res.data.iban_last4}` : ' op de iDeal-rekening';
+      const eta = res.data.eta_days || 5;
+      showToast(`Statiegeld €1,00 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
+      hideReturnChoice();
+      await loadCustomerHistory(STATE.currentOrder.id);
+    } else {
+      showToast(res.data.error || 'Terugstorten mislukt', 'error');
+    }
+  }
   async function startReturnScanner() {
     const video = $('#return-scanner-video');
+    hideReturnChoice();
     $('#return-scan-view').hidden = false;
     if (STATE.returnScanner) return;
     STATE.returnScanner = new QrScanner(video, async result => {
@@ -978,7 +1017,8 @@
       const m = /POT-\d{3}/i.exec(text);
       if (!m) return;
       playScanSuccess();
-      await returnPot(m[0].toUpperCase());
+      stopReturnScanner();
+      showReturnChoice(m[0].toUpperCase());
     }, { highlightScanRegion: true, returnDetailedScanResult: true });
     try { await STATE.returnScanner.start(); }
     catch (e) {
@@ -1135,7 +1175,7 @@ Ellis en Melle`;
     renderOrders();
   });
 
-  $('#back-to-list').addEventListener('click', () => { stopScanner(); stopReturnScanner(); $('#return-scan-view').hidden = true; showView('list-view'); });
+  $('#back-to-list').addEventListener('click', () => { stopScanner(); stopReturnScanner(); $('#return-scan-view').hidden = true; hideReturnChoice(); showView('list-view'); });
   $('#start-scan-btn').addEventListener('click', () => { if (STATE.qrScanner) stopScanner(); else startScanner(); });
   $('#undo-btn').addEventListener('click', undoDelivery);
   $('#left-with-neighbours-btn').addEventListener('click', leftWithNeighbours);
@@ -1145,6 +1185,13 @@ Ellis en Melle`;
     else { stopReturnScanner(); $('#return-scan-view').hidden = true; }
   });
   $('#return-scan-cancel-btn').addEventListener('click', () => { stopReturnScanner(); $('#return-scan-view').hidden = true; });
+  $('#return-choice-credit-btn').addEventListener('click', () => {
+    const pid = STATE.returnChoicePotId; if (pid) returnPotAsCredit(pid);
+  });
+  $('#return-choice-refund-btn').addEventListener('click', () => {
+    const pid = STATE.returnChoicePotId; if (pid) returnPotAsRefund(pid);
+  });
+  $('#return-choice-cancel-btn').addEventListener('click', hideReturnChoice);
 
   // Hamburger
   $('#menu-open')?.addEventListener('click', () => { $('#menu-backdrop').classList.add('open'); $('#menu-panel').classList.add('open'); });
