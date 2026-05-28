@@ -67,7 +67,8 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     return `nog ${n} dagen`;
   }
   function fmtEuro(n) {
-    return '€' + (Number(n) || 0).toFixed(2).replace('.', ',');
+    const v = Number(n) || 0;
+    return '€' + (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ','));
   }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -330,7 +331,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     if (!__currentPot || !__currentPot.order_id) return;
     const name = __currentPot.voornaam || 'de klant';
     const confirmed = window.confirm(
-      `Weet je zeker dat je €1,00 terug wil storten naar ${name}'s IBAN?\n\n` +
+      `Weet je zeker dat je €1 terug wil storten naar ${name}'s IBAN?\n\n` +
       `Het geld komt binnen ~5 werkdagen op de rekening waarmee betaald is. ` +
       `Daarna staat de bestelling op "Opgehaald".`
     );
@@ -341,7 +342,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     if (!data) return;
     const ibanPart = data.iban_last4 ? ` op IBAN ****${data.iban_last4}` : ' op je iDeal-rekening';
     const eta = data.eta_days || 5;
-    toast(`Statiegeld €1,00 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
+    toast(`Statiegeld €1 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
     closeDrawer();
     softRefreshPage();
   }
@@ -525,7 +526,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       rows.push(['Adres', pot.adres]);
     }
     // Statiegeld is a fixed €1 per pot
-    rows.push(['Statiegeld', '€1,00']);
+    rows.push(['Statiegeld', '€1']);
     // Note: pot.ratings + pot.rated_at intentionally NOT shown here — ratings belong
     // on the order detail page (/bestelling/:id Feedback section), not on pot info.
     if (pot.order_id) {
