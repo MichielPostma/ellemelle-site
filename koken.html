@@ -1282,6 +1282,8 @@
     if (ev.data.type === 'admin-order-success') {
       closeDrawer();
       setTimeout(() => location.reload(), 600);
+    } else if (ev.data.type === 'admin-order-cancel') {
+      closeDrawer();
     } else if (ev.data.type === 'admin-open-new-customer') {
       // Stay inside the drawer — navigate the iframe to fresh customer flow in embed mode
       const ifr = document.getElementById('admin-order-iframe');
