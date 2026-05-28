@@ -339,7 +339,7 @@
     <div class="actions-label">Bestelling</div>
     <div class="info-card">
       <div class="detail-row"><span class="k">Aantal potten</span><span class="v" id="d-aantal">1</span></div>
-      <div class="detail-row"><span class="k">Prijs</span><span class="v" id="d-prijs">€6,00</span></div>
+      <div class="detail-row"><span class="k">Prijs</span><span class="v" id="d-prijs">€6</span></div>
       <div class="detail-row"><span class="k">Besteldatum</span><span class="v" id="d-created">—</span></div>
       <div class="detail-row" id="d-pot-row" hidden><span class="k">Gekoppelde pot(ten)</span><span class="v" id="d-pot-ids">—</span></div>
       <button class="btn-outline" id="couple-pot-btn" type="button" hidden style="margin-top: 14px;">Koppel pot(ten)</button>
@@ -353,7 +353,7 @@
       <div class="detail-row"><span class="k">Plaats</span><span class="v" id="d-plaats">—</span></div>
       <div class="detail-row"><span class="k">Updates</span><span class="v" id="d-kanaal">—</span></div>
       <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact">—</span></div>
-      <div class="detail-row"><span class="k">Statiegeld credit</span><span class="v" id="d-credit">€0,00</span></div>
+      <div class="detail-row"><span class="k">Statiegeld credit</span><span class="v" id="d-credit">€0</span></div>
     </div>
 
     <div id="d-feedback-wrap" hidden>
@@ -609,7 +609,7 @@
       return `Uiterlijke bezorgdatum vastgezet op ${entry.value}`;
     }
     if (a === 'deposit_refunded') {
-      const eur = ((entry.amount_cents || 100) / 100).toFixed(2).replace('.', ',');
+      const cents = entry.amount_cents || 100; const v = cents/100; const eur = Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
       const iban = entry.iban_last4 ? ` naar IBAN ****${entry.iban_last4}` : '';
       return `Statiegeld €${eur} teruggestort${iban} (pot ${entry.pot_id || ''})`.trim();
     }
@@ -716,9 +716,9 @@
     } else { c.textContent = '—'; }
     // Statiegeld credit (deposit outstanding) — comes from /bestellingen-get .customer.statiegeld_credit
     const credit = (STATE.customer && Number(STATE.customer.statiegeld_credit)) || 0;
-    $('#d-credit').textContent = '€' + credit.toFixed(2).replace('.', ',');
+    $('#d-credit').textContent = '€' + (Number.isInteger(credit) ? String(credit) : credit.toFixed(2).replace('.', ','));
     $('#d-aantal').textContent = String(o.aantal || 1);
-    $('#d-prijs').textContent = '€6,00';
+    $('#d-prijs').textContent = '€6';
     $('#d-created').textContent = fmtDateTime(o.created_at);
 
     // Feedback ratings — hide the whole section unless the customer actually submitted a rating.
@@ -728,10 +728,10 @@
     if (fbWrap) fbWrap.hidden = !hasRating;
     if (hasRating) {
       const renderStars = (n) => {
-        if (!n || n < 1) return '<span style="color:#999;">n/a</span>';
+        if (!n || n < 1) return '<span style="color:var(--black);">n/a</span>';
         const FULL = '★', EMPTY = '☆';
         const stars = FULL.repeat(n) + EMPTY.repeat(Math.max(0, 5 - n));
-        return '<span style="color:var(--red);letter-spacing:2px;font-size:16px;">' + stars + '</span> <span style="color:#666;font-size:12px;">(' + n + '/5)</span>';
+        return '<span style="color:var(--red);letter-spacing:2px;font-size:16px;">' + stars + '</span> <span style="color:var(--black);font-size:14px;font-weight:600;">' + n + '/5</span>';
       };
       $('#d-rating-taste').innerHTML   = renderStars(ratings.taste);
       $('#d-rating-texture').innerHTML = renderStars(ratings.texture);
