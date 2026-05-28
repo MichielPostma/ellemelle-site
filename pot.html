@@ -157,17 +157,6 @@
   @media (prefers-reduced-motion: reduce) { #qrcode { animation: none; } }
   .success-subtitle { color: #666; font-size: 15px; line-height: 1.45; text-align: center; margin: 6px auto 0; max-width: 360px; }
 
-  .bank-picker { display: block; margin: 16px 0 4px; }
-  .bank-picker-label { display: block; font-size: 13px; color: rgba(0,0,0,0.7); margin: 0 0 6px 2px; font-weight: 600; }
-  .bank-select {
-    width: 100%; padding: 14px 44px 14px 16px;
-    border: 2px solid var(--red, #c52828); border-radius: 12px; background-color: #fff; color: #000;
-    font-size: 16px; font-family: inherit; line-height: 1.2;
-    appearance: none; -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c52828' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 16px center;
-  }
-  .bank-select:focus { outline: none; border-color: var(--red-dark, #8b1a1a); }
 </style>
 </head>
 <body>
@@ -286,29 +275,7 @@
   </section>
 
   <section id="reorder-bank-view" hidden class="step">
-    <h1 class="step-question">Kies je bank</h1>
-    <p class="subtitle">We sturen je direct naar de iDeal-pagina van je bank.</p>
-    <div class="order-card" id="bank-order-recap" style="margin-bottom: 16px;"></div>
-    <div class="bank-picker">
-      <label class="bank-picker-label" for="reorder-bank-select">Bank</label>
-      <select id="reorder-bank-select" class="bank-select" required>
-        <option value="" disabled selected>— Selecteer je bank —</option>
-        <option value="abn_amro">ABN AMRO</option>
-        <option value="ing">ING</option>
-        <option value="rabobank">Rabobank</option>
-        <option value="sns_bank">SNS</option>
-        <option value="asn_bank">ASN</option>
-        <option value="knab">Knab</option>
-        <option value="bunq">bunq</option>
-        <option value="triodos_bank">Triodos</option>
-        <option value="regiobank">RegioBank</option>
-        <option value="revolut">Revolut</option>
-        <option value="van_lanschot">Van Lanschot</option>
-        <option value="yoursafe">Yoursafe</option>
-        <option value="n26">N26</option>
-      </select>
-    </div>
-    <button type="button" class="btn-primary" id="reorder-pay-btn">Betaal met iDeal →</button>
+    <p style="text-align:center; padding: 60px 0; color:#666;">Naar iDeal…</p>
   </section>
 </main>
 
@@ -453,58 +420,22 @@
     if (STATE.surveyStep < SURVEY_Qs.length) { renderSurveyStep(); return; }
     await submitRatings();
     if (STATE.surveyMode === 'reorder') {
-      // Skip the old bevestigingspagina — show the inline bank picker instead.
-      // After paying via Stripe the customer lands on /pot/{id}?paid=stripe.
-      showReorderBankPicker();
+      await reorderAndPay();
     } else {
       openPickupReview();
     }
   }
-  function showReorderBankPicker() {
-    // Render small recap card with delivery info so the customer sees what they're paying for.
-    const p = STATE.pot || {};
-    const recap = $('#bank-order-recap');
-    if (recap) {
-      const adres = (p.straat || '') + ' ' + (p.huisnummer || '') + (p.toevoeging ? '-' + p.toevoeging : '');
-      const stad  = (p.postcode || '') + ' ' + (p.plaats || 'Haarlem');
-      recap.innerHTML =
-        '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
-        '<div class="order-line"><span>Statiegeld</span><span>€1,00</span></div>' +
-        '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
-        (adres.trim() ? ('<div class="order-meta"><strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '</div>') : '');
-    }
+  async function reorderAndPay() {
     showView('reorder-bank-view');
-  }
-
-  async function payReorderWithIdeal() {
-    const sel = $('#reorder-bank-select');
-    const bank = sel ? sel.value : '';
-    if (!bank) {
-      showToast('Kies eerst je bank', 'error');
-      if (sel) sel.focus();
-      return;
-    }
-    const btn = $('#reorder-pay-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Even geduld…'; }
-    // 1) Place the reorder in the backend (creates pickup-with-reorder linkage)
     try {
       const r = await fetch('/.netlify/functions/customer-reorder', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pot_id: STATE.potId }),
       });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        if (btn) { btn.disabled = false; btn.textContent = 'Betaal met iDeal →'; }
-        showToast(j.error || 'Bestellen mislukt', 'error');
-        return;
-      }
+      if (!r.ok) { showToast(j.error || 'Bestellen mislukt', 'error'); return; }
       STATE.reorderResp = j;
-    } catch (e) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Betaal met iDeal →'; }
-      showToast('Bestellen mislukt', 'error');
-      return;
-    }
-    // 2) Create Payment Intent with pre-selected bank — direct redirect to bank's iDeal page
+    } catch (e) { showToast('Bestellen mislukt', 'error'); return; }
     try {
       const r = await fetch('/api/stripe/create-payment-intent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -513,20 +444,12 @@
           aantal: 1,
           statiegeld_credit: 0,
           success_pot_id: STATE.potId,
-          bank,
         }),
       });
       const j = await r.json();
-      if (!r.ok || !j.url) {
-        if (btn) { btn.disabled = false; btn.textContent = 'Betaal met iDeal →'; }
-        showToast(j.error || 'Stripe sessie mislukt', 'error');
-        return;
-      }
+      if (!r.ok || !j.url) { showToast(j.error || 'Stripe sessie mislukt', 'error'); return; }
       (window.top || window).location.href = j.url;
-    } catch (e) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Betaal met iDeal →'; }
-      showToast('Betaling kon niet starten', 'error');
-    }
+    } catch (e) { showToast('Betaling kon niet starten', 'error'); }
   }
   async function submitRatings() {
     const payload = {};
@@ -595,7 +518,7 @@
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { btn.disabled = false; btn.textContent = 'Doe betaling →'; showToast(j.error || 'Bestellen mislukt', 'error'); return; }
     STATE.reorderResp = j; STATE.pot.status = 'pickup-with-reorder';
-    showReorderBankPicker();
+    reorderAndPay();
   }
 
   $('#btn-pickup').addEventListener('click', () => startSurvey('pickup'));
@@ -615,7 +538,6 @@
   $('#reorder-back-btn').addEventListener('click', () => { if (STATE.pot.status === 'pickup-with-reorder') showView('reordered-view'); else renderForCurrentState(); });
   $('#reorder-confirm').addEventListener('change', () => { $('#reorder-submit-btn').disabled = !$('#reorder-confirm').checked; });
   $('#reorder-submit-btn').addEventListener('click', submitReorder);
-  $('#reorder-pay-btn').addEventListener('click', payReorderWithIdeal);
 
   (async () => {
     STATE.potId = getPotIdFromURL();
