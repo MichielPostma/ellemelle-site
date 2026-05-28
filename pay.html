@@ -140,6 +140,7 @@
           aantal: Math.max(1, parseInt(order.aantal, 10) || 1),
           statiegeld_credit: Math.max(0, parseInt(order.statiegeld_credit, 10) || 0),
           full_order: order,
+          success_pay_id: STATE.tempId || '',
         }),
       });
       const j = await r.json();
@@ -173,13 +174,29 @@
     // Post-payment landing?
     const qs = new URLSearchParams(location.search);
     if (qs.get('paid') === 'stripe') {
+      const urlVoornaam = qs.get('voornaam') || '';
+      const orderRef = qs.get('order_ref') || '';
+      // Optimistic render from URL voornaam — refined when blob fetch returns.
+      $('#success-headline').textContent = 'Leuk' + (urlVoornaam ? ' ' + urlVoornaam : '') + ', we gaan aan de slag!';
       let snap = null;
       try { snap = JSON.parse(localStorage.getItem('ellemelle_last_order_v1') || 'null'); } catch {}
-      const voornaam = qs.get('voornaam') || (snap && snap.voornaam) || '';
-      $('#success-headline').textContent = 'Leuk' + (voornaam ? ' ' + voornaam : '') + '!';
       if (snap) renderRecap('success-recap', snap);
       showView('success-view');
       setTimeout(burstConfetti, 200);
+      // Fetch the actual order from the pending-orders blob — works cross-device (when localStorage is empty).
+      if (orderRef) {
+        try {
+          const r = await fetch('/api/order/get-pending?id=' + encodeURIComponent(orderRef));
+          if (r.ok) {
+            const rec = await r.json();
+            if (rec && rec.order) {
+              const o = rec.order;
+              if (o.voornaam) $('#success-headline').textContent = 'Leuk ' + o.voornaam + ', we gaan aan de slag!';
+              renderRecap('success-recap', o);
+            }
+          }
+        } catch {}
+      }
       try { history.replaceState({}, '', location.pathname); } catch {}
       return;
     }
