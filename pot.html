@@ -336,7 +336,7 @@
     const rows = [
       { k: 'Geproduceerd', v: p.production_date ? fmtDateLong(p.production_date) : '—' },
       { k: 'Houdbaar t/m', v: p.expiry_date ? fmtDateLong(p.expiry_date) : '—' },
-      { k: 'Statiegeld', v: '€1,00' },
+      { k: 'Statiegeld', v: '€1' },
       { k: 'Besteller', v: p.voornaam || '—' },
     ];
     $('#pot-info-blok').innerHTML = rows.map(r => '<div class="row"><span class="k">'+escapeHtml(r.k)+'</span><span class="v">'+escapeHtml(r.v)+'</span></div>').join('');
@@ -481,7 +481,7 @@
     const ophaaldatum = 'zaterdag ' + next.getDate() + ' ' + NL_MAANDEN[next.getMonth()];
     $('#pickup-review-card').innerHTML =
       '<div class="order-line"><span>1× lege pot ' + escapeHtml(STATE.potId) + '</span><span>ophalen</span></div>' +
-      '<div class="order-line"><span>Statiegeld retour</span><span>€1,00</span></div>' +
+      '<div class="order-line"><span>Statiegeld retour</span><span>€1</span></div>' +
       '<div class="order-meta">' +
         '<strong>Ophaaladres</strong><br>' + addrLine + '<br>' + cityLine + '<br><br>' +
         '<strong>Ophaaldatum</strong><br>' + ophaaldatum +
@@ -500,7 +500,7 @@
     const offset = ((6 - day + 7) % 7) || 7;
     const next = new Date(today.getTime() + offset * 86400000);
     $('#pickup-confirm-headline').textContent = 'We halen je pot op zaterdag ' + next.getDate() + ' ' + NL_MAANDEN[next.getMonth()] + '.';
-    $('#pickup-confirm-sub').textContent = 'Statiegeld €1,00 wordt teruggestort. Bedankt voor je feedback!';
+    $('#pickup-confirm-sub').textContent = 'Statiegeld €1 wordt teruggestort. Bedankt voor je feedback!';
     showView('pickup-confirm-view');
   }
 
@@ -510,9 +510,9 @@
     const addrLine = (p.adres ? escapeHtml(p.adres) : '(adres onbekend)');
     const cityLine = (p.stad ? escapeHtml(p.stad) : '');
     $('#reorder-order-card').innerHTML =
-      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
-      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
-      '<div class="order-line total"><span>Totaal</span><span>€6,00</span></div>' +
+      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5</span></div>' +
+      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1</span></div>' +
+      '<div class="order-line total"><span>Totaal</span><span>€6</span></div>' +
       '<div class="order-meta"><strong>Bezorgadres</strong><br>'+addrLine+'<br>'+cityLine+'<br><br>Binnen 4 weken aan je deur door Ellis & Melle. Lege pot '+escapeHtml(STATE.potId)+' nemen we mee.</div>';
     $('#reorder-confirm').checked = false; $('#reorder-submit-btn').disabled = true;
     showView('reorder-review-view');
@@ -568,9 +568,9 @@
     const recap = $('#reorder-success-card');
     if (!recap) return;
     recap.innerHTML =
-      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5,00</span></div>' +
-      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1,00</span></div>' +
-      '<div class="order-line total"><span>Totaal betaald</span><span>€6,00</span></div>' +
+      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5</span></div>' +
+      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1</span></div>' +
+      '<div class="order-line total"><span>Totaal betaald</span><span>€6</span></div>' +
       '<div class="order-meta">' +
         '<strong>Bezorgadres</strong><br>' + adres + '<br>' + stad + '<br><br>' +
         'Lege pot ' + escapeHtml(STATE.potId || '') + ' nemen we tegelijk mee.' +
