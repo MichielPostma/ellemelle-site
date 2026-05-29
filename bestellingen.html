@@ -1023,23 +1023,29 @@
   $('#menu-backdrop').addEventListener('click', () => { $('#menu-backdrop').classList.remove('open'); $('#menu-panel').classList.remove('open'); });
   $('#menu-logout').addEventListener('click', () => { clearSession(); location.reload(); });
 
-  // Boot
-  document.body.classList.add('on-login');
+  // Boot — only add the `on-login` class when there's no session, so the main layout
+  // doesn't briefly compress to login-width while the first API call is in flight.
   STATE.password = loadSession();
+  if (!STATE.password) {
+    document.body.classList.add('on-login');
+  }
   if (STATE.password) {
+    $('#login-view').hidden = true;
+    $('#main-view').hidden = false;
     (async () => {
-      const res = await api('bestellingen-list');
-      if (!res.ok) { clearSession(); STATE.password = null; return; }
-      $('#login-view').hidden = true; $('#main-view').hidden = false;
-      document.body.classList.remove('on-login');
+      // Fetch orders + voorraad in parallel — they're independent and were ~doubling the cold-load time.
+      const [res, cfg] = await Promise.all([
+        api('bestellingen-list'),
+        api('voorraad-list'),
+      ]);
+      if (!res.ok) { clearSession(); STATE.password = null; document.body.classList.add('on-login'); $('#main-view').hidden = true; $('#login-view').hidden = false; return; }
       STATE.orders = res.data.orders || [];
-      const cfg = await api('voorraad-list');
       if (cfg.ok && cfg.data && cfg.data.config) {
         STATE.config = cfg.data.config;
         const pots = cfg.data.pots || [];
         STATE.config.stock_count = pots.filter(p => p.status === 'voorraad').length;
       }
-        renderOrders();
+      renderOrders();
     })();
   }
   syncTabFromHash();
