@@ -1144,7 +1144,15 @@
         body: JSON.stringify({ password: pwd, order_id: o.id, pot_ids: Array.from(selected) }),
       });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) { toast(j.error || 'Bewaren mislukt'); return; }
+      if (!r.ok) {
+        // Surface the offending pot id + actual status so the message is debuggable when something
+        // looks inconsistent (e.g. drawer shows pot as voorraad but backend already moved it elsewhere).
+        let msg = j.error || 'Bewaren mislukt';
+        if (j.pot_id) msg += ' (' + j.pot_id + (j.status ? ' = ' + j.status : '') + ')';
+        if (j.other_order) msg = 'Pot ' + j.pot_id + ' is al gekoppeld aan een andere bestelling';
+        toast(msg);
+        return;
+      }
       close();
       // Reload the order so the Pot row reflects fresh state.
       setTimeout(() => location.reload(), 200);
