@@ -476,14 +476,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       // admin starts a new order via the floating + button after either action lands.
       wrap.appendChild(actionButton('Statiegeld bewaren →', { variant: 'primary', onClick: () => returnPot() }));
       wrap.appendChild(actionButton('Statiegeld terugstorten', { variant: 'outline', onClick: () => refundDeposit() }));
-      // Bottom outline link to the order detail page — replaces the "Bestelling: Bekijk →" row.
-      if (pot.order_id) {
-        const orderId = pot.order_id;
-        wrap.appendChild(actionButton('Bekijk bestelling', {
-          variant: 'outline',
-          onClick: () => { closeDrawer(); location.href = '/bestelling/' + orderId; },
-        }));
-      }
+      // "Bekijk bestelling" is rendered by renderFooter() below the pot history card.
     }
     else if (status === 'returned') {
       titleEl.textContent = 'Deze pot heb je eerder teruggenomen, wat wil je doen?';
@@ -598,12 +591,25 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     drawerRoot.drawer.scrollTop = 0;
   }
 
-  // Render the always-at-the-bottom Verwijder pot button.
+  // Render the always-at-the-bottom buttons:
+  //   - "Bekijk bestelling" (only when an order is linked)
+  //   - "Pot verwijderen" (always, except for uninitialized)
+  // Order matters: Bekijk bestelling sits ABOVE Verwijder pot.
   // For `delivered` an extra-strong confirm is needed because the pot is at a customer.
   function renderFooter(pot) {
     const wrap = document.getElementById('sfb-footer-actions');
     wrap.innerHTML = '';
     const status = pot.status || 'uninitialized';
+
+    // "Bekijk bestelling" — first in the footer, only when the pot is currently linked to an order.
+    if (pot.order_id) {
+      const orderId = pot.order_id;
+      wrap.appendChild(actionButton('Bekijk bestelling', {
+        variant: 'outline',
+        onClick: () => { closeDrawer(); location.href = '/bestelling/' + orderId; },
+      }));
+    }
+
     // Uninitialized has nothing to delete yet
     if (status === 'uninitialized') return;
     if (status === 'delivered') {
