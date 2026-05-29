@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#D9301E">
+<title>ELLEMELLE — klant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+  :root {
+    --red: #D9301E; --red-dark: #8B1A0E;
+    --cream: #feece2; --cream-dark: #ECE3D2;
+    --black: #1A1A1A; --white: #FFFFFF;
+    --shadow-card: 0 2px 10px rgba(139,26,14,0.08);
+    --shadow-cta: 0 6px 18px rgba(217,48,30,0.28);
+    --radius-md: 14px;
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream); color: var(--black);
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 16px; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+  #app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; position: relative; }
+  .step-question { color: var(--red); font-size: 28px; line-height: 1.15; margin-bottom: 14px; letter-spacing: -0.2px; font-weight: 700; }
+  .actions-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .back-link { background: transparent; border: none; padding: 6px 0; color: var(--black); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 4px; }
+  input[type="password"] {
+    width: 100%; min-height: 56px; padding: 16px 18px; font-size: 16px; font-family: inherit;
+    background: var(--white); border: 2px solid transparent; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card); color: var(--black); appearance: none;
+  }
+  input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card); }
+  .btn-primary {
+    display: block; width: 100%; min-height: 60px; line-height: 60px; text-align: center;
+    background: var(--red); color: var(--white); border: none; border-radius: var(--radius-md);
+    font-family: inherit; font-size: 18px; font-weight: 700;
+    cursor: pointer; margin-top: 14px; box-shadow: var(--shadow-cta);
+  }
+  .btn-primary[hidden] { display: none !important; }
+  .btn-outline {
+    display: block; width: 100%; min-height: 56px; line-height: 52px; text-align: center;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-top: 10px;
+  }
+  .btn-outline[hidden] { display: none !important; }
+  .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
+  .info-card { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 14px; line-height: 1.45; }
+  .detail-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--cream-dark); font-size: 14px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .k { color: #666; font-weight: 500; }
+  .detail-row .v { color: var(--black); font-weight: 600; text-align: right; }
+  .error { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 500; }
+  .empty { padding: 14px 16px; color: #888; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<main id="app">
+  <a href="/bestellingen#klanten" class="back-link">← Klanten</a>
+
+  <section id="login-view" hidden>
+    <h1 class="step-question">Admin login</h1>
+    <input type="password" id="pw" placeholder="Wachtwoord">
+    <button class="btn-primary" id="login-btn" type="button">Inloggen</button>
+    <p class="error" id="login-err"></p>
+  </section>
+
+  <section id="detail-view" hidden>
+    <h1 class="step-question" id="d-name">Klant</h1>
+
+    <div class="actions-label">Klant</div>
+    <div class="info-card">
+      <div class="detail-row"><span class="k">Adres</span><span class="v" id="d-adres">—</span></div>
+      <div class="detail-row"><span class="k">Plaats</span><span class="v" id="d-plaats">—</span></div>
+      <div class="detail-row"><span class="k">Updates</span><span class="v" id="d-kanaal">—</span></div>
+      <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact">—</span></div>
+      <div class="detail-row"><span class="k">Pot(ten) in huis</span><span class="v" id="d-pots-home">0</span></div>
+    </div>
+
+    <div class="actions-label">Statiegeld</div>
+    <div class="info-card">
+      <div class="detail-row"><span class="k">Statiegeld krediet</span><span class="v" id="d-credit-amount">€0</span></div>
+      <button class="btn-outline" id="refund-credit-btn" type="button" style="margin-top: 14px;">Statiegeld terugbetalen</button>
+    </div>
+
+    <div class="actions-label">Bestellingen</div>
+    <div class="info-card" id="d-orders"></div>
+  </section>
+</main>
+
+<div id="toast" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--black); color: white; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 200ms; pointer-events: none; max-width: 90%; text-align: center;"></div>
+
+<script>
+(function(){
+  'use strict';
+  const $ = sel => document.querySelector(sel);
+  const STORAGE_KEY = 'ellemelle_admin_session_v1';
+  const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
+  const STATE = { password: null, customer: null, orders: [] };
+
+  function getKey() {
+    const m = location.pathname.match(/^\/klant\/(.+)$/);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  function loadSession() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      if (!o || !o.savedAt || (Date.now() - o.savedAt) > SESSION_TTL) return null;
+      return o.password || null;
+    } catch { return null; }
+  }
+  function saveSession(pw) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ password: pw, savedAt: Date.now() })); } catch {} }
+  function showToast(msg, type) {
+    const t = $('#toast'); if (!t) return;
+    t.textContent = msg;
+    t.style.background = type === 'success' ? '#1c7d3f' : (type === 'error' ? 'var(--red)' : 'var(--black)');
+    t.style.opacity = '1';
+    clearTimeout(window.__toastT); window.__toastT = setTimeout(() => { t.style.opacity = '0'; }, 4000);
+  }
+  function showView(name) {
+    $('#login-view').hidden = (name !== 'login');
+    $('#detail-view').hidden = (name !== 'detail');
+  }
+  async function api(ep, body) {
+    const r = await fetch('/.netlify/functions/' + ep, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ password: STATE.password }, body || {})),
+    });
+    const data = await r.json().catch(() => ({}));
+    return { ok: r.ok, data };
+  }
+  function fmtEuro(cents) {
+    const v = cents / 100;
+    return '€' + (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ','));
+  }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.getDate() + '/' + (d.getMonth() + 1);
+  }
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
+
+  function renderDetail() {
+    const c = STATE.customer;
+    $('#d-name').textContent = c.voornaam || '(geen naam)';
+    $('#d-adres').textContent = c.adres || '—';
+    $('#d-plaats').textContent = c.plaats || '—';
+    $('#d-kanaal').textContent = c.kanaal === 'whatsapp' ? 'WhatsApp' : (c.kanaal === 'email' ? 'E-mail' : (c.kanaal || '—'));
+    const ct = c.kanaal === 'whatsapp' ? c.telefoon : c.email;
+    $('#d-contact').textContent = ct || '—';
+    $('#d-pots-home').textContent = String(c.pots_at_home || 0);
+    const creditCents = (c.statiegeld_credit || 0) * 100;
+    $('#d-credit-amount').textContent = fmtEuro(creditCents);
+    const refundBtn = $('#refund-credit-btn');
+    refundBtn.disabled = creditCents < 50;
+    refundBtn.style.opacity = creditCents < 50 ? '0.4' : '1';
+
+    const ordersEl = $('#d-orders');
+    ordersEl.innerHTML = '';
+    if (!STATE.orders.length) { ordersEl.innerHTML = '<div class="empty">Geen bestellingen.</div>'; return; }
+    STATE.orders.forEach(o => {
+      const row = document.createElement('div');
+      row.className = 'detail-row';
+      row.style.cursor = 'pointer';
+      row.innerHTML = '<span class="k">' + fmtDate(o.created_at) + '</span>' +
+        '<span class="v">' + (STATUS_LABELS[o.order_status] || o.order_status || '—') + '</span>';
+      row.addEventListener('click', () => { location.href = '/bestelling/' + o.id; });
+      ordersEl.appendChild(row);
+    });
+  }
+
+  async function load() {
+    const key = getKey();
+    if (!key) { showToast('Geen klant-id in URL', 'error'); return; }
+    const r = await api('klant-get', { key });
+    if (!r.ok) {
+      if (r.data.error === 'unauthorized') { STATE.password = null; showView('login'); return; }
+      showToast(r.data.error || 'Laden mislukt', 'error'); return;
+    }
+    STATE.customer = r.data.customer;
+    STATE.orders   = r.data.orders || [];
+    showView('detail');
+    renderDetail();
+  }
+
+  async function refundCredit() {
+    const c = STATE.customer;
+    const creditCents = (c.statiegeld_credit || 0) * 100;
+    if (creditCents < 50) return;
+    const name = c.voornaam || 'de klant';
+    const eur = fmtEuro(creditCents);
+    if (!confirm(`Weet je zeker dat je ${eur} terug wil betalen aan ${name}?\n\nHet bedrag wordt binnen ~5 werkdagen overgemaakt naar de rekening waarmee betaald is.`)) return;
+    const btn = $('#refund-credit-btn');
+    btn.disabled = true; btn.textContent = 'Bezig…';
+    const r = await api('refund-klant-credit', { key: c.key });
+    btn.textContent = 'Statiegeld terugbetalen';
+    if (!r.ok) {
+      btn.disabled = false;
+      showToast(r.data.error || 'Terugbetalen mislukt', 'error');
+      return;
+    }
+    const ibanPart = r.data.iban_last4 ? ' op IBAN ****' + r.data.iban_last4 : ' op de iDeal-rekening';
+    const eta = r.data.eta_days || 5;
+    showToast(fmtEuro(r.data.total_amount_cents || 0) + ' wordt binnen ' + eta + ' werkdagen teruggestort' + ibanPart + '.', 'success');
+    setTimeout(load, 800);
+  }
+
+  $('#login-btn').addEventListener('click', async () => {
+    const pw = $('#pw').value.trim();
+    if (!pw) return;
+    STATE.password = pw;
+    const r = await api('klanten-list', {});
+    if (r.ok) { saveSession(pw); load(); }
+    else { $('#login-err').textContent = r.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + r.data.error); }
+  });
+  $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
+  $('#refund-credit-btn').addEventListener('click', refundCredit);
+
+  STATE.password = loadSession();
+  if (STATE.password) load();
+  else showView('login');
+})();
+</script>
+<script src="/assets/pull-to-refresh.js" defer></script>
+</body>
+</html>
