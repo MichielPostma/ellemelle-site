@@ -474,8 +474,16 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       titleEl.textContent = `Je neemt de pot terug van ${name}, wat doen we met het statiegeld?`;
       // Two options for closing this pot's loop with the klant. For a wisselen-flow the
       // admin starts a new order via the floating + button after either action lands.
-      wrap.appendChild(actionButton('Statiegeld bewaren', { variant: 'primary', onClick: () => returnPot() }));
+      wrap.appendChild(actionButton('Statiegeld bewaren →', { variant: 'primary', onClick: () => returnPot() }));
       wrap.appendChild(actionButton('Statiegeld terugstorten', { variant: 'outline', onClick: () => refundDeposit() }));
+      // Bottom outline link to the order detail page — replaces the "Bestelling: Bekijk →" row.
+      if (pot.order_id) {
+        const orderId = pot.order_id;
+        wrap.appendChild(actionButton('Bekijk bestelling', {
+          variant: 'outline',
+          onClick: () => { closeDrawer(); location.href = '/bestelling/' + orderId; },
+        }));
+      }
     }
     else if (status === 'returned') {
       titleEl.textContent = 'Deze pot heb je eerder teruggenomen, wat wil je doen?';
@@ -529,12 +537,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     rows.push(['Statiegeld', '€1']);
     // Note: pot.ratings + pot.rated_at intentionally NOT shown here — ratings belong
     // on the order detail page (/bestelling/:id Feedback section), not on pot info.
-    if (pot.order_id) {
-      rows.push([
-        'Bestelling',
-        `<a href="/bestelling/${esc(pot.order_id)}" style="color:#D9301E;text-decoration:none;font-weight:600;">Bekijk →</a>`,
-      ]);
-    }
+    // (Bestelling-link row removed — replaced by a "Bekijk bestelling" outline button below the action buttons.)
     // Render as /bestelling-style .detail-row rows: label-left grey + value-right black,
     // bottom-border between rows. Inner padding lives on the wrapper card itself.
     wrap.innerHTML = rows.map(([k, v], i, arr) => {
