@@ -471,11 +471,11 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     }
     else if (status === 'delivered') {
       const name = pot.voornaam || 'klant';
-      titleEl.textContent = `Deze pot is bij ${name}, wat wil je doen?`;
+      titleEl.textContent = `Je neemt de pot terug van ${name}, wat doen we met het statiegeld?`;
       // Two options for closing this pot's loop with the klant. For a wisselen-flow the
       // admin starts a new order via the floating + button after either action lands.
-      wrap.appendChild(actionButton('Crediet voor volgende bestelling →', { variant: 'primary', onClick: () => returnPot() }));
-      wrap.appendChild(actionButton('Direct terugstorten naar IBAN →', { variant: 'outline', onClick: () => refundDeposit() }));
+      wrap.appendChild(actionButton('Statiegeld bewaren', { variant: 'primary', onClick: () => returnPot() }));
+      wrap.appendChild(actionButton('Statiegeld terugstorten', { variant: 'outline', onClick: () => refundDeposit() }));
     }
     else if (status === 'returned') {
       titleEl.textContent = 'Deze pot heb je eerder teruggenomen, wat wil je doen?';
