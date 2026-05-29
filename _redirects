@@ -39,4 +39,7 @@
 /api/order/get-pending /.netlify/functions/get-pending-order 200
 /api/bestellingen/assign-pots /.netlify/functions/assign-pots-to-order 200
 /api/refund-deposit /.netlify/functions/refund-deposit 200
+/api/klanten/get /.netlify/functions/klant-get 200
+/api/klanten/refund-credit /.netlify/functions/refund-klant-credit 200
+/klant/* /klant.html 200
 /pay/* /pay.html 200
