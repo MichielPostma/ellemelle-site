@@ -775,6 +775,7 @@
     list.forEach(c => {
       const card = document.createElement('div');
       card.className = 'klant-card';
+      card.style.cursor = 'pointer';
       const tags = [];
       if (c.active_orders > 0) tags.push('<span class="klant-tag active">Actief</span>');
       else tags.push('<span class="klant-tag inactive">Inactief</span>');
@@ -788,6 +789,9 @@
         <div class="addr">${c.adres || ''}${c.plaats ? ' — ' + c.plaats : ''}</div>
         <div class="tags">${tags.join('')}</div>
       `;
+      card.addEventListener('click', () => {
+        location.href = '/klant/' + encodeURIComponent(c.key);
+      });
       wrap.appendChild(card);
     });
   }
