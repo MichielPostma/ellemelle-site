@@ -639,9 +639,11 @@
     const stockTag = hasStock
       ? `<span class="badge has-stock right-tag">Voorraad</span>`
       : `<span class="badge no-stock right-tag">Geen voorraad</span>`;
+    const naam = o.voornaam || '(geen naam)';
+    const titleText = o.pickup_only ? ('Pickup ' + naam) : ('Bezorging ' + naam);
     card.innerHTML = `
       <div class="info">
-        <div class="name">${o.voornaam || '(geen naam)'}</div>
+        <div class="name">${titleText}</div>
         <div class="deadline${dl.late ? ' late' : ''}">${dl.text}</div>
         <div class="tags-row">
           <span class="badge ${status}">${STATUS_LABELS[status] || status}</span>
