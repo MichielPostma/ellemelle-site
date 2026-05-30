@@ -612,21 +612,21 @@
       if (mode === 'stock') {
         dot = 'green';
         text = isPickup
-          ? 'Op voorraad, op te halen in weekend van ' + dateLabel
+          ? 'Op voorraad, op te halen vanaf ' + dateLabel
           : 'Op voorraad, thuisgebracht in weekend van ' + dateLabel;
       } else if (mode === 'production') {
         dot = 'amber';
         text = isPickup
-          ? 'Wordt vers gemaakt, op te halen ' + dateLabel
+          ? 'Wordt vers gemaakt, op te halen vanaf ' + dateLabel
           : 'Wordt vers gemaakt, thuisgebracht ' + dateLabel;
       } else {
         dot = 'amber';
         text = isPickup
-          ? 'Wordt vers gemaakt — we laten je binnen 4 weken weten wanneer je pot op te halen is.'
+          ? 'Wordt vers gemaakt — we laten je binnen 4 weken weten vanaf wanneer je pot op te halen is.'
           : 'Wordt vers gemaakt, als niet binnen 4 weken geleverd wordt storten we je geld terug.';
       }
       return '<div class="levering-block">' +
-        '<strong>' + (isPickup ? 'Ophalen' : 'Bezorgen') + '</strong>' +
+        '<strong>' + (isPickup ? 'Ophalen vanaf' : 'Bezorgen') + '</strong>' +
         '<div class="delivery-info"><span class="status-dot ' + dot + '"></span><span>' + escapeHtml(text) + '</span></div>' +
       '</div>';
     }
