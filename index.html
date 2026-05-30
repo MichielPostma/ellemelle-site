@@ -918,8 +918,23 @@
       <button class="btn-primary" data-next>Volgende →</button>
     </section>
 
-    <!-- STEP 2: Postcode -->
+    <!-- STEP 2: Methode keuze (bezorgen / ophalen) -->
     <section class="step" data-step="2">
+      <h1 class="step-question">Wil je 'm laten bezorgen of zelf ophalen, <span data-name-slot>…</span>?</h1>
+      <div class="kanaal-options">
+        <button class="kanaal-card" data-methode="bezorgen" type="button">
+          <span><span class="label">Bezorgen</span><span class="sub">Aan de deur in de Potgieterbuurt Haarlem</span></span>
+        </button>
+        <button class="kanaal-card" data-methode="ophalen" type="button">
+          <span><span class="label">Ophalen</span><span class="sub">Busken Huëtstraat 11, Haarlem</span></span>
+        </button>
+      </div>
+      <div class="error" data-step-error></div>
+      <button class="btn-primary" id="methode-next" data-next disabled>Volgende →</button>
+    </section>
+
+    <!-- STEP 3: Postcode -->
+    <section class="step" data-step="3">
       <h1 class="step-question">Wat is je postcode, <span data-name-slot>…</span>?</h1>
       <div class="field">
         <input id="input-postcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters" placeholder="2032 VJ" maxlength="7" spellcheck="false">
@@ -942,8 +957,8 @@
       <button class="btn-primary" data-next>Volgende →</button>
     </section>
 
-    <!-- STEP 3: Huisnummer + adres lookup -->
-    <section class="step" data-step="3">
+    <!-- STEP 4: Huisnummer + adres lookup -->
+    <section class="step" data-step="4">
       <h1 class="step-question">Welk huisnummer?</h1>
       <div class="row-2">
         <div class="field">
@@ -967,7 +982,7 @@
     </section>
 
     <!-- STEP 4: Aantal potten -->
-    <section class="step" data-step="4">
+    <section class="step" data-step="5">
       <h1 class="step-question">Hoeveel potten wil je?</h1>
       <div class="kanaal-options">
         <button class="kanaal-card aantal-card" data-aantal="1" type="button">
@@ -984,8 +999,8 @@
       <button class="btn-primary" id="aantal-next" data-next>Volgende →</button>
     </section>
 
-    <!-- STEP 5: Kanaal -->
-    <section class="step" data-step="5">
+    <!-- STEP 6: Kanaal -->
+    <section class="step" data-step="6">
       <h1 class="step-question">Hoe kunnen we je laten weten wanneer je bestelling komt?</h1>
       <div class="kanaal-options">
         <button class="kanaal-card" data-kanaal="whatsapp" type="button">
@@ -999,8 +1014,8 @@
       <button class="btn-primary" id="kanaal-next" data-next disabled>Volgende →</button>
     </section>
 
-    <!-- STEP 6: Contact -->
-    <section class="step" data-step="6">
+    <!-- STEP 7: Contact -->
+    <section class="step" data-step="7">
       <h1 class="step-question">En je <span id="contact-noun">06-nummer</span>?</h1>
       <div class="field" id="field-tel" hidden>
         <input id="input-tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" maxlength="14">
@@ -1012,8 +1027,8 @@
       <button class="btn-primary" data-next>Volgende →</button>
     </section>
 
-    <!-- STEP 7: Bevestig — public: opens the bank-drawer; admin: shows a QR for the klant -->
-    <section class="step" data-step="7">
+    <!-- STEP 8: Bevestig — public: opens the bank-drawer; admin: shows a QR for the klant -->
+    <section class="step" data-step="8">
       <h1 class="step-question">Klopt dit, <span data-name-slot>…</span>?</h1>
       <div class="order-card" id="order-summary-content"></div>
       <label class="check-row" id="confirm-row">
@@ -1029,8 +1044,8 @@
       <button class="btn-outline" id="admin-cancel-btn" type="button" hidden>Annuleer bestelling</button>
     </section>
 
-    <!-- STEP 8: Success — post-payment thank-you (or stripeRetry fallback with iDeal button) -->
-    <section class="step success" data-step="8">
+    <!-- STEP 9: Success — post-payment thank-you (or stripeRetry fallback with iDeal button) -->
+    <section class="step success" data-step="9">
       <h1 class="step-question" id="success-headline">Leuk <span id="success-name"></span>! We gaan aan de slag en houden je op de hoogte.</h1>
       <p class="success-subtitle" id="success-sub" hidden>We bezorgen je pot binnen 4 weken.</p>
       <div class="order-card" id="success-recap" hidden></div>
@@ -1066,7 +1081,7 @@
   const ALLOWED_POSTCODES = ['2032'];
 
   // --- Config & state ----------------------------------------------------
-  const TOTAL_STEPS = 7;
+  const TOTAL_STEPS = 8;
   const formData = {
     voornaam: '', telefoon: '', email: '', kanaal: '',
     straat: '', huisnummer: '', toevoeging: '', postcode: '', plaats: '',
@@ -1080,10 +1095,13 @@
   // --- Persistent state (localStorage, 7-day TTL) -----------------------
   const STATE_KEY = 'ellemelle_signup_state_v1';
   const STATE_TTL = 7 * 24 * 60 * 60 * 1000;
+  // Bumped to 2 after the methode-keuze step was added (step numbering shifted +1 for steps 2+).
+  // Older saved states use v1 numbering and would jump the user to the wrong step on resume.
+  const STATE_VER = 2;
 
   function saveState() {
     try {
-      const payload = { step: currentStep, data: { ...formData }, savedAt: Date.now() };
+      const payload = { ver: STATE_VER, step: currentStep, data: { ...formData }, savedAt: Date.now() };
       localStorage.setItem(STATE_KEY, JSON.stringify(payload));
     } catch (e) {}
   }
@@ -1093,6 +1111,9 @@
       if (!raw) return null;
       const obj = JSON.parse(raw);
       if (!obj || !obj.savedAt || (Date.now() - obj.savedAt) > STATE_TTL) {
+        localStorage.removeItem(STATE_KEY); return null;
+      }
+      if (obj.ver !== STATE_VER) {
         localStorage.removeItem(STATE_KEY); return null;
       }
       return obj;
@@ -1123,16 +1144,21 @@
     } else {
       document.body.classList.remove('on-intro');
     }
-    if (n === 8) {
+    if (n === 9) {
       progressEl.textContent = '';
       backBtn.hidden = true;
       document.body.classList.add('on-success');
     } else if (n >= 1) {
-      // Admin existing-customer mode: only steps 4 + 7 are visited → relabel as 1 van 2 / 2 van 2
+      // Admin existing-customer mode: only steps 5 + 8 are visited → relabel as 1 van 2 / 2 van 2
       if (__adminMode === 'existing') {
-        if (n === 4) progressEl.textContent = 'Stap 1 van 2';
-        else if (n === 7) progressEl.textContent = 'Stap 2 van 2';
+        if (n === 5) progressEl.textContent = 'Stap 1 van 2';
+        else if (n === 8) progressEl.textContent = 'Stap 2 van 2';
         else progressEl.textContent = '';
+      } else if (window.__pickupOnly) {
+        // Pickup flow: customer visits steps 1,2,5,6,7,8 — remap to 1..6 for clarity.
+        const remap = { 1:1, 2:2, 5:3, 6:4, 7:5, 8:6 };
+        const x = remap[n] || n;
+        progressEl.textContent = 'Stap ' + x + ' van 6';
       } else {
         progressEl.textContent = 'Stap ' + n + ' van ' + TOTAL_STEPS;
       }
@@ -1178,7 +1204,7 @@
 
   function back() {
     // Admin existing customer: back from step 4 → admin picker
-    if (__adminMode === 'existing' && currentStep === 4) {
+    if (__adminMode === 'existing' && currentStep === 5) {
       hideError();
       showAdminPicker();
       return;
@@ -1201,20 +1227,20 @@
     // Pickup-only mode: rewrite step 5 + step 7 + confirm-row copy so the customer
     // sees ophaal-taal instead of bezorg-taal.
     const pickup = !!window.__pickupOnly;
-    if (n === 5) {
-      const h = document.querySelector('.step[data-step="5"] .step-question');
+    if (n === 6) {
+      const h = document.querySelector('.step[data-step="6"] .step-question');
       if (h) h.textContent = pickup
         ? 'Hoe kunnen we je laten weten wanneer je pot klaar is om op te halen?'
         : 'Hoe kunnen we je laten weten wanneer je bestelling komt?';
     }
-    if (n === 6) {
+    if (n === 7) {
       // Show right contact field based on kanaal
       const isWA = formData.kanaal === 'whatsapp';
       $('#field-tel').hidden = !isWA;
       $('#field-email').hidden = isWA;
       $('#contact-noun').textContent = isWA ? '06-nummer' : 'e-mailadres';
     }
-    if (n === 7) {
+    if (n === 8) {
       // Pickup-aware confirm row text.
       const confirmText = document.getElementById('confirm-row-text');
       if (confirmText) confirmText.textContent = pickup
@@ -1261,6 +1287,12 @@
         return true;
       }
       case 2: {
+        // Methode keuze (bezorgen / ophalen) — the kanaal-card click handler already sets
+        // window.__pickupOnly + formData.methode. Just ensure one was picked.
+        if (!formData.methode) { showError('Kies bezorgen of ophalen.'); return false; }
+        return true;
+      }
+      case 3: {
         const raw = $('#input-postcode').value.replace(/\s+/g, '').toUpperCase();
         if (!raw) { showError('Vul je postcode in.'); return false; }
         if (!/^\d{4}[A-Z]{2}$/.test(raw)) {
@@ -1270,14 +1302,14 @@
         if (!ALLOWED_POSTCODES.includes(prefix)) {
           const card = document.getElementById('postcode-card');
           if (card) card.hidden = false;
-          const btn = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
+          const btn = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
           if (btn) btn.disabled = true;
           return false;
         }
         formData.postcode = raw.slice(0,4) + ' ' + raw.slice(4);
         return true;
       }
-      case 3: {
+      case 4: {
         const num = $('#input-huisnr').value.trim();
         if (!num || !/^\d+/.test(num)) { showError('Vul je huisnummer in.'); return false; }
         formData.huisnummer = num.replace(/\D/g, '').slice(0,6);
@@ -1299,17 +1331,17 @@
         }
         return true;
       }
-      case 4: {
+      case 5: {
         if (!formData.aantal || !Number.isInteger(formData.aantal) || formData.aantal < 1 || formData.aantal > 3) {
           showError('Kies aantal potten.'); return false;
         }
         return true;
       }
-      case 5: {
+      case 6: {
         if (!formData.kanaal) { showError('Kies een kanaal.'); return false; }
         return true;
       }
-      case 6: {
+      case 7: {
         if (formData.kanaal === 'whatsapp') {
           const tel = $('#input-tel').value.trim();
           const cleaned = tel.replace(/[\s\-]/g, '');
@@ -1326,7 +1358,7 @@
         }
         return true;
       }
-      case 7: {
+      case 8: {
         if (!$('#confirm-checkbox').checked) {
           showError('Vink het hokje aan om te bevestigen.'); return false;
         }
@@ -1593,20 +1625,21 @@
     // Comes either from /klanten-list (in-app picker) or URL ?credit=N (FAB from /bestelling/:id).
     formData.__statiegeld_credit = Math.max(0, Number(c.statiegeld_credit) || 0);
     hideAdminPicker();
-    currentStep = 4;
-    prepareStep(4);
-    showStep(4);
+    currentStep = 5;
+    prepareStep(5);
+    showStep(5);
     saveState();
   }
   function nextStepAfter(n) {
-    if (__adminMode === 'existing' && n === 4) return 7;
-    // Pickup-only flow: jump past the address step (step 3) entirely.
-    if (window.__pickupOnly && n === 2) return 4;
+    // Admin existing klant: skip address steps + kanaal/contact (already known).
+    if (__adminMode === 'existing' && n === 5) return 8;
+    // Pickup-only flow: from methode (step 2) skip postcode + huisnummer → straight to aantal.
+    if (window.__pickupOnly && n === 2) return 5;
     return n + 1;
   }
   function prevStepBefore(n) {
-    if (__adminMode === 'existing' && n === 7) return 4;
-    if (window.__pickupOnly && n === 4) return 2;
+    if (__adminMode === 'existing' && n === 8) return 5;
+    if (window.__pickupOnly && n === 5) return 2;
     return n - 1;
   }
 
@@ -1701,9 +1734,9 @@
       return;
     } catch (e) {
       // Stripe error — show success step with a retry iDeal button as fallback.
-      currentStep = 8;
+      currentStep = 9;
       prepareSuccessStep({ stripeRetry: true });
-      showStep(8);
+      showStep(9);
       setTimeout(burstConfetti, 200);
     }
   }
@@ -1923,13 +1956,17 @@
     if (confirmRow2) confirmRow2.hidden = false;
     const cancelBtn2 = document.getElementById('admin-cancel-btn');
     if (cancelBtn2) cancelBtn2.hidden = true;
-    const nb3 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
+    const nb3 = document.querySelector('.step[data-step="4"] .btn-primary[data-next]');
     if (nb3) nb3.disabled = false;
-    const nb2 = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
+    const nb2 = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
     if (nb2) nb2.disabled = false;
     const pCard = document.getElementById('postcode-card');
     if (pCard) pCard.hidden = true;
     $$('.kanaal-card[data-kanaal]').forEach(c => { c.style.borderColor = ''; c.classList.remove('selected'); });
+    $$('.kanaal-card[data-methode]').forEach(c => { c.style.borderColor = ''; c.classList.remove('selected'); });
+    const methodeNextReset = document.getElementById('methode-next');
+    if (methodeNextReset) methodeNextReset.disabled = true;
+    window.__pickupOnly = false;
     const kbReset = document.getElementById('kanaal-next');
     if (kbReset) kbReset.disabled = true;
     const cb = document.getElementById('confirm-checkbox'); if (cb) cb.checked = false;
@@ -2083,30 +2120,64 @@
       });
     });
 
+    // Methode cards (bezorgen / ophalen) — same UX pattern as kanaal-cards.
+    // Picking "ophalen" enters pickup-only mode and pre-fills the address with the pickup point;
+    // picking "bezorgen" clears the address fields so the user fills them in normally on step 3+4.
+    $$('.kanaal-card[data-methode]').forEach(card => {
+      card.addEventListener('click', () => {
+        const m = card.dataset.methode;
+        formData.methode = m;
+        const pickup = (m === 'ophalen');
+        window.__pickupOnly = pickup;
+        formData.pickup_only = pickup ? 'true' : '';
+        if (pickup) {
+          formData.straat = 'Busken Huëtstraat';
+          formData.huisnummer = '11';
+          formData.toevoeging = '';
+          formData.postcode = '2032 VJ';
+          formData.plaats = 'Haarlem';
+          const ip = document.getElementById('input-straat');  if (ip)  ip.value  = formData.straat;
+          const ih = document.getElementById('input-huisnr');  if (ih)  ih.value  = formData.huisnummer;
+          const it = document.getElementById('input-toev');    if (it)  it.value  = '';
+          const ipl = document.getElementById('input-plaats'); if (ipl) ipl.value = formData.plaats;
+        } else if (formData.straat === 'Busken Huëtstraat' && formData.huisnummer === '11') {
+          // Reset address fields if switching back to bezorgen after picking ophalen.
+          formData.straat = ''; formData.huisnummer = ''; formData.toevoeging = '';
+          formData.postcode = ''; formData.plaats = 'Haarlem';
+        }
+        $$('.kanaal-card[data-methode]').forEach(c => {
+          c.classList.toggle('selected', c === card);
+          c.style.borderColor = '';
+        });
+        const mb = document.getElementById('methode-next');
+        if (mb) mb.disabled = false;
+        hideError();
+        saveState();
+      });
+    });
+
     $('#reset-btn').addEventListener('click', resetForm);
 
-    // Out-of-area pickup: customer chose "Doorgaan met afhalen" on step 2.
-    // Switch the flow into pickup-only mode (skip the address step), prefill the address fields
-    // with the pickup-point address, and dynamically tweak step 5/7/8 copy via prepareStep.
+    // Out-of-area pickup: customer chose "Doorgaan met afhalen" on step 3 (postcode).
+    // Safety net for visitors who picked "Bezorgen" but their postcode is outside the area.
+    // Switch into pickup-only mode and jump straight to step 5 (aantal), skipping huisnummer.
     const __pickupContinueBtn = document.getElementById('pickup-continue-btn');
     if (__pickupContinueBtn) {
       __pickupContinueBtn.addEventListener('click', () => {
         window.__pickupOnly = true;
+        formData.methode = 'ophalen';
         formData.pickup_only = 'true';
-        // Lock the recap/address fields to the pickup point. Customer's own postcode stays in formData
-        // so admin still sees where they're from.
         formData.straat     = 'Busken Huëtstraat';
         formData.huisnummer = '11';
         formData.toevoeging = '';
         formData.postcode   = '2032 VJ';
         formData.plaats     = 'Haarlem';
-        // Hydrate hidden inputs so submitOrder picks them up.
         const ip = document.getElementById('input-straat');     if (ip) ip.value = formData.straat;
         const ih = document.getElementById('input-huisnr');     if (ih) ih.value = formData.huisnummer;
         const it = document.getElementById('input-toev');       if (it) it.value = '';
         const ipl = document.getElementById('input-plaats');    if (ipl) ipl.value = formData.plaats;
         hideError();
-        currentStep = nextStepAfter(currentStep); // step 2 → 4 via the pickup branch
+        currentStep = 5; // skip to aantal directly
         prepareStep(currentStep);
         showStep(currentStep);
         saveState();
@@ -2131,7 +2202,7 @@
 
     // Postcode autoformat (4 digits + 2 letters) + live whitelist validation
     const pc = $('#input-postcode');
-    const pcNextBtn = document.querySelector('.step[data-step="2"] .btn-primary[data-next]');
+    const pcNextBtn = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
     const pcCard = document.getElementById('postcode-card');
     function validatePostcodeLive() {
       const raw = pc.value.replace(/\s+/g, '').toUpperCase();
@@ -2213,7 +2284,7 @@
       // Body class set immediately so we don't briefly flash the intro screen.
       document.body.classList.add('on-success');
       try { localStorage.removeItem('ellemelle_signup_state_v1'); } catch {}
-      currentStep = 8;
+      currentStep = 9;
 
       // Hard-render the URL voornaam first so the headline is correct even if blob fetch is slow / fails.
       const __urlVoornaam = __bootParams.get('voornaam') || '';
@@ -2251,7 +2322,7 @@
       }
 
       prepareSuccessStep();
-      showStep(8);
+      showStep(9);
       setTimeout(burstConfetti, 200);
       try { history.replaceState({}, '', location.pathname); } catch {}
     } else if (saved && saved.data && saved.step >= 1 && saved.step <= TOTAL_STEPS) {
@@ -2276,6 +2347,16 @@
         const kb = document.getElementById('kanaal-next');
         if (kb) kb.disabled = false;
       }
+      // Hydrate methode selection — keeps the methode card highlighted + restores __pickupOnly
+      // when the visitor lands back mid-flow.
+      if (formData.methode) {
+        $$('.kanaal-card[data-methode]').forEach(c => {
+          c.classList.toggle('selected', c.dataset.methode === formData.methode); c.style.borderColor = '';
+        });
+        const mb = document.getElementById('methode-next');
+        if (mb) mb.disabled = false;
+        window.__pickupOnly = (formData.methode === 'ophalen');
+      }
       // Hydrate aantal selection
       if (formData.aantal) {
         $$('.aantal-card').forEach(c => {
@@ -2287,7 +2368,7 @@
       prepareStep(currentStep);
       showStep(currentStep);
       // If on the address step, trigger a lookup so the preview re-populates
-      if (currentStep === 3 && formData.postcode && formData.huisnummer) {
+      if (currentStep === 4 && formData.postcode && formData.huisnummer) {
         setTimeout(() => { lastLookup = ''; lookupAddress(); }, 200);
       }
     } else {
