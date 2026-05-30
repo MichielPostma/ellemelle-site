@@ -1,5 +1,7 @@
-// Public: customer marks their delivered pot as "please pick it up".
-// POST { pot_id }
+// Public: customer marks their delivered pot for return.
+// POST { pot_id, bring_self?: boolean }
+//   - bring_self=false (default): bezorger picks it up at the customer's address
+//   - bring_self=true: customer will drop it off at Busken Huëtstraat themselves
 // Idempotent — if already pickup-requested, returns ok without error.
 
 const { getStore } = require('@netlify/blobs');
@@ -21,11 +23,14 @@ async function notifyMichiel(payload) {
   const RESEND = process.env.RESEND_API_KEY;
   if (!RESEND) return { mailed: false, reason: 'no RESEND_API_KEY' };
   const from = process.env.RESEND_FROM || 'ELLEMELLE <onboarding@resend.dev>';
-  const subject = `Ophaalverzoek — ${payload.pot_id} (${payload.voornaam || 'onbekend'})`;
+  const bringSelf = !!payload.bring_self;
+  const subject = bringSelf
+    ? `Pot komt langs — ${payload.pot_id} (${payload.voornaam || 'onbekend'})`
+    : `Ophaalverzoek — ${payload.pot_id} (${payload.voornaam || 'onbekend'})`;
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#1A1A1A;">
-      <h2 style="color:#D9301E;">Ophaalverzoek</h2>
-      <p><strong>${esc(payload.voornaam || '?')}</strong> wil de lege pot <strong>${esc(payload.pot_id)}</strong> ophalen.</p>
+      <h2 style="color:#D9301E;">${bringSelf ? 'Klant brengt pot langs' : 'Ophaalverzoek'}</h2>
+      <p><strong>${esc(payload.voornaam || '?')}</strong> ${bringSelf ? 'brengt' : 'wil'} de lege pot <strong>${esc(payload.pot_id)}</strong> ${bringSelf ? 'binnenkort langs op Busken Huëtstraat 11.' : 'laten ophalen.'}</p>
       <p style="font-size:14px;color:#555;">Geen nieuwe pot besteld.</p>
       <p style="font-size:12px;color:#888;margin-top:24px;">Tijdstip: ${new Date().toISOString()}</p>
     </div>`;
@@ -49,6 +54,7 @@ exports.handler = async (event) => {
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch {}
   const potId = String(body.pot_id || '').toUpperCase().trim();
+  const bringSelf = !!body.bring_self;
   if (!/^POT-\d{3}$/.test(potId)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid pot id' }) };
   }
@@ -69,11 +75,12 @@ exports.handler = async (event) => {
 
   const now = new Date().toISOString();
   const existingHistory = Array.isArray(pot.history) ? pot.history : [];
-  const histEntry = { at: now, action: 'pickup_requested', order_id: pot.order_id };
+  const histEntry = { at: now, action: 'pickup_requested', order_id: pot.order_id, bring_self: bringSelf };
   await potsStore.setJSON(potId, {
     ...pot,
     status: 'pickup-requested',
     return_requested_at: now,
+    bring_self_pickup: bringSelf,
     history: existingHistory.concat([histEntry]),
   });
   const existingOrder = (await ordersStore.get(pot.order_id, { type: 'json' })) || {};
@@ -81,6 +88,7 @@ exports.handler = async (event) => {
   await ordersStore.setJSON(pot.order_id, {
     ...existingOrder,
     pickup_requested_at: now,
+    bring_self_pickup: bringSelf,
     order_status: 'pickup_self_requested',
   });
 
@@ -94,6 +102,6 @@ exports.handler = async (event) => {
     if (r.ok) { const sub = await r.json(); voornaam = (sub.data || {}).voornaam || ''; }
   } catch {}
 
-  const mail = await notifyMichiel({ pot_id: potId, voornaam });
-  return { statusCode: 200, headers, body: JSON.stringify({ ok: true, status: 'pickup-requested', mail }) };
+  const mail = await notifyMichiel({ pot_id: potId, voornaam, bring_self: bringSelf });
+  return { statusCode: 200, headers, body: JSON.stringify({ ok: true, status: 'pickup-requested', bring_self: bringSelf, mail }) };
 };
