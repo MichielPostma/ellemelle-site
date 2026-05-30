@@ -911,20 +911,23 @@
   $('#menu-backdrop').addEventListener('click', () => { $('#menu-backdrop').classList.remove('open'); $('#menu-panel').classList.remove('open'); });
   $('#menu-logout').addEventListener('click', () => { clearSession(); location.reload(); });
 
-  // Boot
-  document.body.classList.add('on-login');
+  // Boot — only narrow body to login layout when there's no session, otherwise show the detail
+  // view immediately so the first paint matches the final width (no layout shift on data load).
   STATE.password = loadSession();
-  if (STATE.password) {
+  if (!STATE.password) {
+    document.body.classList.add('on-login');
+  } else {
     const orderId = getOrderId();
     if (!orderId) { document.body.innerHTML = '<div style="padding:40px; text-align:center;">Geen order_id in URL.</div>'; return; }
+    $('#login-view').hidden = true; $('#detail-view').hidden = false;
     api('bestellingen-get', { order_id: orderId }).then(res => {
       if (res.ok) {
-        $('#login-view').hidden = true; $('#detail-view').hidden = false;
-        document.body.classList.remove('on-login');
         STATE.order = res.data.order; STATE.history = res.data.history || []; STATE.customer = res.data.customer || null;
         renderDetail();
       } else {
         clearSession(); STATE.password = null;
+        document.body.classList.add('on-login');
+        $('#login-view').hidden = false; $('#detail-view').hidden = true;
       }
     });
   }
