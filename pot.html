@@ -164,10 +164,18 @@
   }
   .kanaal-card .label { font-size: 17px; }
   .kanaal-card .sub   { font-size: 12.5px; color: #666; opacity: 1; font-weight: 500; margin-top: 2px; display: block; }
-  /* Statiegeld info block on reorder review — small heading + 1-liner of explanation. */
-  .statiegeld-note { margin: 14px 0 0; padding: 12px 14px; background: rgba(217,48,30,0.06); border-radius: 10px; }
-  .statiegeld-note .head { color: var(--red); font-weight: 700; font-size: 11.5px; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 4px; }
-  .statiegeld-note .text { color: var(--red); font-size: 13.5px; line-height: 1.45; font-weight: 500; }
+  /* Statiegeld info block on reorder review — small red heading + dark grey body text. */
+  .statiegeld-note { margin: 14px 0 0; padding: 12px 14px; background: rgba(0,0,0,0.04); border-radius: 10px; }
+  .statiegeld-note .head { color: var(--red); font-weight: 700; font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .statiegeld-note .text { color: #555; font-size: 13.5px; line-height: 1.45; }
+
+  /* Levering block — mirrors the public bestelflow (colored dot + status line). */
+  .levering-block { margin-bottom: 16px; }
+  .levering-block strong { display: block; color: var(--black); font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .delivery-info { display: flex; align-items: center; gap: 8px; color: #555; font-size: 14px; line-height: 1.4; padding-top: 2px; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: #999; }
+  .status-dot.green { background: #1f9d55; }
+  .status-dot.amber { background: #f0ad00; }
   .order-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 15px; }
   .order-line.total { border-top: 2px dashed var(--cream-dark); padding-top: 12px; margin-top: 8px; font-weight: 700; font-size: 19px; color: var(--black); }
   .order-meta { font-size: 13.5px; line-height: 1.55; color: rgba(0,0,0,0.72); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--cream-dark); }
@@ -567,13 +575,6 @@
 
     $('#reorder-name').textContent = naam;
 
-    // Date — pickup follows production schedule if known, else next Saturday.
-    const cfg = STATE.configCache || {};
-    const dateIso = cfg.next_production_date
-      ? nextSaturdayISO(cfg.next_production_date)
-      : nextSaturdayISO();
-    const dateLabel = fmtSaturdayLabel(dateIso);
-
     // Money — both new pots + statiegeld are billed on this order. The OLD pot's statiegeld
     // gets refunded separately when bezorger picks it up (see info note below).
     const pots = n * 5;
@@ -584,15 +585,14 @@
       ? 'Busken Huëtstraat 11'
       : (p.adres || '(adres onbekend)');
     const stad = isPickup ? '2032 VJ Haarlem' : (p.stad || '');
-    const headerLine = isPickup ? 'Ophalen' : 'Bezorgen';
 
-    $('#reorder-order-card').innerHTML =
+    // Build initial recap with a placeholder levering block; we'll fill it once /levering-info responds.
+    const buildHtml = (leveringHtmlText) =>
       '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>€' + pots + '</span></div>' +
       '<div class="order-line"><span>Statiegeld (' + n + ' pot' + (n === 1 ? '' : 'ten') + ')</span><span>€' + stat + '</span></div>' +
       '<div class="order-line total"><span>Totaal</span><span>€' + total + '</span></div>' +
       '<div class="order-meta">' +
-        '<strong>' + headerLine + '</strong><br>' +
-        escapeHtml(dateLabel) + '<br><br>' +
+        leveringHtmlText +
         '<strong>' + (isPickup ? 'Ophaaladres' : 'Bezorgadres') + '</strong><br>' +
         escapeHtml(adres) + '<br>' + escapeHtml(stad) +
       '</div>' +
@@ -600,6 +600,48 @@
         '<div class="head">Statiegeld</div>' +
         '<div class="text">Je statiegeld van €1 voor de oude pot wordt teruggestort wanneer we ' + (isPickup ? 'm innemen' : 'm ophalen') + '.</div>' +
       '</div>';
+
+    function leveringHtml(info) {
+      const mode = (info && info.mode) || 'no_schedule';
+      let dateIso = (info && info.delivery_date) || '';
+      if (!dateIso) {
+        const cfg = STATE.configCache || {};
+        dateIso = cfg.next_production_date ? nextSaturdayISO(cfg.next_production_date) : nextSaturdayISO();
+      }
+      const dateLabel = fmtSaturdayLabel(dateIso);
+      let dot, text;
+      if (mode === 'stock') {
+        dot = 'green';
+        text = isPickup
+          ? 'Op voorraad, op te halen in weekend van ' + dateLabel
+          : 'Op voorraad, thuisgebracht in weekend van ' + dateLabel;
+      } else if (mode === 'production') {
+        dot = 'amber';
+        text = isPickup
+          ? 'Wordt vers gemaakt, op te halen ' + dateLabel
+          : 'Wordt vers gemaakt, thuisgebracht ' + dateLabel;
+      } else {
+        dot = 'amber';
+        text = isPickup
+          ? 'Wordt vers gemaakt — we laten je binnen 4 weken weten wanneer je pot op te halen is.'
+          : 'Wordt vers gemaakt, als niet binnen 4 weken geleverd wordt storten we je geld terug.';
+      }
+      return '<div class="levering-block">' +
+        '<strong>' + (isPickup ? 'Ophalen' : 'Bezorgen') + '</strong>' +
+        '<div class="delivery-info"><span class="status-dot ' + dot + '"></span><span>' + escapeHtml(text) + '</span></div>' +
+      '</div>';
+    }
+
+    // Render once with a fallback (no info yet), then again with /levering-info data.
+    $('#reorder-order-card').innerHTML = buildHtml(leveringHtml(null));
+    (async () => {
+      try {
+        const r = await fetch('/.netlify/functions/levering-info?aantal=' + n + '&ts=' + Date.now());
+        if (!r.ok) return;
+        const info = await r.json();
+        $('#reorder-order-card').innerHTML = buildHtml(leveringHtml(info));
+      } catch {}
+    })();
 
     $('#reorder-confirm-text').textContent = isPickup
       ? 'Ja, ik kom deze ' + (n === 1 ? 'pot' : 'potten') + ' ophalen. Als het niet binnen 4 weken klaar is, storten we je geld terug.'
