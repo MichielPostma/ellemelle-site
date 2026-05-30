@@ -78,9 +78,14 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid_bank', bank }) };
   }
 
+  // For reorder flows the statiegeld is rolled over from the old pot — we don't charge it again
+  // on the new order. The bezorger handles the cash-equivalent refund when they physically take
+  // the empty pot. For non-reorder orders the normal product + €1 deposit/pot pricing applies.
+  const reorderForPricing = String(body.reorder_pot_id || '').toUpperCase().trim();
+  const isReorderPricing = /^POT-\d{3}$/.test(reorderForPricing);
   const productCents  = aantal * 500;
-  const depositCents  = aantal * 100;
-  const discountCents = credit * 100;
+  const depositCents  = isReorderPricing ? 0 : (aantal * 100);
+  const discountCents = isReorderPricing ? 0 : (credit * 100);
   const totalCents    = Math.max(50, productCents + depositCents - discountCents); // Stripe min: 50 cents
 
   const voornaam = String(body.voornaam || '').trim() || 'klant';
@@ -98,9 +103,11 @@ exports.handler = async (event) => {
     }
   }
 
-  // Reorder context: just a pot id — webhook fetches original customer fields via customer-reorder.
+  // Reorder context: pot id + optional methode/aantal — webhook fetches original customer fields via customer-reorder.
   const reorderPotId = String(body.reorder_pot_id || '').toUpperCase().trim();
   const isReorder = /^POT-\d{3}$/.test(reorderPotId);
+  const reorderAantal = Math.max(1, parseInt(body.reorder_aantal, 10) || 1);
+  const reorderPickupOnly = String(body.reorder_pickup_only || '').toLowerCase() === 'true';
 
   // Build the return URL. Prefer success_pay_id (pay.html QR-handoff) → success_pot_id (reorder) →
   // orderId (admin direct) → '/'.
@@ -116,6 +123,10 @@ exports.handler = async (event) => {
   params.set('paid', 'stripe');
   if (voornaam && voornaam !== 'klant') params.set('voornaam', voornaam);
   if (tempOrderId) params.set('order_ref', tempOrderId);
+  if (isReorder) {
+    params.set('methode', reorderPickupOnly ? 'ophalen' : 'bezorgen');
+    params.set('aantal', String(reorderAantal));
+  }
   const returnUrl = `${baseUrl}${successPath}?${params.toString()}`;
 
   // No-bank path: try Payment Intents API with confirm=true and iDEAL without specifying a bank.
@@ -139,6 +150,8 @@ exports.handler = async (event) => {
     if (orderId)      pParams.set('metadata[order_id]', orderId);
     if (tempOrderId)  pParams.set('metadata[temp_order_id]', tempOrderId);
     if (isReorder)    pParams.set('metadata[reorder_pot_id]', reorderPotId);
+    if (isReorder)    pParams.set('metadata[reorder_aantal]', String(reorderAantal));
+    if (isReorder && reorderPickupOnly) pParams.set('metadata[reorder_pickup_only]', 'true');
     if (voornaam)     pParams.set('metadata[voornaam]', voornaam);
     pParams.set('metadata[aantal]', String(aantal));
     pParams.set('metadata[statiegeld_credit]', String(credit));
@@ -183,6 +196,8 @@ exports.handler = async (event) => {
   if (orderId)      params2.set('metadata[order_id]', orderId);
   if (tempOrderId)  params2.set('metadata[temp_order_id]', tempOrderId);
   if (isReorder)    params2.set('metadata[reorder_pot_id]', reorderPotId);
+  if (isReorder)    params2.set('metadata[reorder_aantal]', String(reorderAantal));
+  if (isReorder && reorderPickupOnly) params2.set('metadata[reorder_pickup_only]', 'true');
   if (voornaam)     params2.set('metadata[voornaam]', voornaam);
   params2.set('metadata[aantal]', String(aantal));
   params2.set('metadata[statiegeld_credit]', String(credit));
