@@ -184,9 +184,8 @@
   .check-row {
     display: flex; align-items: flex-start; gap: 10px;
     margin: 12px 0; padding: 12px 14px;
-    background: #ffffff; border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card);
-    font-size: 14px; line-height: 1.45; cursor: pointer;
+    background: rgba(255,255,255,0.6); border-radius: var(--radius-md);
+    font-size: 15px; line-height: 1.4; cursor: pointer;
     user-select: none;
   }
   .check-row input {
@@ -597,8 +596,8 @@
         escapeHtml(adres) + '<br>' + escapeHtml(stad) +
       '</div>' +
       '<div class="statiegeld-note">' +
-        '<div class="head">Statiegeld</div>' +
-        '<div class="text">Je statiegeld van €1 voor de oude pot wordt teruggestort wanneer we ' + (isPickup ? 'm innemen' : 'm ophalen') + '.</div>' +
+        '<div class="head">Over je statiegeld</div>' +
+        '<div class="text">Je statiegeld van €1 voor de oude pot wordt teruggestort wanneer we \u2019em ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
       '</div>';
 
     function leveringHtml(info) {
@@ -832,8 +831,8 @@
         'Lege pot ' + escapeHtml(STATE.potId || '') + ' nemen we ' + (isPickup ? 'in als je hem brengt' : 'tegelijk op') + '.' +
       '</div>' +
       '<div class="statiegeld-note">' +
-        '<div class="head">Statiegeld</div>' +
-        '<div class="text">Je statiegeld van €1 voor de oude pot wordt teruggestort wanneer we ' + (isPickup ? 'm innemen' : 'm ophalen') + '.</div>' +
+        '<div class="head">Over je statiegeld</div>' +
+        '<div class="text">Je statiegeld van €1 voor de oude pot wordt teruggestort wanneer we \u2019em ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
       '</div>';
   }
 
