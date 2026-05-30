@@ -207,6 +207,30 @@
     font-size: 14px;
   }
   .postcode-card[hidden] { display: none; }
+
+  /* Pickup-only address block — shown inside the postcode-card when out of delivery range. */
+  .pickup-addr-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid var(--cream-dark);
+  }
+  .pickup-addr-row .info { flex: 1; min-width: 0; }
+  .pickup-addr-row .info .head {
+    color: var(--black); font-weight: 700; font-size: 14px; line-height: 1.3;
+  }
+  .pickup-addr-row .info .sub {
+    color: #666; font-size: 12.5px; margin-top: 2px;
+  }
+  .pickup-addr-row .route-btn {
+    flex: 0 0 44px; width: 44px; height: 44px;
+    border: 2px solid var(--red); background: transparent; color: var(--red);
+    border-radius: 10px; cursor: pointer; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pickup-addr-row .route-btn:hover { background: rgba(217,48,30,0.06); }
+  .pickup-addr-row .route-btn svg { width: 22px; height: 22px; display: block; }
   .address-confirm strong { display: block; font-size: 16px; margin-bottom: 2px; color: var(--black); }
   .address-confirm small { color: rgba(0,0,0,0.55); }
 
@@ -901,8 +925,18 @@
         <input id="input-postcode" type="text" inputmode="text" autocomplete="postal-code" autocapitalize="characters" placeholder="2032 VJ" maxlength="7" spellcheck="false">
       </div>
       <div class="postcode-card" id="postcode-card" hidden>
-        <strong>Ah, jammer zeg!</strong>
-        <span>We kunnen helaas nog niet bij jou bezorgen, op dit moment richten we ons op een deel van de Potgieterbuurt in Haarlem.</span>
+        <strong>Daar kunnen we niet bezorgen, je kunt alleen afhalen</strong>
+        <span>We bezorgen op dit moment alleen in een deel van de Potgieterbuurt in Haarlem. Maar je kunt de pot wel ophalen.</span>
+        <div class="pickup-addr-row">
+          <div class="info">
+            <div class="head">Ophalen Busken Huëtstraat 11</div>
+            <div class="sub">2032 VJ Haarlem</div>
+          </div>
+          <a class="route-btn" id="pickup-route-btn" href="https://www.google.com/maps/dir/?api=1&destination=Busken+Hu%C3%ABtstraat+11%2C+2032+VJ+Haarlem&travelmode=walking" target="_blank" rel="noopener" aria-label="Route naar ophaaladres">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+        </div>
+        <button class="btn-primary" id="pickup-continue-btn" type="button" style="margin-top: 14px;">Doorgaan met afhalen →</button>
       </div>
       <div class="error" data-step-error></div>
       <button class="btn-primary" data-next>Volgende →</button>
@@ -984,7 +1018,7 @@
       <div class="order-card" id="order-summary-content"></div>
       <label class="check-row" id="confirm-row">
         <input type="checkbox" id="confirm-checkbox">
-        <span>Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
+        <span id="confirm-row-text">Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
       </label>
       <div class="error" data-step-error></div>
       <!-- Admin variant: QR voor klant — placed BEFORE the action button so QR sits right under the recap -->
@@ -1164,6 +1198,15 @@
     // Substitute name slot
     $$('[data-name-slot]').forEach(el => { el.textContent = formData.voornaam || 'jij'; });
 
+    // Pickup-only mode: rewrite step 5 + step 7 + confirm-row copy so the customer
+    // sees ophaal-taal instead of bezorg-taal.
+    const pickup = !!window.__pickupOnly;
+    if (n === 5) {
+      const h = document.querySelector('.step[data-step="5"] .step-question');
+      if (h) h.textContent = pickup
+        ? 'Hoe kunnen we je laten weten wanneer je pot klaar is om op te halen?'
+        : 'Hoe kunnen we je laten weten wanneer je bestelling komt?';
+    }
     if (n === 6) {
       // Show right contact field based on kanaal
       const isWA = formData.kanaal === 'whatsapp';
@@ -1172,6 +1215,11 @@
       $('#contact-noun').textContent = isWA ? '06-nummer' : 'e-mailadres';
     }
     if (n === 7) {
+      // Pickup-aware confirm row text.
+      const confirmText = document.getElementById('confirm-row-text');
+      if (confirmText) confirmText.textContent = pickup
+        ? 'Ja, ik kom deze pot op halen. Als het niet binnen 4 weken klaar is, storten we je geld terug.'
+        : 'Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.';
       renderOrderSummary();
       if (__adminMode) {
         // Admin variant — kick off the QR generation right when stap 7 renders,
@@ -1360,19 +1408,26 @@
     if (!info) return '';
     const mode = info.mode || (info.in_stock ? 'stock' : (info.next_production_date ? 'production' : 'no_schedule'));
     const date = fmtDeliveryDate(info.delivery_date);
+    const pickup = !!window.__pickupOnly;
     let dot, text;
     if (mode === 'stock') {
       dot = 'green';
-      text = 'Op voorraad, thuisgebracht in weekend van ' + date;
+      text = pickup
+        ? 'Op voorraad, op te halen in weekend van ' + date
+        : 'Op voorraad, thuisgebracht in weekend van ' + date;
     } else if (mode === 'production') {
       dot = 'amber';
-      text = 'Wordt vers gemaakt, thuisgebracht ' + date;
+      text = pickup
+        ? 'Wordt vers gemaakt, op te halen ' + date
+        : 'Wordt vers gemaakt, thuisgebracht ' + date;
     } else {
       dot = 'amber';
-      text = 'Wordt vers gemaakt, als niet binnen 4 weken geleverd wordt storten we je geld terug.';
+      text = pickup
+        ? 'Wordt vers gemaakt — we laten je binnen 4 weken weten wanneer je pot op te halen is. Lukt het niet, dan storten we je geld terug.'
+        : 'Wordt vers gemaakt, als niet binnen 4 weken geleverd wordt storten we je geld terug.';
     }
     return '<div class="levering-block">' +
-      '<strong>Levering</strong>' +
+      '<strong>' + (pickup ? 'Ophalen' : 'Levering') + '</strong>' +
       '<div class="delivery-info"><span class="status-dot ' + dot + '"></span><span>' + text + '</span></div>' +
     '</div>';
   }
@@ -1415,6 +1470,8 @@
     const adminRefundNote = __adminMode
       ? ' Je bestelling wordt thuis gebracht; als het niet lukt binnen 4 weken, storten we je geld terug.'
       : '';
+    const pickup = !!window.__pickupOnly;
+    const addrHeader = pickup ? 'Ophaaladres' : 'Bezorgadres';
     const baseHtml = (lev) =>
       '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(potsTotal) + '</span></div>' +
       '<div class="order-line"><span>Statiegeld (' + n + ' pot' + (n===1?'':'ten') + ')</span><span>' + fmtEuro(stat) + '</span></div>' +
@@ -1422,7 +1479,7 @@
       '<div class="order-line total"><span>Totaal</span><span>' + fmtEuro(total) + '</span></div>' +
       '<div class="order-meta">' +
         leveringHtml(lev) +
-        '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
+        '<strong>' + addrHeader + '</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
         'We sturen je updates via ' + kLabel + ' op ' + escapeHtml(contact) + '.' +
         adminRefundNote +
       '</div>';
@@ -1543,10 +1600,13 @@
   }
   function nextStepAfter(n) {
     if (__adminMode === 'existing' && n === 4) return 7;
+    // Pickup-only flow: jump past the address step (step 3) entirely.
+    if (window.__pickupOnly && n === 2) return 4;
     return n + 1;
   }
   function prevStepBefore(n) {
     if (__adminMode === 'existing' && n === 7) return 4;
+    if (window.__pickupOnly && n === 4) return 2;
     return n - 1;
   }
 
@@ -1581,6 +1641,9 @@
       delivery_mode: __delivery_mode,
       is_admin_order: __adminMode ? 'true' : '',
       customer_identifier: formData.__customer_identifier || '',
+      // Out-of-area "afhalen" path: marks the order as pickup-only so admin/bezorger flows
+      // can render distinct titles and skip auto-delivery scheduling.
+      pickup_only: window.__pickupOnly ? 'true' : '',
     });
     delete payload.__customer_identifier;
 
@@ -1598,6 +1661,7 @@
       statiegeld_credit: (__adminMode === 'existing') ? (Number(formData.__statiegeld_credit) || 0) : 0,
       delivery_date: __delivery_date,
       delivery_mode: __delivery_mode,
+      pickup_only: window.__pickupOnly ? 'true' : '',
       ts: Date.now(),
     };
     try { localStorage.setItem('ellemelle_last_order_v1', JSON.stringify(__snap)); } catch {}
@@ -1695,16 +1759,25 @@
         headline.innerHTML = 'Leuk' + (nameTxt ? ' <span id="success-name">' + escapeHtml(nameTxt) + '</span>' : '') + ', we gaan aan de slag!';
       }
     }
-    // Delivery subtitle for post-payment view — uses snapshot delivery_date if known.
+    // Delivery / pickup subtitle for post-payment view — uses snapshot delivery_date if known.
     if (subEl && !isRetry) {
-      let subText = 'We bezorgen je pot binnen 4 weken.';
+      const isPickup = String((data && data.pickup_only) || '').toLowerCase() === 'true' || !!window.__pickupOnly;
+      let subText = isPickup
+        ? 'We laten je binnen 4 weken weten wanneer je pot klaar is om op te halen.'
+        : 'We bezorgen je pot binnen 4 weken.';
       const dd = data && data.delivery_date;
       const dm = data && data.delivery_mode;
       if (dd) {
         const dateNL = fmtDayDateLong ? fmtDayDateLong(dd) : dd;
-        if (dm === 'in_voorraad')         subText = 'We hebben deze week potten op voorraad — we bezorgen uiterlijk ' + dateNL + '.';
-        else if (dm === 'op_kookplanning') subText = 'We koken vers — we bezorgen rond ' + dateNL + '.';
-        else                              subText = 'We bezorgen je pot uiterlijk ' + dateNL + '.';
+        if (isPickup) {
+          if (dm === 'in_voorraad')         subText = 'We hebben deze week potten op voorraad — op te halen uiterlijk ' + dateNL + '.';
+          else if (dm === 'op_kookplanning') subText = 'We koken vers — op te halen rond ' + dateNL + '.';
+          else                              subText = 'We laten je weten wanneer je pot klaar is — uiterlijk ' + dateNL + '.';
+        } else {
+          if (dm === 'in_voorraad')         subText = 'We hebben deze week potten op voorraad — we bezorgen uiterlijk ' + dateNL + '.';
+          else if (dm === 'op_kookplanning') subText = 'We koken vers — we bezorgen rond ' + dateNL + '.';
+          else                              subText = 'We bezorgen je pot uiterlijk ' + dateNL + '.';
+        }
       }
       subEl.textContent = subText;
     }
@@ -1738,13 +1811,15 @@
         const contactLine = contact
           ? 'We sturen je updates via ' + sKLabel + ' op ' + escapeHtml(contact) + '.'
           : 'We sturen je updates over de bezorging.';
+        const sPickup = String(data.pickup_only || '').toLowerCase() === 'true' || !!window.__pickupOnly;
+        const sAddrHeader = sPickup ? 'Ophaaladres' : 'Bezorgadres';
         recap.innerHTML =
           '<div class="order-line"><span>' + sn + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(sPots) + '</span></div>' +
           '<div class="order-line"><span>Statiegeld (' + sn + ' pot' + (sn===1?'':'ten') + ')</span><span>' + fmtEuro(sStat) + '</span></div>' +
           sCreditLine +
           '<div class="order-line total"><span>' + totalLbl + '</span><span>' + fmtEuro(sTot) + '</span></div>' +
           '<div class="order-meta">' +
-            '<strong>Bezorgadres</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
+            '<strong>' + sAddrHeader + '</strong><br>' + escapeHtml(adres) + '<br>' + escapeHtml(stad) + '<br><br>' +
             contactLine +
           '</div>';
       } else {
@@ -2009,6 +2084,34 @@
     });
 
     $('#reset-btn').addEventListener('click', resetForm);
+
+    // Out-of-area pickup: customer chose "Doorgaan met afhalen" on step 2.
+    // Switch the flow into pickup-only mode (skip the address step), prefill the address fields
+    // with the pickup-point address, and dynamically tweak step 5/7/8 copy via prepareStep.
+    const __pickupContinueBtn = document.getElementById('pickup-continue-btn');
+    if (__pickupContinueBtn) {
+      __pickupContinueBtn.addEventListener('click', () => {
+        window.__pickupOnly = true;
+        formData.pickup_only = 'true';
+        // Lock the recap/address fields to the pickup point. Customer's own postcode stays in formData
+        // so admin still sees where they're from.
+        formData.straat     = 'Busken Huëtstraat';
+        formData.huisnummer = '11';
+        formData.toevoeging = '';
+        formData.postcode   = '2032 VJ';
+        formData.plaats     = 'Haarlem';
+        // Hydrate hidden inputs so submitOrder picks them up.
+        const ip = document.getElementById('input-straat');     if (ip) ip.value = formData.straat;
+        const ih = document.getElementById('input-huisnr');     if (ih) ih.value = formData.huisnummer;
+        const it = document.getElementById('input-toev');       if (it) it.value = '';
+        const ipl = document.getElementById('input-plaats');    if (ipl) ipl.value = formData.plaats;
+        hideError();
+        currentStep = nextStepAfter(currentStep); // step 2 → 4 via the pickup branch
+        prepareStep(currentStep);
+        showStep(currentStep);
+        saveState();
+      });
+    }
 
     // Admin existing-customer flow: "Annuleer bestelling" closes the surrounding admin drawer.
     // Inside an iframe → postMessage to the parent so it can call closeDrawer() without reload.
