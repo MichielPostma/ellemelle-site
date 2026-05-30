@@ -105,7 +105,12 @@
   .history-list .label { color: var(--black); font-size: 14.5px; flex: 1; }
   .history-list .empty { color: #888; font-size: 14px; padding: 14px 0; }
 
-  .stars { display: flex; gap: 6px; margin: 18px 0; }
+  .stars {
+    display: flex; gap: 6px; margin: 18px 0;
+    justify-content: center; padding: 24px 14px;
+    background: #ffffff; border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+  }
   .star { cursor: pointer; padding: 4px; background: none; border: 0; transition: transform 120ms; -webkit-tap-highlight-color: transparent; }
   .star:active { transform: scale(0.92); }
   .star svg { display: block; width: 44px; height: 44px; transition: fill 120ms, filter 120ms; }
@@ -142,6 +147,24 @@
   .toast.error { background: var(--red); }
 
   .order-card { background: var(--white); border-radius: var(--radius-md); padding: 18px; box-shadow: var(--shadow-card); margin-bottom: 14px; text-align: left; }
+  /* Kanaal-style methode + aantal cards (mirrors index.html). */
+  .kanaal-options { display: grid; gap: 12px; margin: 14px 0; }
+  .kanaal-card {
+    display: flex; align-items: center; gap: 16px;
+    min-height: 80px; padding: 16px 18px;
+    background: var(--white); border: 2px solid rgba(0,0,0,0.08); border-radius: var(--radius-md);
+    cursor: pointer; font-size: 16px; font-weight: 700; color: var(--black);
+    font-family: inherit; text-align: left;
+    box-shadow: var(--shadow-card);
+    transition: border-color 120ms, transform 90ms; width: 100%;
+  }
+  .kanaal-card.selected { border-color: var(--red); }
+  .kanaal-card .label { font-size: 17px; }
+  .kanaal-card .sub   { font-size: 12.5px; color: #666; opacity: 1; font-weight: 500; margin-top: 2px; display: block; }
+  /* Statiegeld info block on reorder review — small heading + 1-liner of explanation. */
+  .statiegeld-note { margin: 14px 0 0; padding: 12px 14px; background: rgba(0,0,0,0.03); border-radius: 10px; }
+  .statiegeld-note .head { color: #666; font-weight: 700; font-size: 11.5px; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 4px; }
+  .statiegeld-note .text { color: var(--black); font-size: 13.5px; line-height: 1.45; }
   .order-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 15px; }
   .order-line.total { border-top: 2px dashed var(--cream-dark); padding-top: 12px; margin-top: 8px; font-weight: 700; font-size: 19px; color: var(--black); }
   .order-meta { font-size: 13.5px; line-height: 1.55; color: rgba(0,0,0,0.72); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--cream-dark); }
@@ -248,13 +271,41 @@
     </div>
   </section>
 
+  <!-- Methode keuze voor reorder: bezorgen of zelf ophalen. -->
+  <section id="reorder-methode-view" hidden>
+    <h1 class="step-question">Wat wil je doen, <span id="reorder-methode-name">jij</span>?</h1>
+    <div class="kanaal-options">
+      <button class="kanaal-card" data-reorder-methode="bezorgen" type="button">
+        <span><span class="label">Nieuwe pot laten bezorgen</span><span class="sub">Aan de deur op je bekende adres</span></span>
+      </button>
+      <button class="kanaal-card" data-reorder-methode="ophalen" type="button">
+        <span><span class="label">Nieuwe pot zelf ophalen</span><span class="sub">Busken Huëtstraat 11, Haarlem</span></span>
+      </button>
+    </div>
+    <button class="btn-primary" id="reorder-methode-next" disabled>Volgende →</button>
+    <button class="btn-outline" id="reorder-methode-back">Terug</button>
+  </section>
+
+  <!-- Aantal stap voor reorder. -->
+  <section id="reorder-aantal-view" hidden>
+    <h1 class="step-question">Hoeveel potten wil je, <span id="reorder-aantal-name">jij</span>?</h1>
+    <p class="subtitle">€5 per pot.</p>
+    <div class="kanaal-options">
+      <button class="kanaal-card aantal-card" data-reorder-aantal="1" type="button"><span><span class="label">1 pot</span><span class="sub">€5</span></span></button>
+      <button class="kanaal-card aantal-card" data-reorder-aantal="2" type="button"><span><span class="label">2 potten</span><span class="sub">€10</span></span></button>
+      <button class="kanaal-card aantal-card" data-reorder-aantal="3" type="button"><span><span class="label">3 potten</span><span class="sub">€15</span></span></button>
+    </div>
+    <button class="btn-primary" id="reorder-aantal-next" disabled>Volgende →</button>
+    <button class="btn-outline" id="reorder-aantal-back">Terug</button>
+  </section>
+
   <section id="reorder-review-view" hidden>
     <h1 class="step-question">Klopt dit, <span id="reorder-name">jij</span>?</h1>
-    <p class="subtitle">We bezorgen op hetzelfde adres als vorige keer.</p>
+    <p class="subtitle" id="reorder-review-subtitle">We bezorgen op hetzelfde adres als vorige keer.</p>
     <div class="order-card" id="reorder-order-card"></div>
     <label class="check-row">
       <input type="checkbox" id="reorder-confirm">
-      <span>Ja, ik wil 1 pot Ellemelle chocopasta, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.</span>
+      <span id="reorder-confirm-text">Ja, ik wil deze bestelling.</span>
     </label>
     <button class="btn-primary" id="reorder-submit-btn" disabled>Doe betaling →</button>
     <button class="btn-outline" id="reorder-back-btn">Terug</button>
@@ -301,13 +352,16 @@
     potId: null, pot: null, configCache: null, reorderResp: null,
     surveyMode: null, surveyStep: 0,
     ratings: { taste: 0, texture: 0, kids: 0 },
+    // Reorder-flow choices captured between survey and Stripe handoff.
+    reorderMethode: '', // 'bezorgen' | 'ophalen'
+    reorderAantal:  1,
   };
   const SURVEY_Qs = [
     { key: 'taste',   q: 'Wat vond je van de smaak?',   sub: 'Tip: 5 = top, 1 = niet lekker.' },
     { key: 'texture', q: 'Wat vond je van de textuur?', sub: 'Romig, smeuïg, klonterig — geef je oordeel.' },
     { key: 'kids',    q: 'Wat vonden de kids ervan?',   sub: 'Als die er zijn — anders sla je over.' },
   ];
-  const VIEWS = ['loading-view','notfound-view','available-view','delivered-view','pickup-view','reordered-view','survey-view','reorder-review-view','pickup-review-view','pickup-confirm-view','reorder-bank-view','reorder-success-view'];
+  const VIEWS = ['loading-view','notfound-view','available-view','delivered-view','pickup-view','reordered-view','survey-view','reorder-methode-view','reorder-aantal-view','reorder-review-view','pickup-review-view','pickup-confirm-view','reorder-bank-view','reorder-success-view'];
 
   function showToast(msg, type) {
     const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + (type || '') + ' show';
@@ -430,25 +484,119 @@
     if (STATE.surveyStep < SURVEY_Qs.length) { renderSurveyStep(); return; }
     await submitRatings();
     if (STATE.surveyMode === 'reorder') {
-      await reorderAndPay();
+      openReorderMethode();
     } else {
       openPickupReview();
     }
   }
+
+  // --- Reorder-only views: methode + aantal + review ---------------------
+  function openReorderMethode() {
+    const naam = (STATE.pot && STATE.pot.voornaam) || 'jij';
+    $('#reorder-methode-name').textContent = naam;
+    document.querySelectorAll('#reorder-methode-view .kanaal-card').forEach(c => {
+      c.classList.toggle('selected', c.dataset.reorderMethode === STATE.reorderMethode);
+    });
+    $('#reorder-methode-next').disabled = !STATE.reorderMethode;
+    showView('reorder-methode-view');
+  }
+  function openReorderAantal() {
+    const naam = (STATE.pot && STATE.pot.voornaam) || 'jij';
+    $('#reorder-aantal-name').textContent = naam;
+    document.querySelectorAll('#reorder-aantal-view .aantal-card').forEach(c => {
+      c.classList.toggle('selected', parseInt(c.dataset.reorderAantal, 10) === STATE.reorderAantal);
+    });
+    $('#reorder-aantal-next').disabled = !STATE.reorderAantal;
+    showView('reorder-aantal-view');
+  }
+
+  // ISO YYYY-MM-DD for the next strictly-future Saturday from a given start date (default today).
+  function nextSaturdayISO(start) {
+    const d = start ? new Date(start) : new Date();
+    const day = d.getDay();
+    const offset = ((6 - day + 7) % 7) || 7;
+    const sat = new Date(d.getTime() + offset * 86400000);
+    return sat.toISOString().slice(0,10);
+  }
+  function fmtSaturdayLabel(iso) {
+    if (!iso) return '';
+    const [, m, day] = iso.split('-').map(n => parseInt(n, 10));
+    return 'zaterdag ' + day + ' ' + (NL_MAANDEN[m-1] || '');
+  }
+
+  function openReorderReview() {
+    const p = STATE.pot || {};
+    const naam = p.voornaam || 'jij';
+    const n = Math.max(1, parseInt(STATE.reorderAantal, 10) || 1);
+    const isPickup = STATE.reorderMethode === 'ophalen';
+
+    $('#reorder-name').textContent = naam;
+    $('#reorder-review-subtitle').textContent = isPickup
+      ? 'Op te halen op Busken Huëtstraat 11, Haarlem.'
+      : 'We bezorgen op hetzelfde adres als vorige keer.';
+
+    // Date — pickup follows production schedule if known, else next Saturday.
+    const cfg = STATE.configCache || {};
+    const dateIso = cfg.next_production_date
+      ? nextSaturdayISO(cfg.next_production_date)
+      : nextSaturdayISO();
+    const dateLabel = fmtSaturdayLabel(dateIso);
+
+    // Money — STATIEGELD IS NOT BILLED ON THIS ORDER. Only product price.
+    const pots = n * 5;
+    const total = pots;
+
+    const adres = isPickup
+      ? 'Busken Huëtstraat 11'
+      : (p.adres || '(adres onbekend)');
+    const stad = isPickup ? '2032 VJ Haarlem' : (p.stad || '');
+    const headerLine = isPickup ? 'Ophalen' : 'Bezorgen';
+
+    // €1 deposit per pot already at home — we always pick up just THIS pot, so €1 = €1.
+    const statiegeldEur = '€1';
+
+    $('#reorder-order-card').innerHTML =
+      '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>€' + pots + '</span></div>' +
+      '<div class="order-line total"><span>Totaal</span><span>€' + total + '</span></div>' +
+      '<div class="order-meta">' +
+        '<strong>' + headerLine + '</strong><br>' +
+        escapeHtml(dateLabel) + '<br><br>' +
+        '<strong>' + (isPickup ? 'Ophaaladres' : 'Bezorgadres') + '</strong><br>' +
+        escapeHtml(adres) + '<br>' + escapeHtml(stad) +
+      '</div>' +
+      '<div class="statiegeld-note">' +
+        '<div class="head">Statiegeld</div>' +
+        '<div class="text">Je statiegeld van ' + statiegeldEur + ' wordt teruggestort wanneer we de oude pot ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
+      '</div>';
+
+    $('#reorder-confirm-text').textContent = isPickup
+      ? 'Ja, ik kom deze ' + (n === 1 ? 'pot' : 'potten') + ' op halen. Als het niet binnen 4 weken klaar is, storten we je geld terug.'
+      : 'Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.';
+
+    $('#reorder-confirm').checked = false;
+    $('#reorder-submit-btn').disabled = true;
+    showView('reorder-review-view');
+  }
   async function reorderAndPay() {
     showView('reorder-bank-view');
     // Order-after-payment: do NOT call customer-reorder here. The Stripe webhook reads
-    // reorder_pot_id from PaymentIntent metadata and calls customer-reorder server-to-server
-    // ONLY after the iDeal payment succeeds. Abandoned payments leave no order behind.
+    // reorder_pot_id + reorder_aantal + reorder_pickup_only from PaymentIntent metadata and
+    // calls customer-reorder server-to-server ONLY after the iDeal payment succeeds.
+    const isPickup = STATE.reorderMethode === 'ophalen';
+    const aantal = Math.max(1, parseInt(STATE.reorderAantal, 10) || 1);
     try {
       const r = await fetch('/api/stripe/create-payment-intent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           voornaam: (STATE.pot && STATE.pot.voornaam) || '',
-          aantal: 1,
+          aantal: aantal,
+          // Statiegeld is NOT applied to this order — refunded only when bezorger physically takes
+          // the old pot. Pass credit=0 so the Stripe amount stays at n × €5.
           statiegeld_credit: 0,
           success_pot_id: STATE.potId,
           reorder_pot_id: STATE.potId,
+          reorder_aantal: aantal,
+          reorder_pickup_only: isPickup ? 'true' : '',
         }),
       });
       const j = await r.json();
@@ -504,19 +652,6 @@
     showView('pickup-confirm-view');
   }
 
-  function openReorderReview() {
-    const p = STATE.pot;
-    $('#reorder-name').textContent = p.voornaam || 'jij';
-    const addrLine = (p.adres ? escapeHtml(p.adres) : '(adres onbekend)');
-    const cityLine = (p.stad ? escapeHtml(p.stad) : '');
-    $('#reorder-order-card').innerHTML =
-      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5</span></div>' +
-      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1</span></div>' +
-      '<div class="order-line total"><span>Totaal</span><span>€6</span></div>' +
-      '<div class="order-meta"><strong>Bezorgadres</strong><br>'+addrLine+'<br>'+cityLine+'<br><br>Binnen 4 weken aan je deur door Ellis & Melle. Lege pot '+escapeHtml(STATE.potId)+' nemen we mee.</div>';
-    $('#reorder-confirm').checked = false; $('#reorder-submit-btn').disabled = true;
-    showView('reorder-review-view');
-  }
   async function submitReorder() {
     const btn = $('#reorder-submit-btn'); btn.disabled = true; btn.textContent = 'Bezig…';
     // Skip pre-payment customer-reorder call — handled by the Stripe webhook after payment_intent.succeeded.
@@ -537,7 +672,44 @@
   });
   $('#pickup-confirm-btn').addEventListener('click', performPickup);
   $('#pickup-review-back').addEventListener('click', renderForCurrentState);
-  $('#reorder-back-btn').addEventListener('click', () => { if (STATE.pot.status === 'pickup-with-reorder') showView('reordered-view'); else renderForCurrentState(); });
+
+  // Reorder: methode-card pickers
+  document.querySelectorAll('#reorder-methode-view .kanaal-card').forEach(card => {
+    card.addEventListener('click', () => {
+      STATE.reorderMethode = card.dataset.reorderMethode;
+      document.querySelectorAll('#reorder-methode-view .kanaal-card').forEach(c => {
+        c.classList.toggle('selected', c === card);
+      });
+      $('#reorder-methode-next').disabled = false;
+    });
+  });
+  $('#reorder-methode-next').addEventListener('click', () => {
+    if (!STATE.reorderMethode) return;
+    openReorderAantal();
+  });
+  $('#reorder-methode-back').addEventListener('click', () => {
+    // Back from methode → last survey step
+    STATE.surveyStep = SURVEY_Qs.length - 1;
+    renderSurveyStep();
+  });
+
+  // Reorder: aantal-card pickers
+  document.querySelectorAll('#reorder-aantal-view .aantal-card').forEach(card => {
+    card.addEventListener('click', () => {
+      STATE.reorderAantal = parseInt(card.dataset.reorderAantal, 10) || 1;
+      document.querySelectorAll('#reorder-aantal-view .aantal-card').forEach(c => {
+        c.classList.toggle('selected', c === card);
+      });
+      $('#reorder-aantal-next').disabled = false;
+    });
+  });
+  $('#reorder-aantal-next').addEventListener('click', () => {
+    if (!STATE.reorderAantal) return;
+    openReorderReview();
+  });
+  $('#reorder-aantal-back').addEventListener('click', () => openReorderMethode());
+
+  $('#reorder-back-btn').addEventListener('click', () => openReorderAantal());
   $('#reorder-confirm').addEventListener('change', () => { $('#reorder-submit-btn').disabled = !$('#reorder-confirm').checked; });
   $('#reorder-submit-btn').addEventListener('click', submitReorder);
 
@@ -562,18 +734,29 @@
     }
   }
 
-  function renderReorderSuccessRecap(pot, voornaam) {
-    const adres = pot && pot.adres ? escapeHtml(pot.adres) : '(adres onbekend)';
-    const stad  = pot && pot.stad  ? escapeHtml(pot.stad)  : '';
+  function renderReorderSuccessRecap(pot, voornaam, opts) {
+    opts = opts || {};
+    const isPickup = opts.methode === 'ophalen';
+    const n = Math.max(1, parseInt(opts.aantal, 10) || 1);
+    const adres = isPickup
+      ? escapeHtml('Busken Huëtstraat 11')
+      : (pot && pot.adres ? escapeHtml(pot.adres) : '(adres onbekend)');
+    const stad = isPickup
+      ? escapeHtml('2032 VJ Haarlem')
+      : (pot && pot.stad  ? escapeHtml(pot.stad)  : '');
     const recap = $('#reorder-success-card');
     if (!recap) return;
+    const total = n * 5;
     recap.innerHTML =
-      '<div class="order-line"><span>1× ELLEMELLE pot 250g</span><span>€5</span></div>' +
-      '<div class="order-line"><span>Statiegeld glazen pot</span><span>€1</span></div>' +
-      '<div class="order-line total"><span>Totaal betaald</span><span>€6</span></div>' +
+      '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>€' + (n*5) + '</span></div>' +
+      '<div class="order-line total"><span>Totaal betaald</span><span>€' + total + '</span></div>' +
       '<div class="order-meta">' +
-        '<strong>Bezorgadres</strong><br>' + adres + '<br>' + stad + '<br><br>' +
-        'Lege pot ' + escapeHtml(STATE.potId || '') + ' nemen we tegelijk mee.' +
+        '<strong>' + (isPickup ? 'Ophaaladres' : 'Bezorgadres') + '</strong><br>' + adres + '<br>' + stad + '<br><br>' +
+        'Lege pot ' + escapeHtml(STATE.potId || '') + ' nemen we ' + (isPickup ? 'in als je hem brengt' : 'tegelijk op') + '.' +
+      '</div>' +
+      '<div class="statiegeld-note">' +
+        '<div class="head">Statiegeld</div>' +
+        '<div class="text">Je statiegeld van €1 wordt teruggestort wanneer we de oude pot ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
       '</div>';
   }
 
@@ -593,10 +776,16 @@
       STATE.pot = p || {};
       const urlVoornaam = qs.get('voornaam') || '';
       const voornaam = urlVoornaam || (p && p.voornaam) || '';
+      const methode = qs.get('methode') || 'bezorgen';
+      const aantal  = Math.max(1, parseInt(qs.get('aantal'), 10) || 1);
       $('#reorder-success-headline').textContent = voornaam
         ? 'Leuk ' + voornaam + ', we gaan aan de slag!'
         : 'Leuk, we gaan aan de slag!';
-      renderReorderSuccessRecap(STATE.pot, voornaam);
+      const sub = $('#reorder-success-sub');
+      if (sub) sub.textContent = methode === 'ophalen'
+        ? 'We laten je weten wanneer je nieuwe ' + (aantal === 1 ? 'pot klaar is' : 'potten klaar zijn') + ' om op te halen — de oude pot nemen we dan in.'
+        : 'We bezorgen je nieuwe ' + (aantal === 1 ? 'pot' : 'potten') + ' binnen 4 weken — de lege pot halen we tegelijk op.';
+      renderReorderSuccessRecap(STATE.pot, voornaam, { methode, aantal });
       showView('reorder-success-view');
       setTimeout(burstConfetti, 200);
       try { history.replaceState({}, '', location.pathname); } catch {}
