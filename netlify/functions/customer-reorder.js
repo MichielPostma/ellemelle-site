@@ -71,6 +71,8 @@ exports.handler = async (event) => {
   if (!/^POT-\d{3}$/.test(potId)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid pot id' }) };
   }
+  const reqAantal     = Math.max(1, parseInt(body.aantal, 10) || 1);
+  const reqPickupOnly = !!body.pickup_only;
 
   const potsStore   = getStore(blobOpts('ellemelle-pots'));
   const ordersStore = getStore(blobOpts('ellemelle-orders'));
@@ -89,6 +91,12 @@ exports.handler = async (event) => {
   // Fetch original submission to copy customer fields into new Netlify Forms entry
   const orig = await getOriginalSubmission(pot.order_id);
   const d = (orig && orig.data) || {};
+  // Pickup variant: address swaps to the Busken Huëtstraat pickup point.
+  const straat     = reqPickupOnly ? 'Busken Huëtstraat' : (d.straat     || '');
+  const huisnummer = reqPickupOnly ? '11'                 : (d.huisnummer || '');
+  const toevoeging = reqPickupOnly ? ''                   : (d.toevoeging || '');
+  const postcode   = reqPickupOnly ? '2032 VJ'            : (d.postcode   || '');
+  const plaats     = reqPickupOnly ? 'Haarlem'            : (d.plaats     || 'Haarlem');
   const payload = {
     'form-name':  'ellemelle-signup',
     'bot-field':  '',
@@ -96,12 +104,10 @@ exports.handler = async (event) => {
     telefoon:     d.telefoon   || '',
     email:        d.email      || '',
     kanaal:       d.kanaal     || 'whatsapp',
-    straat:       d.straat     || '',
-    huisnummer:   d.huisnummer || '',
-    toevoeging:   d.toevoeging || '',
-    postcode:     d.postcode   || '',
-    plaats:       d.plaats     || 'Haarlem',
+    straat, huisnummer, toevoeging, postcode, plaats,
+    aantal:            String(reqAantal),
     is_reorder:        'true',
+    pickup_only:       reqPickupOnly ? 'true' : '',
     original_pot_id:   potId,
     original_order_id: pot.order_id,
   };
