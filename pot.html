@@ -342,11 +342,38 @@
     </div>
   </section>
 
+  <!-- Methode keuze voor pickup-only: klant brengt zelf of wij halen op. -->
+  <section id="pickup-methode-view" hidden>
+    <h1 class="step-question">Breng je 'm langs, of komen wij 'm ophalen?</h1>
+    <div class="kanaal-options">
+      <button class="kanaal-card" data-pickup-methode="brengen" type="button">
+        <span><span class="label">Ik breng 'm naar de Busken Huëtstraat</span><span class="sub">Busken Huëtstraat 11, 2032 VJ Haarlem</span></span>
+      </button>
+      <button class="kanaal-card" data-pickup-methode="halen" type="button">
+        <span><span class="label">Jullie komen 'm bij me ophalen</span><span class="sub">Binnenkort in het weekend bellen we aan</span></span>
+      </button>
+    </div>
+    <div class="step-actions">
+      <button type="button" class="back-pill" id="pickup-methode-back" aria-label="Vorige">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <button class="btn-primary" id="pickup-methode-next">Volgende →</button>
+    </div>
+  </section>
+
   <section id="pickup-review-view" hidden>
     <h1 class="step-question">Klopt dit, <span id="pickup-review-name">jij</span>?</h1>
     <div class="order-card" id="pickup-review-card"></div>
-    <button class="btn-primary" id="pickup-confirm-btn">Bevestig ophalen →</button>
-    <button class="btn-outline" id="pickup-review-back">Terug</button>
+    <label class="check-row">
+      <input type="checkbox" id="pickup-review-confirm">
+      <span id="pickup-review-confirm-text">Ja, jullie mogen langskomen om de lege pot op te halen.</span>
+    </label>
+    <div class="step-actions">
+      <button type="button" class="back-pill" id="pickup-review-back" aria-label="Vorige">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <button class="btn-primary" id="pickup-confirm-btn" disabled>Bevestig →</button>
+    </div>
   </section>
 
   <section id="pickup-confirm-view" hidden>
@@ -384,13 +411,15 @@
     // Reorder-flow choices captured between survey and Stripe handoff.
     reorderMethode: '', // 'bezorgen' | 'ophalen'
     reorderAantal:  1,
+    // Pickup-only flow choice: klant brengt zelf ('brengen') of bezorger haalt ('halen').
+    pickupMethode: '', // 'brengen' | 'halen'
   };
   const SURVEY_Qs = [
     { key: 'taste',   q: 'Wat vond je van de smaak?',   sub: 'Tip: 5 = top, 1 = niet lekker.' },
     { key: 'texture', q: 'Wat vond je van de textuur?', sub: 'Romig, smeuïg, klonterig — geef je oordeel.' },
     { key: 'kids',    q: 'Wat vonden de kids ervan?',   sub: 'Als die er zijn — anders sla je over.' },
   ];
-  const VIEWS = ['loading-view','notfound-view','available-view','delivered-view','pickup-view','reordered-view','survey-view','reorder-methode-view','reorder-aantal-view','reorder-review-view','pickup-review-view','pickup-confirm-view','reorder-bank-view','reorder-success-view'];
+  const VIEWS = ['loading-view','notfound-view','available-view','delivered-view','pickup-view','reordered-view','survey-view','reorder-methode-view','reorder-aantal-view','reorder-review-view','pickup-methode-view','pickup-review-view','pickup-confirm-view','reorder-bank-view','reorder-success-view'];
 
   function showToast(msg, type) {
     const t = $('#toast'); t.textContent = msg; t.className = 'toast ' + (type || '') + ' show';
@@ -489,7 +518,9 @@
   const STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg>';
   function renderSurveyStep() {
     const idx = STATE.surveyStep, cfg = SURVEY_Qs[idx];
+    // Step indicator: rating is 1-3 in both reorder (6 total) and pickup (5 total) flows.
     if (STATE.surveyMode === 'reorder') setReorderProgress('Stap ' + (idx + 1) + ' van 6');
+    else if (STATE.surveyMode === 'pickup')  setReorderProgress('Stap ' + (idx + 1) + ' van 5');
     $('#survey-q').textContent = cfg.q;
     const cur = STATE.ratings[cfg.key] || 0;
     const wrap = $('#survey-stars'); wrap.innerHTML = '';
@@ -512,6 +543,8 @@
       STATE.reorderAantal = 1;
       if (!STATE.reorderMethode) STATE.reorderMethode = 'ophalen';
     }
+    // Pickup default: klant brengt zelf langs (consistent with the reorder flow default).
+    if (mode === 'pickup' && !STATE.pickupMethode) STATE.pickupMethode = 'brengen';
     renderSurveyStep();
   }
 
@@ -527,7 +560,7 @@
     if (STATE.surveyMode === 'reorder') {
       openReorderMethode();
     } else {
-      openPickupReview();
+      openPickupMethode();
     }
   }
 
@@ -689,39 +722,110 @@
     } catch {}
   }
 
+  function openPickupMethode() {
+    setReorderProgress('Stap 4 van 5');
+    document.querySelectorAll('#pickup-methode-view .kanaal-card').forEach(c => {
+      c.classList.toggle('selected', c.dataset.pickupMethode === STATE.pickupMethode);
+    });
+    $('#pickup-methode-next').disabled = !STATE.pickupMethode;
+    showView('pickup-methode-view');
+  }
+
   function openPickupReview() {
-    const p = STATE.pot;
-    $('#pickup-review-name').textContent = p.voornaam || 'jij';
-    const addrLine = (p.adres ? escapeHtml(p.adres) : '(adres onbekend)');
-    const cityLine = (p.stad ? escapeHtml(p.stad) : '');
-    // Compute next Saturday (strictly future — incl. next sat if today is sat)
-    const today = new Date();
-    const day = today.getDay();
-    const offset = ((6 - day + 7) % 7) || 7;
-    const next = new Date(today.getTime() + offset * 86400000);
-    const ophaaldatum = 'zaterdag ' + next.getDate() + ' ' + NL_MAANDEN[next.getMonth()];
-    $('#pickup-review-card').innerHTML =
-      '<div class="order-line"><span>1× lege pot ' + escapeHtml(STATE.potId) + '</span><span>ophalen</span></div>' +
-      '<div class="order-line"><span>Statiegeld retour</span><span>€1</span></div>' +
+    setReorderProgress('Stap 5 van 5');
+    const p = STATE.pot || {};
+    const naam = p.voornaam || 'jij';
+    const isBrengen = STATE.pickupMethode === 'brengen';
+    $('#pickup-review-name').textContent = naam;
+
+    const adres = isBrengen ? 'Busken Huëtstraat 11'
+                            : (p.adres || '(adres onbekend)');
+    const stad  = isBrengen ? '2032 VJ Haarlem'
+                            : (p.stad || '');
+
+    // Build initial card; refine date with /levering-info to use voorraad cue if relevant.
+    const buildHtml = (leveringHtmlText) =>
+      '<div class="order-line"><span>1× lege pot ' + escapeHtml(STATE.potId) + '</span><span>retour</span></div>' +
       '<div class="order-meta">' +
-        '<strong>Ophaaladres</strong><br>' + addrLine + '<br>' + cityLine + '<br><br>' +
-        '<strong>Ophaaldatum</strong><br>' + ophaaldatum +
+        leveringHtmlText +
+        '<strong>' + (isBrengen ? 'Inleveradres' : 'Ophaaladres') + '</strong><br>' +
+        escapeHtml(adres) + '<br>' + escapeHtml(stad) +
+      '</div>' +
+      '<div class="statiegeld-note">' +
+        '<div class="head">Over je statiegeld</div>' +
+        '<div class="text">Je statiegeld van €1 wordt teruggestort zodra we de pot ' + (isBrengen ? 'ontvangen' : 'hebben opgehaald') + '.</div>' +
       '</div>';
+
+    function leveringHtml(info) {
+      const mode = (info && info.mode) || 'no_schedule';
+      let dateIso = (info && info.delivery_date) || '';
+      if (!dateIso) dateIso = nextSaturdayISO();
+      const dateLabel = fmtSaturdayLabel(dateIso);
+      let dot, text, headerLabel;
+      if (isBrengen) {
+        // Klant brengt zelf langs — geen vaste datum, koffie staat klaar wanneer ze maar willen.
+        dot = 'green';
+        text = 'Je kunt ’m spontaan langsbrengen, of even appen om een moment af te stemmen.';
+        headerLabel = 'Inleverdatum';
+      } else {
+        headerLabel = 'Ophaaldatum';
+        if (mode === 'stock') { dot = 'green';  text = 'Op voorraad, we halen ’m op in weekend van ' + dateLabel; }
+        else if (mode === 'production') { dot = 'amber'; text = 'Wordt rond ' + dateLabel + ' opgehaald.'; }
+        else { dot = 'amber'; text = 'We halen ’m op in weekend van ' + dateLabel + '.'; }
+      }
+      return '<div class="levering-block">' +
+        '<strong>' + headerLabel + '</strong>' +
+        '<div class="delivery-info"><span class="status-dot ' + dot + '"></span><span>' + escapeHtml(text) + '</span></div>' +
+      '</div>';
+    }
+
+    $('#pickup-review-card').innerHTML = buildHtml(leveringHtml(null));
+    if (!isBrengen) {
+      (async () => {
+        try {
+          const r = await fetch('/.netlify/functions/levering-info?aantal=1&ts=' + Date.now());
+          if (!r.ok) return;
+          const info = await r.json();
+          $('#pickup-review-card').innerHTML = buildHtml(leveringHtml(info));
+        } catch {}
+      })();
+    }
+
+    $('#pickup-review-confirm-text').textContent = isBrengen
+      ? 'Ja, ik kom de lege pot langsbrengen. Ik kom spontaan, of app even om een moment af te stemmen.'
+      : 'Ja, jullie mogen langskomen om de lege pot op te halen.';
+    $('#pickup-review-confirm').checked = false;
+    $('#pickup-confirm-btn').disabled = true;
     showView('pickup-review-view');
   }
+
   async function performPickup() {
+    const btn = $('#pickup-confirm-btn'); btn.disabled = true; btn.textContent = 'Bezig…';
+    const bringSelf = STATE.pickupMethode === 'brengen';
     const r = await fetch('/.netlify/functions/customer-request-pickup', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pot_id: STATE.potId }),
+      body: JSON.stringify({ pot_id: STATE.potId, bring_self: bringSelf }),
     });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) { showToast(j.error || 'Iets ging mis', 'error'); renderForCurrentState(); return; }
-    const today = new Date();
-    const day = today.getDay();
-    const offset = ((6 - day + 7) % 7) || 7;
-    const next = new Date(today.getTime() + offset * 86400000);
-    $('#pickup-confirm-headline').textContent = 'We halen je pot op zaterdag ' + next.getDate() + ' ' + NL_MAANDEN[next.getMonth()] + '.';
-    $('#pickup-confirm-sub').textContent = 'Statiegeld €1 wordt teruggestort. Bedankt voor je feedback!';
+    if (!r.ok) {
+      btn.disabled = false; btn.textContent = 'Bevestig →';
+      showToast(j.error || 'Iets ging mis', 'error');
+      return;
+    }
+    // Confirmation message depends on chosen methode.
+    if (bringSelf) {
+      $('#pickup-confirm-headline').textContent = 'Top, we zien je snel!';
+      $('#pickup-confirm-sub').textContent = 'Bedankt voor je feedback! Statiegeld €1 storten we terug zodra we de pot ontvangen.';
+    } else {
+      const today = new Date();
+      const day = today.getDay();
+      const offset = ((6 - day + 7) % 7) || 7;
+      const next = new Date(today.getTime() + offset * 86400000);
+      $('#pickup-confirm-headline').textContent = 'We halen je pot op zaterdag ' + next.getDate() + ' ' + NL_MAANDEN[next.getMonth()] + '.';
+      $('#pickup-confirm-sub').textContent = 'Bedankt voor je feedback! Statiegeld €1 storten we terug zodra we de pot hebben opgehaald.';
+    }
+    // Hide the top progress label on the final confirmation view.
+    const pl = document.getElementById('pot-label'); if (pl) { pl.textContent = ''; pl.style.display = 'none'; }
     showView('pickup-confirm-view');
   }
 
@@ -744,7 +848,30 @@
     }
   });
   $('#pickup-confirm-btn').addEventListener('click', performPickup);
-  $('#pickup-review-back').addEventListener('click', renderForCurrentState);
+  // Review back → re-show the methode keuze step so klant can switch brengen/halen.
+  $('#pickup-review-back').addEventListener('click', () => openPickupMethode());
+  $('#pickup-review-confirm').addEventListener('change', () => {
+    $('#pickup-confirm-btn').disabled = !$('#pickup-review-confirm').checked;
+  });
+
+  // Pickup methode-card pickers
+  document.querySelectorAll('#pickup-methode-view .kanaal-card').forEach(card => {
+    card.addEventListener('click', () => {
+      STATE.pickupMethode = card.dataset.pickupMethode;
+      document.querySelectorAll('#pickup-methode-view .kanaal-card').forEach(c => {
+        c.classList.toggle('selected', c === card);
+      });
+      $('#pickup-methode-next').disabled = false;
+    });
+  });
+  $('#pickup-methode-next').addEventListener('click', () => {
+    if (!STATE.pickupMethode) return;
+    openPickupReview();
+  });
+  $('#pickup-methode-back').addEventListener('click', () => {
+    STATE.surveyStep = SURVEY_Qs.length - 1;
+    renderSurveyStep();
+  });
 
   // Reorder: methode-card pickers
   document.querySelectorAll('#reorder-methode-view .kanaal-card').forEach(card => {
