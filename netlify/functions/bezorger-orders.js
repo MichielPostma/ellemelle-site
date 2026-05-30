@@ -106,6 +106,8 @@ exports.handler = async (event) => {
     try { p = await potsStore.get(pid, { type: 'json' }); } catch { continue; }
     if (!p) continue;
     if (p.status !== 'pickup-requested' && p.status !== 'pickup-with-reorder') continue;
+    // Klant-brings-self pickups don't need a bezorger stop — they're delivered to the kitchen.
+    if (p.bring_self_pickup) continue;
     pickupPots.push({
       pot_id: pid,
       pot_status: p.status,
