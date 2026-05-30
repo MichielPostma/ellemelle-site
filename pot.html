@@ -173,7 +173,14 @@
   .order-meta { font-size: 13.5px; line-height: 1.55; color: rgba(0,0,0,0.72); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--cream-dark); }
   .order-meta strong { color: var(--black); }
 
-  .check-row { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0; font-size: 14px; line-height: 1.45; cursor: pointer; }
+  .check-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 12px 0; padding: 12px 14px;
+    background: #ffffff; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    font-size: 14px; line-height: 1.45; cursor: pointer;
+    user-select: none;
+  }
   .check-row input { margin-top: 2px; }
 
   .step.success { text-align: center; }
@@ -296,11 +303,10 @@
   <!-- Aantal stap voor reorder. -->
   <section id="reorder-aantal-view" hidden>
     <h1 class="step-question">Hoeveel potten wil je, <span id="reorder-aantal-name">jij</span>?</h1>
-    <p class="subtitle">€5 per pot.</p>
     <div class="kanaal-options">
-      <button class="kanaal-card aantal-card" data-reorder-aantal="1" type="button"><span><span class="label">1 pot</span><span class="sub">€5</span></span></button>
-      <button class="kanaal-card aantal-card" data-reorder-aantal="2" type="button"><span><span class="label">2 potten</span><span class="sub">€10</span></span></button>
-      <button class="kanaal-card aantal-card" data-reorder-aantal="3" type="button"><span><span class="label">3 potten</span><span class="sub">€15</span></span></button>
+      <button class="kanaal-card aantal-card" data-reorder-aantal="1" type="button"><span><span class="label">1 pot</span><span class="sub">5 euro plus 1 euro statiegeld</span></span></button>
+      <button class="kanaal-card aantal-card" data-reorder-aantal="2" type="button"><span><span class="label">2 potten</span><span class="sub">10 euro plus 2 euro statiegeld</span></span></button>
+      <button class="kanaal-card aantal-card" data-reorder-aantal="3" type="button"><span><span class="label">3 potten</span><span class="sub">15 euro plus 3 euro statiegeld</span></span></button>
     </div>
     <div class="step-actions">
       <button type="button" class="back-pill" id="reorder-aantal-back" aria-label="Vorige">
@@ -322,7 +328,7 @@
       <button type="button" class="back-pill" id="reorder-back-btn" aria-label="Vorige">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       </button>
-      <button class="btn-primary" id="reorder-submit-btn" disabled>Doe betaling →</button>
+      <button class="btn-primary" id="reorder-submit-btn" disabled>Betaling via iDeal →</button>
     </div>
   </section>
 
