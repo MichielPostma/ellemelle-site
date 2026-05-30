@@ -327,12 +327,12 @@
     </script>
     <h1 class="step-question" id="d-name">—</h1>
 
-    <div class="actions-label">Bezorging</div>
+    <div class="actions-label" id="bezorging-label">Bezorging</div>
     <div class="info-card">
       <div class="big-date" id="d-deliverydate">—</div>
       <div class="detail-row"><span class="k">Status</span><span class="v"><span class="badge" id="d-statusbadge">—</span></span></div>
-      <div class="detail-row"><span class="k">Uiterlijke bezorgdatum</span><span class="v" id="d-uiterlijke" style="font-weight: 500;">—</span></div>
-      <div class="detail-row"><span class="k">Geplande bezorgweek</span><span class="v" id="d-geplande" style="font-weight: 500;">—</span></div>
+      <div class="detail-row"><span class="k" id="d-uiterlijke-label">Uiterlijke bezorgdatum</span><span class="v" id="d-uiterlijke" style="font-weight: 500;">—</span></div>
+      <div class="detail-row"><span class="k" id="d-geplande-label">Geplande bezorgweek</span><span class="v" id="d-geplande" style="font-weight: 500;">—</span></div>
       <button class="btn-outline" id="edit-wijzigen-btn" type="button" style="margin-top: 10px;">Wijzigen</button>
     </div>
 
@@ -639,7 +639,16 @@
     function renderDetail() {
     const o = STATE.order;
     if (!o) return;
-    $('#d-name').textContent = o.voornaam || '(geen naam)';
+    const naam = o.voornaam || '(geen naam)';
+    const isPickup = !!o.pickup_only;
+    $('#d-name').textContent = isPickup ? ('Pickup ' + naam) : naam;
+    // Pickup-only orders swap "Bezorging" labels for "Pickup" labels in the top section.
+    const bezLabel = document.getElementById('bezorging-label');
+    if (bezLabel) bezLabel.textContent = isPickup ? 'Pickup' : 'Bezorging';
+    const uitLabel = document.getElementById('d-uiterlijke-label');
+    if (uitLabel) uitLabel.textContent = isPickup ? 'Uiterlijke ophaaldatum' : 'Uiterlijke bezorgdatum';
+    const gepLabel = document.getElementById('d-geplande-label');
+    if (gepLabel) gepLabel.textContent = isPickup ? 'Geplande ophaalweek' : 'Geplande bezorgweek';
     const cd = bigDateLabel(o);
     const isLate = !!o.is_te_laat;
     const dEl = $('#d-deliverydate');
