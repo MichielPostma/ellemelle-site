@@ -858,8 +858,8 @@
         ? 'Leuk ' + voornaam + ', we gaan aan de slag!'
         : 'Leuk, we gaan aan de slag!';
       renderReorderSuccessRecap(STATE.pot, voornaam, { methode, aantal });
-      // Reset the top label so the success page shows the pot id (not the reorder progress text).
-      const pl = document.getElementById('pot-label'); if (pl) pl.textContent = STATE.potId || '';
+      // Hide the top pot-label entirely on the success view — no progress text, no pot id.
+      const pl = document.getElementById('pot-label'); if (pl) { pl.textContent = ''; pl.style.display = 'none'; }
       showView('reorder-success-view');
       setTimeout(burstConfetti, 200);
       try { history.replaceState({}, '', location.pathname); } catch {}
