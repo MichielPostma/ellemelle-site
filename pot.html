@@ -165,9 +165,9 @@
   .kanaal-card .label { font-size: 17px; }
   .kanaal-card .sub   { font-size: 12.5px; color: #666; opacity: 1; font-weight: 500; margin-top: 2px; display: block; }
   /* Statiegeld info block on reorder review — small heading + 1-liner of explanation. */
-  .statiegeld-note { margin: 14px 0 0; padding: 12px 14px; background: rgba(0,0,0,0.03); border-radius: 10px; }
-  .statiegeld-note .head { color: #666; font-weight: 700; font-size: 11.5px; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 4px; }
-  .statiegeld-note .text { color: var(--black); font-size: 13.5px; line-height: 1.45; }
+  .statiegeld-note { margin: 14px 0 0; padding: 12px 14px; background: rgba(217,48,30,0.06); border-radius: 10px; }
+  .statiegeld-note .head { color: var(--red); font-weight: 700; font-size: 11.5px; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 4px; }
+  .statiegeld-note .text { color: var(--red); font-size: 13.5px; line-height: 1.45; font-weight: 500; }
   .order-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 15px; }
   .order-line.total { border-top: 2px dashed var(--cream-dark); padding-top: 12px; margin-top: 8px; font-weight: 700; font-size: 19px; color: var(--black); }
   .order-meta { font-size: 13.5px; line-height: 1.55; color: rgba(0,0,0,0.72); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--cream-dark); }
@@ -181,7 +181,11 @@
     font-size: 14px; line-height: 1.45; cursor: pointer;
     user-select: none;
   }
-  .check-row input { margin-top: 2px; }
+  .check-row input {
+    width: 22px; height: 22px; flex-shrink: 0;
+    accent-color: var(--red);
+    cursor: pointer; margin-top: 2px;
+  }
 
   .step.success { text-align: center; }
   #qrcode { display: flex; justify-content: center; align-items: center; width: 240px; height: 240px; margin: 28px auto 24px; padding: 20px; background: #fff; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.12); animation: qr-wiggle 4s ease-in-out infinite; transform-origin: center center; }
@@ -570,9 +574,11 @@
       : nextSaturdayISO();
     const dateLabel = fmtSaturdayLabel(dateIso);
 
-    // Money — STATIEGELD IS NOT BILLED ON THIS ORDER. Only product price.
+    // Money — both new pots + statiegeld are billed on this order. The OLD pot's statiegeld
+    // gets refunded separately when bezorger picks it up (see info note below).
     const pots = n * 5;
-    const total = pots;
+    const stat = n * 1;
+    const total = pots + stat;
 
     const adres = isPickup
       ? 'Busken Huëtstraat 11'
@@ -580,11 +586,9 @@
     const stad = isPickup ? '2032 VJ Haarlem' : (p.stad || '');
     const headerLine = isPickup ? 'Ophalen' : 'Bezorgen';
 
-    // €1 deposit per pot already at home — we always pick up just THIS pot, so €1 = €1.
-    const statiegeldEur = '€1';
-
     $('#reorder-order-card').innerHTML =
       '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>€' + pots + '</span></div>' +
+      '<div class="order-line"><span>Statiegeld (' + n + ' pot' + (n === 1 ? '' : 'ten') + ')</span><span>€' + stat + '</span></div>' +
       '<div class="order-line total"><span>Totaal</span><span>€' + total + '</span></div>' +
       '<div class="order-meta">' +
         '<strong>' + headerLine + '</strong><br>' +
@@ -594,11 +598,11 @@
       '</div>' +
       '<div class="statiegeld-note">' +
         '<div class="head">Statiegeld</div>' +
-        '<div class="text">Je statiegeld van ' + statiegeldEur + ' wordt teruggestort wanneer we de oude pot ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
+        '<div class="text">Je statiegeld van €1 voor de oude pot wordt teruggestort wanneer we ' + (isPickup ? 'm innemen' : 'm ophalen') + '.</div>' +
       '</div>';
 
     $('#reorder-confirm-text').textContent = isPickup
-      ? 'Ja, ik kom deze ' + (n === 1 ? 'pot' : 'potten') + ' op halen. Als het niet binnen 4 weken klaar is, storten we je geld terug.'
+      ? 'Ja, ik kom deze ' + (n === 1 ? 'pot' : 'potten') + ' ophalen. Als het niet binnen 4 weken klaar is, storten we je geld terug.'
       : 'Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.';
 
     $('#reorder-confirm').checked = false;
@@ -774,9 +778,12 @@
       : (pot && pot.stad  ? escapeHtml(pot.stad)  : '');
     const recap = $('#reorder-success-card');
     if (!recap) return;
-    const total = n * 5;
+    const pots = n * 5;
+    const stat = n * 1;
+    const total = pots + stat;
     recap.innerHTML =
-      '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>€' + (n*5) + '</span></div>' +
+      '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>€' + pots + '</span></div>' +
+      '<div class="order-line"><span>Statiegeld (' + n + ' pot' + (n === 1 ? '' : 'ten') + ')</span><span>€' + stat + '</span></div>' +
       '<div class="order-line total"><span>Totaal betaald</span><span>€' + total + '</span></div>' +
       '<div class="order-meta">' +
         '<strong>' + (isPickup ? 'Ophaaladres' : 'Bezorgadres') + '</strong><br>' + adres + '<br>' + stad + '<br><br>' +
@@ -784,7 +791,7 @@
       '</div>' +
       '<div class="statiegeld-note">' +
         '<div class="head">Statiegeld</div>' +
-        '<div class="text">Je statiegeld van €1 wordt teruggestort wanneer we de oude pot ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
+        '<div class="text">Je statiegeld van €1 voor de oude pot wordt teruggestort wanneer we ' + (isPickup ? 'm innemen' : 'm ophalen') + '.</div>' +
       '</div>';
   }
 
