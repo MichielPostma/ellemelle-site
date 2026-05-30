@@ -189,6 +189,8 @@ async function listEnrichedOrders() {
       is_reorder:      String(d.is_reorder || '').toLowerCase() === 'true',
       original_pot_id: d.original_pot_id || '',
       original_order_id: d.original_order_id || '',
+      // Out-of-area pickup-only flag — set by index.html step 2 fallback flow.
+      pickup_only:     String(d.pickup_only || '').toLowerCase() === 'true',
       // Snapshot fallback
       snapshot_delivery_date: snapshotDate,
       snapshot_delivery_mode: snapshotMode,
