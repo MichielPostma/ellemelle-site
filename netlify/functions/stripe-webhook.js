@@ -125,11 +125,17 @@ exports.handler = async (event) => {
   // (fetches original customer fields, files a new Netlify Forms entry with is_reorder=true,
   // flips pot.status to pickup-with-reorder, mails Michiel). It's idempotent on pot.status.
   if (/^POT-\d{3}$/.test(reorderPotId)) {
+    const reorderAantal     = Math.max(1, parseInt(meta.reorder_aantal, 10) || 1);
+    const reorderPickupOnly = String(meta.reorder_pickup_only || '').toLowerCase() === 'true';
     try {
       const r = await fetch(baseUrl + '/.netlify/functions/customer-reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pot_id: reorderPotId }),
+        body: JSON.stringify({
+          pot_id: reorderPotId,
+          aantal: reorderAantal,
+          pickup_only: reorderPickupOnly,
+        }),
       });
       const j = await r.json().catch(() => ({}));
       await paidStore.setJSON(piId, {
