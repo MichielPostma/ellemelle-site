@@ -318,7 +318,6 @@
 
   <section id="reorder-review-view" hidden>
     <h1 class="step-question">Klopt dit, <span id="reorder-name">jij</span>?</h1>
-    <p class="subtitle" id="reorder-review-subtitle">We bezorgen op hetzelfde adres als vorige keer.</p>
     <div class="order-card" id="reorder-order-card"></div>
     <label class="check-row">
       <input type="checkbox" id="reorder-confirm">
@@ -334,7 +333,6 @@
 
   <section id="pickup-review-view" hidden>
     <h1 class="step-question">Klopt dit, <span id="pickup-review-name">jij</span>?</h1>
-    <p class="subtitle">We halen alleen de lege pot op — geen nieuwe bestelling.</p>
     <div class="order-card" id="pickup-review-card"></div>
     <button class="btn-primary" id="pickup-confirm-btn">Bevestig ophalen →</button>
     <button class="btn-outline" id="pickup-review-back">Terug</button>
@@ -354,7 +352,6 @@
 
   <section id="reorder-success-view" hidden>
     <h1 class="step-question" id="reorder-success-headline">Leuk, we gaan aan de slag!</h1>
-    <p class="success-subtitle" id="reorder-success-sub">We bezorgen je nieuwe pot binnen 4 weken — de lege pot halen we tegelijk op.</p>
     <div class="order-card" id="reorder-success-card"></div>
     <p class="success-help">En wil je ons helpen? We willen heel graag aan nóg meer leuke kids gezonde chocopasta bezorgen.</p>
     <button type="button" class="btn-primary" id="reorder-share-whatsapp-btn">Deel via WhatsApp →</button>
@@ -565,9 +562,6 @@
     const isPickup = STATE.reorderMethode === 'ophalen';
 
     $('#reorder-name').textContent = naam;
-    $('#reorder-review-subtitle').textContent = isPickup
-      ? 'Op te halen op Busken Huëtstraat 11, Haarlem.'
-      : 'We bezorgen op hetzelfde adres als vorige keer.';
 
     // Date — pickup follows production schedule if known, else next Saturday.
     const cfg = STATE.configCache || {};
@@ -815,10 +809,6 @@
       $('#reorder-success-headline').textContent = voornaam
         ? 'Leuk ' + voornaam + ', we gaan aan de slag!'
         : 'Leuk, we gaan aan de slag!';
-      const sub = $('#reorder-success-sub');
-      if (sub) sub.textContent = methode === 'ophalen'
-        ? 'We laten je weten wanneer je nieuwe ' + (aantal === 1 ? 'pot klaar is' : 'potten klaar zijn') + ' om op te halen — de oude pot nemen we dan in.'
-        : 'We bezorgen je nieuwe ' + (aantal === 1 ? 'pot' : 'potten') + ' binnen 4 weken — de lege pot halen we tegelijk op.';
       renderReorderSuccessRecap(STATE.pot, voornaam, { methode, aantal });
       // Reset the top label so the success page shows the pot id (not the reorder progress text).
       const pl = document.getElementById('pot-label'); if (pl) pl.textContent = STATE.potId || '';
