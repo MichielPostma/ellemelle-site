@@ -105,12 +105,7 @@
   .history-list .label { color: var(--black); font-size: 14.5px; flex: 1; }
   .history-list .empty { color: #888; font-size: 14px; padding: 14px 0; }
 
-  .stars {
-    display: flex; gap: 6px; margin: 18px 0;
-    justify-content: center; padding: 24px 14px;
-    background: #ffffff; border: 1px solid rgba(0,0,0,0.08);
-    border-radius: var(--radius-md); box-shadow: var(--shadow-card);
-  }
+  .stars { display: flex; gap: 6px; margin: 18px 0; }
   .star { cursor: pointer; padding: 4px; background: none; border: 0; transition: transform 120ms; -webkit-tap-highlight-color: transparent; }
   .star:active { transform: scale(0.92); }
   .star svg { display: block; width: 44px; height: 44px; transition: fill 120ms, filter 120ms; }
@@ -150,6 +145,7 @@
   /* Kanaal-style methode + aantal cards (mirrors index.html). */
   .kanaal-options { display: grid; gap: 12px; margin: 14px 0; }
   .kanaal-card {
+    position: relative;
     display: flex; align-items: center; gap: 16px;
     min-height: 80px; padding: 16px 18px;
     background: var(--white); border: 2px solid rgba(0,0,0,0.08); border-radius: var(--radius-md);
@@ -159,6 +155,13 @@
     transition: border-color 120ms, transform 90ms; width: 100%;
   }
   .kanaal-card.selected { border-color: var(--red); }
+  /* Red check badge in the top-right corner of the selected card. */
+  .kanaal-card.selected::after {
+    content: '✓'; position: absolute; top: 10px; right: 12px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    font-size: 13px; line-height: 22px; text-align: center; font-weight: 700;
+  }
   .kanaal-card .label { font-size: 17px; }
   .kanaal-card .sub   { font-size: 12.5px; color: #666; opacity: 1; font-weight: 500; margin-top: 2px; display: block; }
   /* Statiegeld info block on reorder review — small heading + 1-liner of explanation. */
@@ -271,19 +274,23 @@
     </div>
   </section>
 
-  <!-- Methode keuze voor reorder: bezorgen of zelf ophalen. -->
+  <!-- Methode keuze voor reorder: bezorgen of zelf ophalen. Ophalen staat bovenaan + pre-selected. -->
   <section id="reorder-methode-view" hidden>
-    <h1 class="step-question">Wat wil je doen, <span id="reorder-methode-name">jij</span>?</h1>
+    <h1 class="step-question">Kom je langs, of wil je dat we naar je toekomen?</h1>
     <div class="kanaal-options">
-      <button class="kanaal-card" data-reorder-methode="bezorgen" type="button">
-        <span><span class="label">Nieuwe pot laten bezorgen</span><span class="sub">Aan de deur op je bekende adres</span></span>
-      </button>
       <button class="kanaal-card" data-reorder-methode="ophalen" type="button">
-        <span><span class="label">Nieuwe pot zelf ophalen</span><span class="sub">Busken Huëtstraat 11, Haarlem</span></span>
+        <span><span class="label">Je komt naar de Busken Huëtstraat</span><span class="sub">Busken Huëtstraat 11, 2032 VJ Haarlem</span></span>
+      </button>
+      <button class="kanaal-card" data-reorder-methode="bezorgen" type="button">
+        <span><span class="label">We komen langs bij je thuis</span><span class="sub">Binnenkort in het weekend bellen we aan</span></span>
       </button>
     </div>
-    <button class="btn-primary" id="reorder-methode-next" disabled>Volgende →</button>
-    <button class="btn-outline" id="reorder-methode-back">Terug</button>
+    <div class="step-actions">
+      <button type="button" class="back-pill" id="reorder-methode-back" aria-label="Vorige">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <button class="btn-primary" id="reorder-methode-next">Volgende →</button>
+    </div>
   </section>
 
   <!-- Aantal stap voor reorder. -->
@@ -295,8 +302,12 @@
       <button class="kanaal-card aantal-card" data-reorder-aantal="2" type="button"><span><span class="label">2 potten</span><span class="sub">€10</span></span></button>
       <button class="kanaal-card aantal-card" data-reorder-aantal="3" type="button"><span><span class="label">3 potten</span><span class="sub">€15</span></span></button>
     </div>
-    <button class="btn-primary" id="reorder-aantal-next" disabled>Volgende →</button>
-    <button class="btn-outline" id="reorder-aantal-back">Terug</button>
+    <div class="step-actions">
+      <button type="button" class="back-pill" id="reorder-aantal-back" aria-label="Vorige">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <button class="btn-primary" id="reorder-aantal-next" disabled>Volgende →</button>
+    </div>
   </section>
 
   <section id="reorder-review-view" hidden>
@@ -307,8 +318,12 @@
       <input type="checkbox" id="reorder-confirm">
       <span id="reorder-confirm-text">Ja, ik wil deze bestelling.</span>
     </label>
-    <button class="btn-primary" id="reorder-submit-btn" disabled>Doe betaling →</button>
-    <button class="btn-outline" id="reorder-back-btn">Terug</button>
+    <div class="step-actions">
+      <button type="button" class="back-pill" id="reorder-back-btn" aria-label="Vorige">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <button class="btn-primary" id="reorder-submit-btn" disabled>Doe betaling →</button>
+    </div>
   </section>
 
   <section id="pickup-review-view" hidden>
@@ -460,6 +475,7 @@
   const STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg>';
   function renderSurveyStep() {
     const idx = STATE.surveyStep, cfg = SURVEY_Qs[idx];
+    if (STATE.surveyMode === 'reorder') setReorderProgress('Stap ' + (idx + 1) + ' van 6');
     $('#survey-q').textContent = cfg.q;
     const cur = STATE.ratings[cfg.key] || 0;
     const wrap = $('#survey-stars'); wrap.innerHTML = '';
@@ -477,7 +493,18 @@
   function startSurvey(mode) {
     STATE.surveyMode = mode; STATE.surveyStep = 0;
     STATE.ratings = { taste: 0, texture: 0, kids: 0 };
+    // Reorder default: 1 pot, pickup pre-selected. User can override before continuing.
+    if (mode === 'reorder') {
+      STATE.reorderAantal = 1;
+      if (!STATE.reorderMethode) STATE.reorderMethode = 'ophalen';
+    }
     renderSurveyStep();
+  }
+
+  // Reorder-flow step indicator — 1-3 = rating, 4 = methode, 5 = aantal, 6 = review.
+  function setReorderProgress(label) {
+    const el = document.getElementById('pot-label');
+    if (el) el.textContent = label;
   }
   async function advanceSurvey() {
     STATE.surveyStep += 1;
@@ -492,8 +519,7 @@
 
   // --- Reorder-only views: methode + aantal + review ---------------------
   function openReorderMethode() {
-    const naam = (STATE.pot && STATE.pot.voornaam) || 'jij';
-    $('#reorder-methode-name').textContent = naam;
+    setReorderProgress('Stap 4 van 6');
     document.querySelectorAll('#reorder-methode-view .kanaal-card').forEach(c => {
       c.classList.toggle('selected', c.dataset.reorderMethode === STATE.reorderMethode);
     });
@@ -501,6 +527,7 @@
     showView('reorder-methode-view');
   }
   function openReorderAantal() {
+    setReorderProgress('Stap 5 van 6');
     const naam = (STATE.pot && STATE.pot.voornaam) || 'jij';
     $('#reorder-aantal-name').textContent = naam;
     document.querySelectorAll('#reorder-aantal-view .aantal-card').forEach(c => {
@@ -525,6 +552,7 @@
   }
 
   function openReorderReview() {
+    setReorderProgress('Stap 6 van 6');
     const p = STATE.pot || {};
     const naam = p.voornaam || 'jij';
     const n = Math.max(1, parseInt(STATE.reorderAantal, 10) || 1);
@@ -786,6 +814,8 @@
         ? 'We laten je weten wanneer je nieuwe ' + (aantal === 1 ? 'pot klaar is' : 'potten klaar zijn') + ' om op te halen — de oude pot nemen we dan in.'
         : 'We bezorgen je nieuwe ' + (aantal === 1 ? 'pot' : 'potten') + ' binnen 4 weken — de lege pot halen we tegelijk op.';
       renderReorderSuccessRecap(STATE.pot, voornaam, { methode, aantal });
+      // Reset the top label so the success page shows the pot id (not the reorder progress text).
+      const pl = document.getElementById('pot-label'); if (pl) pl.textContent = STATE.potId || '';
       showView('reorder-success-view');
       setTimeout(burstConfetti, 200);
       try { history.replaceState({}, '', location.pathname); } catch {}
