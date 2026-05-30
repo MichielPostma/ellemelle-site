@@ -185,6 +185,10 @@ async function listEnrichedOrders() {
       plaats:     d.plaats     || '',
       is_extra:        d.is_extra        || '',
       parent_order_id: d.parent_order_id || '',
+      // Reorder-from-pot context (set by customer-reorder.js when klant scans pot + bestelt nieuwe).
+      is_reorder:      String(d.is_reorder || '').toLowerCase() === 'true',
+      original_pot_id: d.original_pot_id || '',
+      original_order_id: d.original_order_id || '',
       // Snapshot fallback
       snapshot_delivery_date: snapshotDate,
       snapshot_delivery_mode: snapshotMode,
