@@ -820,12 +820,19 @@
       const stepHtml = `<span class="step-num">Stop ${idx + 1}</span>`;
       const mapsAddr = [o.straat, o.huisnummer + (o.toevoeging ? '-' + o.toevoeging : ''), o.postcode, o.plaats].filter(Boolean).join(' ');
       const mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(mapsAddr) + '&travelmode=walking';
+      // Stop-type label: pickup / levering / pickup_levering — driven by the backend's stop_type field.
+      const stop = o.stop_type || 'levering';
+      const naam = o.voornaam || '(geen naam)';
+      const titleText =
+        stop === 'pickup'           ? 'Pickup ' + naam :
+        stop === 'pickup_levering'  ? 'Pickup en levering ' + naam :
+                                      'Levering ' + naam;
       card.innerHTML = `
         <div class="head">
           ${stepHtml}
           <span class="badge ${status}">${badgeText}</span>
         </div>
-        <div class="name">${o.voornaam || '(geen naam)'}</div>
+        <div class="name">${titleText}</div>
         <div class="addr">${addr} — ${o.plaats || ''}</div>
         <a class="btn-outline open-route" href="${mapsUrl}" target="_blank" rel="noopener">Route</a>
       `;
@@ -868,7 +875,14 @@
   }
   function openDetail(order) {
     STATE.currentOrder = order;
-    $('#detail-name').textContent = order.voornaam || '(geen naam)';
+    {
+      const stop = order.stop_type || 'levering';
+      const naam = order.voornaam || '(geen naam)';
+      $('#detail-name').textContent =
+        stop === 'pickup'           ? 'Pickup ' + naam :
+        stop === 'pickup_levering'  ? 'Pickup en levering ' + naam :
+                                      'Levering ' + naam;
+    }
     const isDelivered = (order.order_status === 'delivered') || !!order.delivered_pot;
     const cdEl = $('#detail-countdown');
     if (isDelivered) {
