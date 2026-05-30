@@ -78,14 +78,12 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid_bank', bank }) };
   }
 
-  // For reorder flows the statiegeld is rolled over from the old pot — we don't charge it again
-  // on the new order. The bezorger handles the cash-equivalent refund when they physically take
-  // the empty pot. For non-reorder orders the normal product + €1 deposit/pot pricing applies.
-  const reorderForPricing = String(body.reorder_pot_id || '').toUpperCase().trim();
-  const isReorderPricing = /^POT-\d{3}$/.test(reorderForPricing);
+  // Reorder flows still charge statiegeld for the NEW pot. The old pot's deposit is refunded
+  // separately when the bezorger physically takes the empty pot back. So both new + reorder
+  // orders carry the standard product + €1/pot deposit pricing.
   const productCents  = aantal * 500;
-  const depositCents  = isReorderPricing ? 0 : (aantal * 100);
-  const discountCents = isReorderPricing ? 0 : (credit * 100);
+  const depositCents  = aantal * 100;
+  const discountCents = credit * 100;
   const totalCents    = Math.max(50, productCents + depositCents - discountCents); // Stripe min: 50 cents
 
   const voornaam = String(body.voornaam || '').trim() || 'klant';
