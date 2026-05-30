@@ -166,7 +166,7 @@
   .kanaal-card .sub   { font-size: 12.5px; color: #666; opacity: 1; font-weight: 500; margin-top: 2px; display: block; }
   /* Statiegeld info block on reorder review — small red heading + dark grey body text. */
   .statiegeld-note { margin: 14px 0 0; padding: 12px 14px; background: rgba(0,0,0,0.04); border-radius: 10px; }
-  .statiegeld-note .head { color: var(--red); font-weight: 700; font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .statiegeld-note .head { color: var(--red); font-weight: 700; font-size: 13px; margin-bottom: 4px; }
   .statiegeld-note .text { color: #555; font-size: 13.5px; line-height: 1.45; }
 
   /* Levering block — mirrors the public bestelflow (colored dot + status line). */
@@ -626,7 +626,7 @@
           : 'Wordt vers gemaakt, als niet binnen 4 weken geleverd wordt storten we je geld terug.';
       }
       return '<div class="levering-block">' +
-        '<strong>' + (isPickup ? 'Ophalen vanaf' : 'Bezorgen') + '</strong>' +
+        '<strong>' + (isPickup ? 'Ophaaldatum' : 'Bezorgen') + '</strong>' +
         '<div class="delivery-info"><span class="status-dot ' + dot + '"></span><span>' + escapeHtml(text) + '</span></div>' +
       '</div>';
     }
@@ -643,7 +643,7 @@
     })();
 
     $('#reorder-confirm-text').textContent = isPickup
-      ? 'Ja, ik kom deze ' + (n === 1 ? 'pot' : 'potten') + ' ophalen. Als het niet binnen 4 weken klaar is, storten we je geld terug.'
+      ? 'Ja, ik kom deze ' + (n === 1 ? 'pot' : 'potten') + ' graag ophalen. Ik kom spontaan langs, of app even om een moment af te stemmen.'
       : 'Ja, ik wil deze bestelling, thuis gebracht. Als het niet lukt binnen 4 weken, storten we je geld terug.';
 
     $('#reorder-confirm').checked = false;
