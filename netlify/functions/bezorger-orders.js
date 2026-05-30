@@ -168,8 +168,11 @@ exports.handler = async (event) => {
     });
   }
 
+  // Pickup-only orders (customer comes to collect at Busken Huëtstraat) don't need a bezorger stop.
+  const deliverableStops = allEnriched.filter(o => !o.pickup_only);
+
   // Combine deliveries + synthetic pickups into one flat list before grouping.
-  const allStops = allEnriched.concat(syntheticPickupStops);
+  const allStops = deliverableStops.concat(syntheticPickupStops);
 
   // Group by ISO week of delivery_date
   const map = new Map();
