@@ -208,29 +208,30 @@
   }
   .postcode-card[hidden] { display: none; }
 
-  /* Pickup-only address block — shown inside the postcode-card when out of delivery range. */
-  .pickup-addr-row {
-    display: flex; align-items: center; gap: 10px;
-    margin-top: 14px; padding-top: 14px;
-    border-top: 1px solid var(--cream-dark);
+  /* Pickup-only address card — separate from the postcode-card, styled as a "pre-selected" option.
+     Mirrors the selected pot-tile look (white card, 2px red outline, red checkmark badge). */
+  .pickup-option-card {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md);
+    padding: 16px 18px 16px 18px;
+    margin: 14px 0;
+    line-height: 1.4;
+    outline: 2px solid var(--red);
+    outline-offset: -2px;
+    display: flex; align-items: center; gap: 12px;
   }
-  .pickup-addr-row .info { flex: 1; min-width: 0; }
-  .pickup-addr-row .info .head {
-    color: var(--black); font-weight: 700; font-size: 14px; line-height: 1.3;
-  }
-  .pickup-addr-row .info .sub {
-    color: #666; font-size: 12.5px; margin-top: 2px;
-  }
-  .pickup-addr-row .route-btn {
-    flex: 0 0 44px; width: 44px; height: 44px;
-    border: 2px solid var(--red); background: transparent; color: var(--red);
-    border-radius: 10px; cursor: pointer; padding: 0;
+  .pickup-option-card .info { flex: 1; min-width: 0; }
+  .pickup-option-card .head { color: var(--black); font-weight: 700; font-size: 15px; }
+  .pickup-option-card .sub  { color: #666; font-size: 13px; margin-top: 3px; }
+  .pickup-option-card .check {
+    flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--red); color: var(--white);
     display: inline-flex; align-items: center; justify-content: center;
-    text-decoration: none;
-    -webkit-tap-highlight-color: transparent;
+    font-weight: 700; font-size: 15px;
   }
-  .pickup-addr-row .route-btn:hover { background: rgba(217,48,30,0.06); }
-  .pickup-addr-row .route-btn svg { width: 22px; height: 22px; display: block; }
+  .pickup-option-card[hidden] { display: none; }
   .address-confirm strong { display: block; font-size: 16px; margin-bottom: 2px; color: var(--black); }
   .address-confirm small { color: rgba(0,0,0,0.55); }
 
@@ -942,16 +943,13 @@
       <div class="postcode-card" id="postcode-card" hidden>
         <strong>Daar kunnen we niet bezorgen, je kunt alleen afhalen</strong>
         <span>We bezorgen op dit moment alleen in een deel van de Potgieterbuurt in Haarlem. Maar je kunt de pot wel ophalen.</span>
-        <div class="pickup-addr-row">
-          <div class="info">
-            <div class="head">Ophalen Busken Huëtstraat 11</div>
-            <div class="sub">2032 VJ Haarlem</div>
-          </div>
-          <a class="route-btn" id="pickup-route-btn" href="https://www.google.com/maps/dir/?api=1&destination=Busken+Hu%C3%ABtstraat+11%2C+2032+VJ+Haarlem&travelmode=walking" target="_blank" rel="noopener" aria-label="Route naar ophaaladres">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </a>
+      </div>
+      <div class="pickup-option-card" id="pickup-option-card" hidden aria-label="Ophalen geselecteerd">
+        <div class="info">
+          <div class="head">Ophalen Busken Huëtstraat 11</div>
+          <div class="sub">2032 VJ Haarlem</div>
         </div>
-        <button class="btn-primary" id="pickup-continue-btn" type="button" style="margin-top: 14px;">Doorgaan met afhalen →</button>
+        <span class="check" aria-hidden="true">✓</span>
       </div>
       <div class="error" data-step-error></div>
       <button class="btn-primary" data-next>Volgende →</button>
@@ -1300,11 +1298,38 @@
         }
         const prefix = raw.slice(0,4);
         if (!ALLOWED_POSTCODES.includes(prefix)) {
+          // Out of area — auto-switch into pickup-only mode. Address fields swap to the pickup
+          // point so the recap shows Ophaaladres, and nextStepAfter routes from step 3 → 5.
           const card = document.getElementById('postcode-card');
           if (card) card.hidden = false;
-          const btn = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
-          if (btn) btn.disabled = true;
-          return false;
+          const opt = document.getElementById('pickup-option-card');
+          if (opt) opt.hidden = false;
+          window.__pickupOnly = true;
+          formData.methode = 'ophalen';
+          formData.pickup_only = 'true';
+          formData.straat = 'Busken Huëtstraat';
+          formData.huisnummer = '11';
+          formData.toevoeging = '';
+          formData.postcode = '2032 VJ';
+          formData.plaats = 'Haarlem';
+          const ip  = document.getElementById('input-straat');  if (ip)  ip.value  = formData.straat;
+          const ih  = document.getElementById('input-huisnr');  if (ih)  ih.value  = formData.huisnummer;
+          const it  = document.getElementById('input-toev');    if (it)  it.value  = '';
+          const ipl = document.getElementById('input-plaats');  if (ipl) ipl.value = formData.plaats;
+          return true;
+        }
+        // Valid postcode → make sure pickup mode is cleared (covers visitor who first entered
+        // an out-of-area postcode, then changed their mind and typed a Potgieterbuurt one).
+        if (window.__pickupOnly) {
+          window.__pickupOnly = false;
+          formData.methode = 'bezorgen';
+          formData.pickup_only = '';
+          // Wipe the auto-filled pickup address so the next step (huisnummer) is empty.
+          formData.straat = ''; formData.huisnummer = ''; formData.toevoeging = '';
+          formData.plaats = 'Haarlem';
+          const ip = document.getElementById('input-straat');  if (ip)  ip.value = '';
+          const ih = document.getElementById('input-huisnr');  if (ih)  ih.value = '';
+          const it = document.getElementById('input-toev');    if (it)  it.value = '';
         }
         formData.postcode = raw.slice(0,4) + ' ' + raw.slice(4);
         return true;
@@ -1635,6 +1660,8 @@
     if (__adminMode === 'existing' && n === 5) return 8;
     // Pickup-only flow: from methode (step 2) skip postcode + huisnummer → straight to aantal.
     if (window.__pickupOnly && n === 2) return 5;
+    // Out-of-area safety net: user typed a non-Potgieterbuurt postcode on step 3 → pickup mode.
+    if (window.__pickupOnly && n === 3) return 5;
     return n + 1;
   }
   function prevStepBefore(n) {
@@ -2158,31 +2185,8 @@
 
     $('#reset-btn').addEventListener('click', resetForm);
 
-    // Out-of-area pickup: customer chose "Doorgaan met afhalen" on step 3 (postcode).
-    // Safety net for visitors who picked "Bezorgen" but their postcode is outside the area.
-    // Switch into pickup-only mode and jump straight to step 5 (aantal), skipping huisnummer.
-    const __pickupContinueBtn = document.getElementById('pickup-continue-btn');
-    if (__pickupContinueBtn) {
-      __pickupContinueBtn.addEventListener('click', () => {
-        window.__pickupOnly = true;
-        formData.methode = 'ophalen';
-        formData.pickup_only = 'true';
-        formData.straat     = 'Busken Huëtstraat';
-        formData.huisnummer = '11';
-        formData.toevoeging = '';
-        formData.postcode   = '2032 VJ';
-        formData.plaats     = 'Haarlem';
-        const ip = document.getElementById('input-straat');     if (ip) ip.value = formData.straat;
-        const ih = document.getElementById('input-huisnr');     if (ih) ih.value = formData.huisnummer;
-        const it = document.getElementById('input-toev');       if (it) it.value = '';
-        const ipl = document.getElementById('input-plaats');    if (ipl) ipl.value = formData.plaats;
-        hideError();
-        currentStep = 5; // skip to aantal directly
-        prepareStep(currentStep);
-        showStep(currentStep);
-        saveState();
-      });
-    }
+    // (Removed: legacy pickup-continue-btn click handler. The out-of-area path now happens
+    // automatically inside validateStep case 3 + nextStepAfter — no explicit button needed.)
 
     // Admin existing-customer flow: "Annuleer bestelling" closes the surrounding admin drawer.
     // Inside an iframe → postMessage to the parent so it can call closeDrawer() without reload.
@@ -2200,26 +2204,26 @@
       });
     }
 
-    // Postcode autoformat (4 digits + 2 letters) + live whitelist validation
+    // Postcode autoformat (4 digits + 2 letters) + live whitelist validation.
+    // Out-of-area postcodes now show the (visual-only) "Ophalen geselecteerd" card; Volgende
+    // stays enabled and clicking it routes the visitor into pickup mode via validateStep.
     const pc = $('#input-postcode');
-    const pcNextBtn = document.querySelector('.step[data-step="3"] .btn-primary[data-next]');
     const pcCard = document.getElementById('postcode-card');
+    const pickupOptionCard = document.getElementById('pickup-option-card');
     function validatePostcodeLive() {
       const raw = pc.value.replace(/\s+/g, '').toUpperCase();
-      // Only flag once user has typed at least the 4-digit prefix
       if (raw.length >= 4) {
         const prefix = raw.slice(0,4);
         if (!ALLOWED_POSTCODES.includes(prefix)) {
           if (pcCard) pcCard.hidden = false;
-          if (pcNextBtn) pcNextBtn.disabled = true;
+          if (pickupOptionCard) pickupOptionCard.hidden = false;
           hideError();
           return;
         }
       }
-      // Hide card + re-enable button on any valid prefix or short input
       if (pcCard) pcCard.hidden = true;
+      if (pickupOptionCard) pickupOptionCard.hidden = true;
       hideError();
-      if (pcNextBtn) pcNextBtn.disabled = false;
     }
     pc.addEventListener('input', () => {
       let v = pc.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
