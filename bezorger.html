@@ -825,8 +825,8 @@
       const naam = o.voornaam || '(geen naam)';
       const titleText =
         stop === 'pickup'           ? 'Pickup ' + naam :
-        stop === 'pickup_levering'  ? 'Pickup en levering ' + naam :
-                                      'Levering ' + naam;
+        stop === 'pickup_levering'  ? 'Pickup en bezorging ' + naam :
+                                      'Bezorging ' + naam;
       card.innerHTML = `
         <div class="head">
           ${stepHtml}
@@ -880,8 +880,8 @@
       const naam = order.voornaam || '(geen naam)';
       $('#detail-name').textContent =
         stop === 'pickup'           ? 'Pickup ' + naam :
-        stop === 'pickup_levering'  ? 'Pickup en levering ' + naam :
-                                      'Levering ' + naam;
+        stop === 'pickup_levering'  ? 'Pickup en bezorging ' + naam :
+                                      'Bezorging ' + naam;
     }
     const isDelivered = (order.order_status === 'delivered') || !!order.delivered_pot;
     const cdEl = $('#detail-countdown');
