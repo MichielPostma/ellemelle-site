@@ -41,8 +41,15 @@ exports.handler = async (event) => {
 
   try {
     const { all: orders } = await listEnrichedOrders();
-    // Filter orders matching this customer key.
-    const matching = orders.filter(o => makeIdentityKey(o) === key);
+    // Filter orders matching this customer key. Accept both:
+    //   - `makeIdentityKey` result (tel:/mail:/addr: format) — from klanten-list
+    //   - `customerKey` sha1 hash — from order.customer_key (used by bestelling.html link)
+    const matching = orders.filter(o => {
+      if (makeIdentityKey(o) === key) return true;
+      const ck = customerKey(o);
+      if (ck && ck === key) return true;
+      return false;
+    });
     if (matching.length === 0) {
       return { statusCode: 404, headers, body: JSON.stringify({ error: 'customer not found' }) };
     }

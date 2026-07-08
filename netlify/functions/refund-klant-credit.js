@@ -3,7 +3,7 @@
 //
 // Strategy:
 //   1. Resolve customer + their orders via the same identity-key matcher as klant-get.
-//   2. Compute amount_cents = statiegeld_credit × 100.
+//   2. Compute amount_cents = statiegeld_credit × 300.
 //   3. Walk the customer's orders newest-first; for each one that has a payment_intent_id,
 //      look up how much is still refundable on that PI (pi.amount minus already-refunded sum),
 //      and issue a refund for as much of the remaining-needed amount as that PI can cover.
@@ -68,7 +68,13 @@ exports.handler = async (event) => {
   }
 
   const { all: orders } = await listEnrichedOrders();
-  const matching = orders.filter(o => makeIdentityKey(o) === key);
+  // Accept both key formats (see klant-get.js).
+  const matching = orders.filter(o => {
+    if (makeIdentityKey(o) === key) return true;
+    const ck = customerKey(o);
+    if (ck && ck === key) return true;
+    return false;
+  });
   if (matching.length === 0) {
     return { statusCode: 404, headers, body: JSON.stringify({ error: 'customer not found' }) };
   }
@@ -78,7 +84,7 @@ exports.handler = async (event) => {
   const ck = customerKey({ kanaal: newest.kanaal, telefoon: newest.telefoon, email: newest.email });
   const cust = ck ? (await getCustomer(ck)) : null;
   const creditUnits = (cust && cust.statiegeld_credit) || 0;
-  let needed = creditUnits * 100;
+  let needed = creditUnits * 300; // €3 per outstanding pot
   if (needed < 50) {
     return { statusCode: 409, headers, body: JSON.stringify({ error: 'no credit to refund' }) };
   }
@@ -138,14 +144,14 @@ exports.handler = async (event) => {
     refunds.push({ order_id: o.id, refund_id: refund.id, amount_cents: thisAmount });
   }
 
-  const totalRefunded = (creditUnits * 100) - Math.max(0, needed);
+  const totalRefunded = (creditUnits * 300) - Math.max(0, needed);
   if (totalRefunded < 50) {
     return { statusCode: 502, headers, body: JSON.stringify({ error: 'no PI capacity for refund', detail: refunds }) };
   }
 
   // Reset customer credit (subtract only what we managed to actually refund).
   if (cust) {
-    const unitsRefunded = Math.floor(totalRefunded / 100);
+    const unitsRefunded = Math.floor(totalRefunded / 300);
     const newCredit = Math.max(0, (cust.statiegeld_credit || 0) - unitsRefunded);
     cust.statiegeld_credit = newCredit;
     cust.history = Array.isArray(cust.history) ? cust.history : [];
