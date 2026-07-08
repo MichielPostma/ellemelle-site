@@ -1129,7 +1129,8 @@
     if (bz.ok) {
       const all = (bz.data.weeks || []).flatMap(w => w.orders || []);
       todoOrders = all.filter(o => !o.order_status || o.order_status === 'todo');
-      todoCount = todoOrders.length;
+      // Sum aantal across todo orders (not just count orders) — 1 order × 2 potten = 2 potten to make.
+      todoCount = todoOrders.reduce((sum, o) => sum + (Number(o.aantal) || 1), 0);
       // Only show orders that need a fresh batch (no stock) AND have NOT yet had an update message sent
       needsCookOrders = todoOrders.filter(o => o.delivery_mode !== 'stock' && o.update_message_status !== 'sent');
     }
