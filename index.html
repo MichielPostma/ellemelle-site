@@ -679,6 +679,146 @@
     body.on-intro .product-img { animation: none; transform: scale(1.0); }
   }
 
+  /* Verhaal-sectie onder de intro-kaart. Alleen op step 0 (intro-state).
+     Horizontale slideshow met snap; één foto vol in beeld, volgende foto piept aan de rand
+     zodat swipe-affordance visueel duidelijk is. */
+  .intro-story { display: none; }
+  body.on-intro .intro-story {
+    display: block;
+    padding: 20px 0 32px;
+    background: transparent;
+  }
+  .intro-story-title {
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 24px; font-weight: 700; line-height: 1.15;
+    color: var(--black);
+    margin: 0 20px 8px;
+    letter-spacing: -0.2px;
+  }
+  .intro-story-lead {
+    font-size: 15px; color: #555; line-height: 1.45;
+    margin: 0 20px 16px;
+  }
+  .intro-story-scroll {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 0 4px;
+    scroll-padding-left: 20px;
+  }
+  .intro-story-scroll::-webkit-scrollbar { display: none; }
+  .intro-story-track {
+    display: flex;
+    gap: 12px;
+    padding: 0 32px 0 20px; /* links 20 zodat eerste foto niet tegen viewport plakt, rechts extra ademruimte voor snap */
+  }
+  .intro-story-slide {
+    flex: 0 0 82vw;
+    max-width: 400px;
+    aspect-ratio: 1 / 1;
+    scroll-snap-align: start;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #eee;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .intro-story-slide img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+
+  /* Missie-sectie onder de foto-slideshow. Header-afbeelding met padding + rounded corners,
+     daarna titel en toelichting. Alleen op intro-state. */
+  .intro-mission { display: none; }
+  body.on-intro .intro-mission {
+    display: block;
+    padding: 8px 0 40px;
+  }
+  .intro-mission-image-wrap { padding: 0 20px; margin-top: 18px; }
+  .intro-mission-image {
+    width: 100%; display: block;
+    /* Same square aspect as slider slides so heights match visually. */
+    aspect-ratio: 1 / 1;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .intro-mission-title {
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 24px; font-weight: 700; line-height: 1.15;
+    color: var(--black);
+    margin: 0 20px 8px;
+    letter-spacing: -0.2px;
+  }
+  .intro-mission-lead {
+    font-size: 15px; color: #555; line-height: 1.45;
+    margin: 0 20px;
+  }
+
+  /* FAQ onderaan de intro — zelfde UI-stijl als de game-FAQ. */
+  .intro-faq { display: none; }
+  body.on-intro .intro-faq {
+    display: block;
+    padding: 8px 20px 20px;
+  }
+  .intro-faq .faq-section { margin: 20px 0 0; }
+  .intro-faq .faq-section:first-child { margin-top: 0; }
+  .intro-faq .faq-label {
+    font-size: 12px; color: #666; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .intro-faq .faq-item {
+    background: transparent; border: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    box-shadow: none; overflow: hidden;
+  }
+  .intro-faq .faq-item:last-child { border-bottom: 0; padding-bottom: 10px; }
+  .intro-faq .faq-q {
+    width: 100%; background: transparent; border: 0; cursor: pointer;
+    padding: 14px 0; display: flex; align-items: center; gap: 10px;
+    text-align: left; font-family: inherit;
+    font-size: 17px; font-weight: 700; color: var(--black);
+    line-height: 1.25;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .intro-faq .faq-q .chevron {
+    width: 18px; height: 18px; color: #888; margin-left: auto;
+    transition: transform 220ms; flex-shrink: 0;
+  }
+  .intro-faq .faq-item.open .faq-q .chevron { transform: rotate(180deg); }
+  .intro-faq .faq-a {
+    max-height: 0; overflow: hidden;
+    padding: 0;
+    transition: max-height 280ms ease, padding 280ms ease;
+  }
+  .intro-faq .faq-item.open .faq-a { padding: 0 0 16px; max-height: 900px; }
+  .intro-faq .faq-a p { font-size: 15px; color: #444; line-height: 1.5; margin: 0; }
+  .intro-faq .faq-a p + p { margin-top: 10px; }
+
+  /* WhatsApp contact-button onderaan (zelfde stijl als de game-FAQ hulp-knop) */
+  .intro-wa { display: none; }
+  body.on-intro .intro-wa {
+    display: block;
+    padding: 0 20px 24px;
+  }
+  .intro-wa-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 52px;
+    padding: 8px 18px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font: 700 16px 'DM Sans', system-ui, sans-serif;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, transform 0.08s;
+  }
+  .intro-wa-btn:hover { background: #fdecea; }
+  .intro-wa-btn:active { transform: scale(0.98); }
+  .intro-wa-btn svg { width: 18px; height: 18px; }
+
   /* Success: keep product hero fully visible (no dimming) */
 
   /* Confetti */
@@ -1064,6 +1204,101 @@
     <span class="intro-dot" id="intro-dot" aria-hidden="true"></span>
     <span id="intro-levering-text">Even kijken...</span>
   </div>
+</section>
+
+<!-- Verhaal-sectie 1: kern-pitch + foto-slideshow (alleen zichtbaar op intro) -->
+<section class="intro-story" aria-labelledby="intro-story-title">
+  <h2 class="intro-story-title" id="intro-story-title">Gezondere chocopasta voor alle kids in Haarlem</h2>
+  <p class="intro-story-lead">Ellis en Melle maken thuis met Michiel gezondere chocopasta — biologisch, 42% noten en veel minder suiker dan wat er in het schap ligt.</p>
+  <div class="intro-story-scroll">
+    <div class="intro-story-track">
+      <div class="intro-story-slide"><img src="Images/story/story-1-pot-tuin.jpg" alt="Pot Ellemel chocopasta in de tuin" loading="lazy"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-2-kids-schaal.jpg" alt="Ellis en Melle met verse chocopasta" loading="lazy"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-6-drie-potten.jpg" alt="Drie potten Ellemel op tafel" loading="lazy"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-4-melle-hazelnoten.jpg" alt="Melle met zakken hazelnoten" loading="lazy"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-7-label-close.jpg" alt="Label van dichtbij — veel minder suiker" loading="lazy"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-3-ingredienten.jpg" alt="Ingrediënten: noten, cacao en poeder" loading="lazy"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-5-qr-game.jpg" alt="QR-speurtocht op de deksel" loading="lazy"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-8-verse-potten.jpg" alt="Verse potten net gevuld in de keuken" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Verhaal-sectie 2: missie / speurtocht (alleen zichtbaar op intro) -->
+<section class="intro-mission" aria-labelledby="intro-mission-title">
+  <h2 class="intro-mission-title" id="intro-mission-title">Scan je pot chocoladepasta en doe een speurtocht door de buurt</h2>
+  <p class="intro-mission-lead">Bij elke pot krijgen kids een missie via de QR-code op de deksel — een echte speurtocht door de Potgietersbuurt met geluidsfragmenten, aanwijzingen en een verdiend crew-bandje aan het einde.</p>
+  <div class="intro-mission-image-wrap">
+    <img src="Images/story/story-5-qr-game.jpg" alt="Kind scant de QR-code op de deksel" class="intro-mission-image" loading="lazy">
+  </div>
+</section>
+
+<!-- Verhaal-sectie 3: FAQ (alleen zichtbaar op intro) -->
+<section class="intro-faq" aria-label="Veelgestelde vragen">
+  <div class="faq-section">
+    <div class="faq-item">
+      <button type="button" class="faq-q">
+        Wat is Ellemel?
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">
+        <p>Ellemel is een gezondere chocopasta die Ellis en Melle thuis maken met hun vader Michiel. Biologisch, 42% noten, geen palmolie en minder suiker dan de bekende potten uit de supermarkt.</p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button type="button" class="faq-q">
+        Waar bezorgen jullie?
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">
+        <p>Op dit moment alleen in de Potgietersbuurt in Haarlem. We bezorgen op de fiets in het weekend — vers uit onze keuken, direct aan de deur.</p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button type="button" class="faq-q">
+        Hoe duur is een pot?
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">
+        <p>€5 voor de pot chocopasta, plus €3 statiegeld voor het glazen potje. Het statiegeld krijg je terug bij je volgende bestelling of storten we terug als je een keer stopt.</p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button type="button" class="faq-q">
+        Hoe werkt de speurtocht?
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">
+        <p>Elke pot chocopasta bevat een eigen speurtocht. Scan de QR-code op de deksel met de telefoon — je speurtocht start meteen. Onderweg krijg je geluidsfragmenten van Michiel met aanwijzingen en vragen.</p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button type="button" class="faq-q">
+        Waar is de speurtocht?
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">
+        <p>De vier stops liggen allemaal in de Potgietersbuurt in Haarlem, lekker dicht bij elkaar. Reken op ongeveer een klein uurtje rustig wandelen. Tussendoor pauzeren mag — je voortgang blijft bewaard.</p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button type="button" class="faq-q">
+        Hoe kan ik meedoen?
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="faq-a">
+        <p>Bestel een pot chocopasta — elke pot heeft z'n eigen speurtocht. Tijdens het spelen krijg je aanwijzingen via je telefoon en aan het einde verdien je een echt crew-bandje.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WhatsApp contact-button onderaan (alleen zichtbaar op intro) -->
+<section class="intro-wa">
+  <a class="intro-wa-btn" href="https://wa.me/31641669615?text=Hi%20Michiel%2C%20ik%20heb%20een%20vraag%20over%20Ellemel" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.52 3.48A11.83 11.83 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.16 1.6 5.97L0 24l6.18-1.62A11.93 11.93 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52ZM12 21.82a9.83 9.83 0 0 1-5-1.36l-.36-.22-3.66.96.98-3.58-.24-.37A9.84 9.84 0 1 1 12 21.82Zm5.4-7.36c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.93 1.17-.17.2-.34.22-.64.07-.3-.15-1.26-.46-2.41-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.6.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.9-2.18-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.57-.01-.2 0-.52.07-.79.37-.27.3-1.03 1-1.03 2.44 0 1.44 1.05 2.83 1.2 3.03.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.62.7.22 1.34.19 1.85.12.56-.08 1.76-.72 2-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.34Z"/></svg>
+    <span>Stel je vraag via WhatsApp</span>
+  </a>
 </section>
 
 <!-- QR code library (vanilla, ~3KB gzip) -->
@@ -2097,6 +2332,20 @@
     loadConfig();
     loadBanner();
     showStep(1);
+
+    // FAQ accordion — exclusive per sectie: 1 item open tegelijk.
+    document.querySelectorAll('.intro-faq .faq-section .faq-item').forEach(item => {
+      const q = item.querySelector('.faq-q');
+      if (!q) return;
+      q.addEventListener('click', () => {
+        const wasOpen = item.classList.contains('open');
+        const section = item.closest('.faq-section');
+        if (section) section.querySelectorAll('.faq-item.open').forEach(other => {
+          if (other !== item) other.classList.remove('open');
+        });
+        item.classList.toggle('open', !wasOpen);
+      });
+    });
 
     $$('[data-next]').forEach(b => b.addEventListener('click', next));
     backBtn.addEventListener('click', back);
