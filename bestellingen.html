@@ -438,40 +438,6 @@
   .klant-card .count { color: #888; font-size: 12px; }
   .klant-card .addr { color: #666; font-size: 14px; }
   .klant-card .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
-  .klant-card .klant-free-btn {
-    margin-top: 12px; width: 100%; padding: 10px 14px; border-radius: 10px;
-    background: var(--white); color: var(--red); border: 1.5px solid rgba(217,48,30,0.25);
-    font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
-    text-align: center; letter-spacing: 0.2px;
-    transition: background 120ms, border-color 120ms;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .klant-card .klant-free-btn:hover { background: rgba(217,48,30,0.05); border-color: var(--red); }
-  .klant-card .klant-free-btn:active { transform: scale(0.98); }
-
-  /* Free order drawer */
-  .free-drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 190; }
-  .free-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
-  .free-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--cream); border-radius: 20px 20px 0 0; padding: 16px 20px 28px; transform: translateY(100%); transition: transform 220ms; z-index: 200; max-height: 92vh; overflow-y: auto; box-shadow: 0 -10px 30px rgba(0,0,0,0.12); padding-bottom: max(28px, env(safe-area-inset-bottom)); }
-  .free-drawer.open { transform: translateY(0); }
-  .free-drawer h3 { margin: 4px 0 4px; font-size: 18px; color: var(--black); }
-  .free-drawer .sub { color: #666; font-size: 14px; margin-bottom: 18px; }
-  .free-drawer .label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin: 14px 0 8px; }
-  .free-drawer .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-  .free-drawer .chip { background: var(--white); border: 2px solid transparent; border-radius: 12px; padding: 12px 18px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(139,26,14,0.08); }
-  .free-drawer .chip.selected { border-color: var(--red); color: var(--red); }
-  .free-drawer input[type="date"], .free-drawer select, .free-drawer textarea {
-    display: block; width: 100%; min-height: 52px; background: var(--white); color: var(--black);
-    border: 2px solid transparent; border-radius: 12px; padding: 12px 16px;
-    font-family: inherit; font-size: 16px; box-shadow: 0 2px 10px rgba(139,26,14,0.08); box-sizing: border-box;
-  }
-  .free-drawer textarea { min-height: 72px; resize: vertical; font-family: inherit; }
-  .free-drawer .err { color: var(--red); font-size: 14px; font-weight: 600; margin-top: 10px; display: none; }
-  .free-drawer .err.show { display: block; }
-  .free-drawer .actions { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
-  .free-drawer .btn-primary { background: var(--red); color: var(--white); border: none; border-radius: 14px; padding: 16px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
-  .free-drawer .btn-primary:disabled { opacity: 0.5; cursor: default; }
-  .free-drawer .btn-ghost { background: transparent; color: var(--red); border: none; padding: 12px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
   .klant-tag {
     display: inline-block; font-size: 10px; padding: 3px 8px; border-radius: 999px;
     font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
@@ -1168,16 +1134,9 @@
         </div>
         <div class="addr">${c.adres || ''}${c.plaats ? ' — ' + c.plaats : ''}</div>
         <div class="tags">${tags.join('')}</div>
-        <button class="klant-free-btn" type="button" data-klant-key="${c.key}" data-klant-name="${(c.voornaam || 'klant').replace(/"/g,'&quot;')}">+ Gratis bestelling toevoegen</button>
       `;
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.klant-free-btn')) return;
+      card.addEventListener('click', () => {
         location.href = '/klant/' + encodeURIComponent(c.key);
-      });
-      const freeBtn = card.querySelector('.klant-free-btn');
-      if (freeBtn) freeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openFreeOrderDrawer(c.key, c.voornaam || 'klant');
       });
       wrap.appendChild(card);
     });
@@ -2314,121 +2273,6 @@
 <script type="module" src="/assets/scan-fab.js?v=19"></script>
 
 <script src="/assets/pull-to-refresh.js" defer>
-</script>
-<!-- Free order drawer (per klant) -->
-<div class="free-drawer-backdrop" id="free-drawer-backdrop"></div>
-<div class="free-drawer" id="free-drawer" role="dialog" aria-modal="true">
-  <h3 id="free-drawer-title">Gratis bestelling</h3>
-  <p class="sub" id="free-drawer-sub">Voor <span id="free-klant-name">klant</span></p>
-
-  <div class="label">Aantal potten</div>
-  <div class="chips" id="free-aantal-chips">
-    <button type="button" class="chip selected" data-aantal="1">1</button>
-    <button type="button" class="chip" data-aantal="2">2</button>
-    <button type="button" class="chip" data-aantal="3">3</button>
-    <button type="button" class="chip" data-aantal="4">4</button>
-    <button type="button" class="chip" data-aantal="5">5</button>
-  </div>
-
-  <div class="label">Leveringsdatum <span style="text-transform:none;color:#999;font-weight:400;">(optioneel — leeg = eerstvolgende ronde)</span></div>
-  <input type="date" id="free-delivery-date">
-
-  <div class="label">Reden (verplicht)</div>
-  <select id="free-reden">
-    <option value="">— kies een reden —</option>
-    <option value="Batch defect">Batch defect</option>
-    <option value="Klachtcompensatie">Klachtcompensatie</option>
-    <option value="Cadeau">Cadeau</option>
-    <option value="Testronde">Testronde</option>
-    <option value="Anders">Anders (vul in)</option>
-  </select>
-  <textarea id="free-reden-note" placeholder="Extra toelichting (optioneel)" style="margin-top:8px;"></textarea>
-
-  <div class="err" id="free-err"></div>
-  <div class="actions">
-    <button type="button" class="btn-primary" id="free-submit">Bevestig gratis bestelling</button>
-    <button type="button" class="btn-ghost" id="free-cancel">Annuleer</button>
-  </div>
-</div>
-
-<script>
-(function(){
-  let currentKlantKey = null;
-  let currentKlantName = null;
-
-  window.openFreeOrderDrawer = function(klantKey, klantName) {
-    currentKlantKey = klantKey;
-    currentKlantName = klantName;
-    document.getElementById('free-klant-name').textContent = klantName || 'klant';
-    document.querySelectorAll('#free-aantal-chips .chip').forEach(c => c.classList.toggle('selected', c.dataset.aantal === '1'));
-    document.getElementById('free-delivery-date').value = '';
-    document.getElementById('free-reden').value = '';
-    document.getElementById('free-reden-note').value = '';
-    document.getElementById('free-err').classList.remove('show');
-    document.getElementById('free-submit').disabled = false;
-    document.getElementById('free-submit').textContent = 'Bevestig gratis bestelling';
-    document.getElementById('free-drawer-backdrop').classList.add('open');
-    document.getElementById('free-drawer').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  };
-
-  function closeFreeDrawer() {
-    document.getElementById('free-drawer-backdrop').classList.remove('open');
-    document.getElementById('free-drawer').classList.remove('open');
-    document.body.style.overflow = '';
-    currentKlantKey = null;
-    currentKlantName = null;
-  }
-
-  document.getElementById('free-drawer-backdrop').addEventListener('click', closeFreeDrawer);
-  document.getElementById('free-cancel').addEventListener('click', closeFreeDrawer);
-
-  document.querySelectorAll('#free-aantal-chips .chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('#free-aantal-chips .chip').forEach(c => c.classList.remove('selected'));
-      chip.classList.add('selected');
-    });
-  });
-
-  document.getElementById('free-submit').addEventListener('click', async () => {
-    const aantalChip = document.querySelector('#free-aantal-chips .chip.selected');
-    const aantal = aantalChip ? parseInt(aantalChip.dataset.aantal, 10) : 1;
-    const deliveryDate = document.getElementById('free-delivery-date').value.trim();
-    const reden = document.getElementById('free-reden').value.trim();
-    const redenNote = document.getElementById('free-reden-note').value.trim();
-    const err = document.getElementById('free-err');
-    err.classList.remove('show');
-    if (!reden) { err.textContent = 'Kies een reden — verplicht voor traceability.'; err.classList.add('show'); return; }
-    if (!currentKlantKey) { err.textContent = 'Klant niet gevonden. Sluit en open opnieuw.'; err.classList.add('show'); return; }
-    const btn = document.getElementById('free-submit');
-    btn.disabled = true; btn.textContent = 'Bezig…';
-    try {
-      const res = await fetch('/.netlify/functions/admin-add-free-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          password: STATE.password,
-          klant_key: currentKlantKey,
-          aantal, delivery_date: deliveryDate,
-          reden, reden_note: redenNote,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || ('HTTP ' + res.status));
-      const naam = data.klant && data.klant.voornaam || currentKlantName || 'klant';
-      if (typeof showToast === 'function') showToast(`Gratis bestelling voor ${naam} aangemaakt. Verschijnt in Nieuw.`, 'success');
-      closeFreeDrawer();
-      try { sessionStorage.removeItem('cache_bestellingen-list'); } catch {}
-      try { sessionStorage.removeItem('cache_klanten-list'); } catch {}
-      if (typeof loadOrders === 'function') try { loadOrders(); } catch {}
-      if (typeof loadKlanten === 'function') try { loadKlanten(); } catch {}
-    } catch (e) {
-      btn.disabled = false; btn.textContent = 'Bevestig gratis bestelling';
-      err.textContent = 'Kon niet aanmaken: ' + (e.message || e);
-      err.classList.add('show');
-    }
-  });
-})();
 </script>
 
 </body>

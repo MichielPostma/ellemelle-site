@@ -60,6 +60,57 @@
   .detail-row .v { color: var(--black); font-weight: 600; text-align: right; }
   .error { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 500; }
   .empty { padding: 14px 16px; color: #888; font-size: 13px; }
+
+  /* Bottom drawer — zelfde stijl als bestellingen/bestelling */
+  .drawer-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 90;
+  }
+  .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--cream); border-radius: 20px 20px 0 0;
+    padding: 16px 20px 28px;
+    transform: translateY(100%); transition: transform 220ms;
+    z-index: 100; max-height: 88vh; overflow-y: auto;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.12);
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+  }
+  .drawer.open { transform: translateY(0); }
+  .drawer-handle { width: 40px; height: 4px; border-radius: 2px; background: rgba(0,0,0,0.18); margin: 0 auto 14px; }
+  .drawer h2 { font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
+  .drawer .sub { color: #666; font-size: 14px; margin-bottom: 14px; }
+
+  /* Option-list buttons — zelfde patroon als #status-options in bestelling.html */
+  .option-list { display: grid; gap: 8px; margin-top: 10px; }
+  .option-list button {
+    width: 100%; padding: 14px 16px; border-radius: var(--radius-md);
+    background: var(--white); border: 2px solid transparent; cursor: pointer;
+    text-align: left; font: 500 15px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .option-list button.sel { border-color: var(--red); background: rgba(217,48,30,0.04); font-weight: 700; }
+
+  /* Form inputs binnen drawer — matcht admin styling */
+  .drawer input[type="date"], .drawer select, .drawer textarea {
+    width: 100%; min-height: 56px; padding: 14px 16px;
+    background: var(--white); border: 2px solid transparent; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card); color: var(--black);
+    font-family: inherit; font-size: 16px; box-sizing: border-box;
+    appearance: none; -webkit-appearance: none;
+  }
+  .drawer select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%23D9301E' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 18px center; background-size: 16px 16px;
+    padding-right: 48px;
+  }
+  .drawer textarea { min-height: 80px; resize: vertical; }
+  .drawer input:focus, .drawer select:focus, .drawer textarea:focus {
+    outline: none; border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card);
+  }
+  .drawer .field-label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin: 14px 0 6px; }
+  .drawer .field-hint { color: #999; font-weight: 400; text-transform: none; }
 </style>
 </head>
 <body>
@@ -94,8 +145,48 @@
 
     <div class="actions-label">Bestellingen</div>
     <div class="info-card" id="d-orders"></div>
+
+    <div class="actions-label">Nieuwe bestelling</div>
+    <button class="btn-outline" id="add-free-btn" type="button">+ Gratis bestelling toevoegen</button>
   </section>
 </main>
+
+<!-- Gratis-bestelling drawer -->
+<div class="drawer-backdrop" id="free-backdrop"></div>
+<div class="drawer" id="free-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2>Gratis bestelling</h2>
+  <p class="sub">Voor <span id="free-klant-name">klant</span>. Verschijnt in <em>Nieuw</em> op de bestellingen-tab.</p>
+
+  <div class="field-label">Aantal potten</div>
+  <div class="option-list" id="free-aantal">
+    <button type="button" data-aantal="1" class="sel">1 pot</button>
+    <button type="button" data-aantal="2">2 potten</button>
+    <button type="button" data-aantal="3">3 potten</button>
+    <button type="button" data-aantal="4">4 potten</button>
+    <button type="button" data-aantal="5">5 potten</button>
+  </div>
+
+  <div class="field-label">Reden <span class="field-hint">(verplicht)</span></div>
+  <select id="free-reden">
+    <option value="">— kies een reden —</option>
+    <option value="Batch defect">Batch defect</option>
+    <option value="Klachtcompensatie">Klachtcompensatie</option>
+    <option value="Cadeau">Cadeau</option>
+    <option value="Testronde">Testronde</option>
+    <option value="Anders">Anders</option>
+  </select>
+  <div class="field-label">Toelichting <span class="field-hint">(optioneel)</span></div>
+  <textarea id="free-note" placeholder="Extra context, bijv. klachtnummer of specifieke situatie"></textarea>
+
+  <div class="field-label">Leveringsdatum <span class="field-hint">(optioneel — leeg = eerstvolgende ronde)</span></div>
+  <input type="date" id="free-date">
+
+  <p class="error" id="free-err" style="display:none;"></p>
+
+  <button class="btn-primary" id="free-submit" type="button" style="margin-top: 18px;">Bevestig gratis bestelling</button>
+  <button class="btn-outline" id="free-cancel" type="button" style="margin-top: 10px;">Annuleer</button>
+</div>
 
 <div id="toast" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--black); color: white; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity 200ms; pointer-events: none; max-width: 90%; text-align: center;"></div>
 
@@ -216,6 +307,64 @@
     showToast(fmtEuro(r.data.total_amount_cents || 0) + ' wordt binnen ' + eta + ' werkdagen teruggestort' + ibanPart + '.', 'success');
     setTimeout(load, 800);
   }
+
+  // ─── Gratis bestelling drawer ─────────────────────────────
+  function openFreeDrawer() {
+    const c = STATE.customer;
+    if (!c) return;
+    $('#free-klant-name').textContent = c.voornaam || 'klant';
+    // reset
+    document.querySelectorAll('#free-aantal button').forEach(b => b.classList.toggle('sel', b.dataset.aantal === '1'));
+    $('#free-reden').value = '';
+    $('#free-note').value = '';
+    $('#free-date').value = '';
+    const err = $('#free-err'); err.style.display = 'none'; err.textContent = '';
+    $('#free-submit').disabled = false; $('#free-submit').textContent = 'Bevestig gratis bestelling';
+    $('#free-backdrop').classList.add('open');
+    $('#free-drawer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeFreeDrawer() {
+    $('#free-backdrop').classList.remove('open');
+    $('#free-drawer').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('#free-aantal button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#free-aantal button').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+    });
+  });
+  $('#add-free-btn').addEventListener('click', openFreeDrawer);
+  $('#free-backdrop').addEventListener('click', closeFreeDrawer);
+  $('#free-cancel').addEventListener('click', closeFreeDrawer);
+  $('#free-submit').addEventListener('click', async () => {
+    const selBtn = document.querySelector('#free-aantal button.sel');
+    const aantal = selBtn ? parseInt(selBtn.dataset.aantal, 10) : 1;
+    const reden = $('#free-reden').value.trim();
+    const note  = $('#free-note').value.trim();
+    const date  = $('#free-date').value.trim();
+    const err = $('#free-err');
+    err.style.display = 'none'; err.textContent = '';
+    if (!reden) { err.textContent = 'Kies een reden — verplicht voor traceability.'; err.style.display = 'block'; return; }
+    const c = STATE.customer;
+    if (!c || !c.key) { err.textContent = 'Klantdata niet geladen. Vernieuw de pagina.'; err.style.display = 'block'; return; }
+    const btn = $('#free-submit');
+    btn.disabled = true; btn.textContent = 'Bezig…';
+    const r = await api('admin-add-free-order', {
+      klant_key: c.key, aantal, delivery_date: date, reden, reden_note: note,
+    });
+    if (!r.ok || !r.data.ok) {
+      btn.disabled = false; btn.textContent = 'Bevestig gratis bestelling';
+      err.textContent = 'Kon niet aanmaken: ' + (r.data.error || 'onbekende fout');
+      err.style.display = 'block';
+      return;
+    }
+    const naam = (r.data.klant && r.data.klant.voornaam) || c.voornaam || 'klant';
+    showToast('Gratis bestelling voor ' + naam + ' aangemaakt — staat in Nieuw.', 'success');
+    closeFreeDrawer();
+    setTimeout(load, 400);
+  });
 
   $('#login-btn').addEventListener('click', async () => {
     const pw = $('#pw').value.trim();
