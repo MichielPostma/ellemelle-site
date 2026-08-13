@@ -3,7 +3,18 @@
 // De submission wordt aangemaakt via Netlify Forms POST zodat 'ie in de standaard "Nieuw" flow verschijnt.
 // Pot-toewijzing gebeurt niet — bezorger scant een pot op leveringsdag (bestaande flow).
 
-const { listEnrichedOrders, invalidateOrderCache } = require('./_lib/orders');
+const { listEnrichedOrders, invalidateOrderCache, customerMatchKey } = require('./_lib/orders');
+
+// Match klant on either the raw identity key (from klanten-list: "tel:0612..." / "mail:...")
+// OR the sha1-hashed customer_key stored on orders. Both are supported so the UI can send
+// whichever it has.
+function makeIdentityKey(o) {
+  const ck = customerMatchKey(o);
+  if (ck) return ck;
+  const addr = `${(o.straat||'').toLowerCase()}|${(o.huisnummer||'')}|${(o.toevoeging||'').toLowerCase()}`;
+  const name = (o.voornaam || '').toLowerCase().trim();
+  return `addr:${name}|${addr}`;
+}
 
 exports.handler = async (event) => {
   const headers = { 'Content-Type': 'application/json' };
@@ -35,9 +46,11 @@ exports.handler = async (event) => {
   let klant;
   try {
     const { all } = await listEnrichedOrders();
-    const klantOrders = all.filter(o => o.customer_key === klantKey);
+    const klantOrders = all.filter(o =>
+      o.customer_key === klantKey || makeIdentityKey(o) === klantKey
+    );
     if (klantOrders.length === 0) {
-      return { statusCode: 404, headers, body: JSON.stringify({ error: 'klant not found' }) };
+      return { statusCode: 404, headers, body: JSON.stringify({ error: 'klant not found', received_key: klantKey }) };
     }
     klantOrders.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
     klant = klantOrders[0];
