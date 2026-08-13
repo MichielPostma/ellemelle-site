@@ -1,4 +1,4 @@
-// Thin wrapper around Netlify Blobs for ELLEMELLE pot tracking.
+// Thin wrapper around Netlify Blobs for Ellemel pot tracking.
 // Stores:
 //   pots/POT-NNN   → { id, status, order_id?, delivered_at?, returned_at?, ... }
 //   orders/ORDER-X → { id, voornaam, address, contact, status, delivery_week, ... }

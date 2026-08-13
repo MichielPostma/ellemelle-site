@@ -37,11 +37,16 @@ exports.handler = async (event) => {
   if (!pot) {
     return { statusCode: 404, headers, body: JSON.stringify({ error: 'pot not found — run seed-pots first' }) };
   }
-  // Accept pots that are EITHER empty (available) OR ready-to-ship (voorraad).
-  // Voorraad pots come straight off the production shelf and get delivered to a customer
-  // in one scan via the admin scan-FAB flow.
-  if (pot.status !== 'available' && pot.status !== 'voorraad') {
-    return { statusCode: 409, headers, body: JSON.stringify({ error: 'pot not available or voorraad', status: pot.status, current_order: pot.order_id }) };
+  // STRICT invariant: only filled pots (voorraad) can be delivered.
+  // Empty (available), uninitialized, returned or already-delivered pots are rejected.
+  // This prevents drift like voorraad → available → delivered (which loses production_date)
+  // and keeps the data model honest: a delivered pot ALWAYS has a production date.
+  if (pot.status !== 'voorraad') {
+    return { statusCode: 409, headers, body: JSON.stringify({
+      error: `Alleen volle (voorraad) potten kunnen bezorgd worden. ${potId} heeft status: ${pot.status}.`,
+      status: pot.status,
+      current_order: pot.order_id,
+    }) };
   }
   const existingOrder = (await ordersStore.get(orderId, { type: 'json' })) || {};
   if (existingOrder.delivered_pot) {
@@ -50,11 +55,17 @@ exports.handler = async (event) => {
 
   const now = new Date().toISOString();
   const existingHistory = Array.isArray(pot.history) ? pot.history : [];
+  // Optional scan-location for audit trail (from bezorger geolocation at scan time).
+  const loc = body.scan_location;
+  const validLoc = (loc && typeof loc === 'object' && Number.isFinite(loc.lat) && Number.isFinite(loc.lng))
+    ? { lat: Number(loc.lat), lng: Number(loc.lng), accuracy: Number(loc.accuracy) || null }
+    : null;
   // Log the delivery event into pot.history so admin scan-drawer can show a full audit trail.
   const histEntry = {
     at: now,
     action: 'delivered',
     order_id: orderId,
+    ...(validLoc ? { scan_location: validLoc } : {}),
   };
   await potsStore.setJSON(potId, {
     ...pot, status: 'delivered', order_id: orderId, delivered_at: now,

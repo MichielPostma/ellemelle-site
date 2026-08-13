@@ -1,4 +1,4 @@
-// Inventory helpers for ELLEMELLE pot stock + delivery date calculation.
+// Inventory helpers for Ellemel pot stock + delivery date calculation.
 // Pot statuses (extended):
 //   - uninitialized: no record yet (never seeded)
 //   - available:     empty pot waiting to be filled (= statiegeld returned)

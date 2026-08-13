@@ -56,7 +56,12 @@ exports.handler = async (event) => {
       const fres = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/forms`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const forms = await fres.json();
+      const formsRaw = await fres.text();
+      let forms;
+      try { forms = JSON.parse(formsRaw); } catch { forms = null; }
+      if (!Array.isArray(forms)) {
+        return { statusCode: 502, headers, body: JSON.stringify({ error: 'forms API non-array response', status: fres.status, raw: formsRaw.slice(0, 400) }) };
+      }
       const form = forms.find(f => f.name === 'ellemelle-signup');
       if (!form) {
         return { statusCode: 200, headers, body: JSON.stringify({ signups: [], total: 0, paid: 0, outstanding: 0 }) };

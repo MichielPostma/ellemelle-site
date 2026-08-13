@@ -59,6 +59,9 @@ exports.handler = async (event) => {
       this_order_qty: aantal,
       active_pot_demand: activePotDemand,
       available_after_this_order: availableAfter,
+      // Klantenstop (customer stop) — admin can pause new orders to safeguard existing deliveries
+      customer_stop: !!cfg.customer_stop,
+      customer_stop_whatsapp_url: cfg.customer_stop_whatsapp_url || null,
     }) };
   } catch (e) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: String(e && e.message || e) }) };

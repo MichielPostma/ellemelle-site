@@ -34,7 +34,7 @@ exports.handler = async (event) => {
 
   webpush.setVapidDetails(subj, pub, priv);
   const payload = JSON.stringify({
-    title: 'Nieuwe ELLEMELLE-bestelling 🛒',
+    title: 'Nieuwe Ellemel-bestelling 🛒',
     body: `${voornaam} bestelde ${aantal} pot${aantal === 1 ? '' : 'ten'}${addr ? ' op ' + addr : ''}`,
     icon: '/assets/icons/icon-192.png',
     badge: '/assets/icons/icon-192.png',
@@ -60,5 +60,28 @@ exports.handler = async (event) => {
       }
     }
   }
+
+  // Append to push-log blob for the in-app notifications drawer.
+  // Best-effort — never fails the request.
+  try {
+    const logStore = getStore(blobOpts('ellemelle-push-log'));
+    const existing = (await logStore.get('log', { type: 'json' })) || [];
+    const arr = Array.isArray(existing) ? existing : [];
+    arr.push({
+      at: new Date().toISOString(),
+      icon: '🛒',
+      title: 'Nieuwe Ellemel-bestelling',
+      body: `${voornaam} bestelde ${aantal} pot${aantal === 1 ? '' : 'ten'}${addr ? ' op ' + addr : ''}`,
+      url,
+      order_id: orderId,
+      action: 'new_order',
+    });
+    // Cap the log to the last 500 entries to avoid unbounded growth.
+    const capped = arr.slice(-500);
+    await logStore.setJSON('log', capped);
+  } catch (e) {
+    // ignore — logging is a nice-to-have
+  }
+
   return { statusCode: 200, headers, body: JSON.stringify({ ok: true, ...results }) };
 };

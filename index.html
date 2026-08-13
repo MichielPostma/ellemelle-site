@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#D9301E">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TXDQ6849');</script>
+<!-- End Google Tag Manager -->
 
 <!-- iOS / PWA home-screen support -->
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
@@ -14,12 +21,24 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="ELLEMELLE">
-<meta name="description" content="ELLEMELLE — ambachtelijke chocopasta met 3× minder suiker. Door Ellis & Melle uit Haarlem.">
-<meta property="og:title" content="ELLEMELLE — Chocopasta door Ellis & Melle">
-<meta property="og:description" content="Ambachtelijke chocopasta. 3× minder suiker. Door Ellis & Melle uit Haarlem.">
-<meta property="og:image" content="/Images/product.png">
-<title>ELLEMELLE — Chocopasta door Ellis & Melle</title>
+<meta name="apple-mobile-web-app-title" content="Ellemel">
+<meta name="description" content="Gezondere chocopasta voor kids in Haarlem — bezorgd aan je deur. Huisgemaakt door Ellis en Melle met véél minder suiker. En helemaal bio!">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ellemel">
+<meta property="og:url" content="https://ellemel.nl/">
+<meta property="og:title" content="Gezondere chocopasta voor kids in Haarlem — bezorgd aan je deur">
+<meta property="og:description" content="Gezondere chocopasta voor kids in Haarlem — bezorgd aan je deur. Huisgemaakt door Ellis en Melle met véél minder suiker. En helemaal bio!">
+<meta property="og:image" content="https://ellemel.nl/Images/koken-pot.jpg?v=6">
+<meta property="og:image:secure_url" content="https://ellemel.nl/Images/koken-pot.jpg?v=6">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="1200">
+<meta property="og:image:alt" content="Pot Ellemel chocopasta">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Gezondere chocopasta voor kids in Haarlem — bezorgd aan je deur">
+<meta name="twitter:description" content="Gezondere chocopasta voor kids in Haarlem — bezorgd aan je deur. Huisgemaakt door Ellis en Melle met véél minder suiker. En helemaal bio!">
+<meta name="twitter:image" content="https://ellemel.nl/Images/koken-pot.jpg?v=6">
+<title>Gezondere chocopasta voor kids in Haarlem — bezorgd aan je deur</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
@@ -80,6 +99,27 @@
   .banner-dot.green     { background: #1f9d55; }
   .banner-dot.amber     { background: #f0ad00; }
   .banner-dot.lightblue { background: #66b3ff; }
+  .banner-dot.red       { background: #D9301E; }
+
+  /* Tile-scan notice — shows when visitor arrived via ?from_tile=T01 (physical tile scan) */
+  #tile-scan-notice {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 18px;
+    background: var(--red); color: #fff;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 14px; line-height: 1.4;
+  }
+  #tile-scan-notice[hidden] { display: none; }
+  #tile-scan-notice .tile-scan-notice-inner { flex: 1 1 auto; min-width: 0; }
+  #tile-scan-notice .tile-scan-notice-inner strong { display: block; font-weight: 700; margin-bottom: 2px; }
+  #tile-scan-notice .tile-scan-close {
+    flex: 0 0 auto;
+    background: transparent; border: 0; color: #fff;
+    font-size: 22px; line-height: 1; cursor: pointer;
+    padding: 0 4px; opacity: 0.85;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #tile-scan-notice .tile-scan-close:hover { opacity: 1; }
 
   /* Topbar */
   .topbar {
@@ -326,6 +366,7 @@
     transition: border-color 120ms, transform 90ms;
     width: 100%;
   }
+  .kanaal-card { position: relative; }
   .kanaal-card.selected { border-color: var(--red); }
   /* Hover red only on hover-capable pointers (avoid touch-sticky red on email) */
   @media (hover: hover) and (pointer: fine) {
@@ -334,6 +375,22 @@
   .kanaal-card .ic { font-size: 30px; line-height: 1; }
   .kanaal-card .label { font-size: 18px; }
   .kanaal-card .sub { font-size: 12px; color: #666; opacity: 1; font-weight: 500; margin-top: 2px; display: block; }
+  /* Stock tag rechtsboven op aantal-kaart, zoals badges in de admin app */
+  .card-tag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    line-height: 1.4;
+    text-transform: none;
+  }
+  .card-tag.stock     { background: rgba(31,157,85,0.14);  color: #1c7d3f; }
+  .card-tag.upcoming  { background: rgba(240,173,0,0.18);  color: #a06c00; }
+  .card-tag[hidden]   { display: none; }
 
   /* Order summary */
   .order-card {
@@ -577,7 +634,8 @@
   body.on-intro {
     display: flex;
     flex-direction: column;
-    min-height: 100dvh;
+    /* Geen min-height op body: laat het body sizen naar content-hoogte zodat er geen
+       lege scroll onder de laatste sectie ontstaat. Hero pakt zelf 100dvh (zie verderop). */
   }
   /* Success: pot photo on top, then form content (using flex order) */
   body.on-success {
@@ -593,15 +651,15 @@
   body.on-intro #app { flex: 0 0 auto; height: 0; padding: 0; min-height: 0; overflow: hidden; }
   body.on-intro .product-hero {
     position: relative;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
+    /* Content-sized in plaats van 100dvh — voorkomt het 'sticky' voelen bij scroll. */
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 12px 20px 104px;   /* bottom reserved for absolutely positioned CTA */
+    gap: 14px;
+    padding: 32px 0;              /* zelfde verticale ademruimte als andere intro-secties */
     cursor: pointer;
     transition: opacity 160ms ease;
-    overflow: hidden;
   }
   body.on-intro .product-hero:hover { opacity: 0.92; }
   body.on-intro .product-hero:active { opacity: 0.85; }
@@ -609,29 +667,33 @@
   /* Intro CTA button (only visible on step 0) — absolute, so scaled pot can't push it off */
   .intro-cta { display: none; }
 
-  /* Levering status subtle subtitle under the intro CTA — only on step 0 */
+  /* Levering status als wit kaart-element onder de intro CTA — meer aandacht dan een subtiele regel. */
   .intro-levering { display: none; }
   body.on-intro .intro-levering {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    position: absolute;
-    left: 20px;
-    right: 20px;
-    bottom: 8px;
-    color: #666;
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.3;
-    letter-spacing: 0;
-    text-align: center;
-    text-transform: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    background: var(--white);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    /* Hero heeft 0 side-padding zodat de pot edge-to-edge kan; deze kaart moet zelf minimaal 20px marge houden. */
+    width: min(100% - 40px, 440px);
+    box-sizing: border-box;
+    text-align: left;
     z-index: 2;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .intro-levering-head { display: flex; align-items: center; gap: 8px; }
+  .intro-levering-title { font-weight: 700; font-size: 15px; color: var(--black); line-height: 1.25; }
+  .intro-levering-sub {
+    font-size: 14px; color: #555; line-height: 1.5;
+    margin: 0;
   }
   .intro-dot {
     display: inline-block;
-    width: 8px; height: 8px;
+    width: 9px; height: 9px;
     border-radius: 50%;
     background: #999;
     flex-shrink: 0;
@@ -639,28 +701,58 @@
   .intro-dot.green     { background: #1f9d55; }
   .intro-dot.amber     { background: #f0ad00; }
   .intro-dot.lightblue { background: #66b3ff; }
+  .intro-dot.red       { background: #D9301E; }
+
+  /* Klantenstop bottom drawer (opens when user clicks Bestel-CTA while klantenstop actief) */
+  .stop-drawer-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 200;
+  }
+  .stop-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .stop-drawer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--cream); border-radius: 20px 20px 0 0;
+    padding: 18px 22px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 260ms cubic-bezier(.2,.7,.2,1);
+    z-index: 210; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.24);
+  }
+  .stop-drawer.open { transform: translateY(0); }
+  .stop-drawer .drawer-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.18); margin: 0 auto 16px;
+  }
+  .stop-drawer h2 {
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 10px;
+    line-height: 1.2; letter-spacing: -0.2px;
+  }
+  .stop-drawer p {
+    color: #333; font-size: 15px; line-height: 1.5; margin-bottom: 20px;
+  }
+  .stop-drawer .stop-actions {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .stop-drawer .btn-primary { text-align: center; }
+  .stop-drawer .btn-outline { text-align: center; }
   body.on-intro .intro-cta {
     display: block;
-    position: absolute;
-    bottom: 48px;
-    left: 0;
-    right: 0;
-    margin-left: auto;
-    margin-right: auto;
-    width: calc(100% - 40px);
-    max-width: 440px;
+    /* Zelfde constraint als de kaart: max 440px, altijd minstens 20px marge aan de kant. */
+    width: min(100% - 40px, 440px);
+    box-sizing: border-box;
     cursor: pointer;
     z-index: 2;
   }
   body.on-intro .product-hero:has(.intro-cta:hover) { opacity: 1; }
   body.on-intro .product-img {
-    /* 45% groter via transform; max-height begrenst layout-box zodat zelfs op kleinere viewports
-       de scaled visual nooit door de absolute CTA-positie heen prikt */
+    /* Groter maken lukt alleen als BEIDE constraints ruimte laten: max-width (hero-breedte) en max-height (viewport).
+       Hero heeft nu 0 side-padding zodat de pot tot aan de viewport-rand kan groeien op portrait mobile. */
     width: auto;
     max-width: 100%;
     height: auto;
-    max-height: 56vh;
+    max-height: 82vh;
     object-fit: contain;
+    flex-shrink: 0;
     transform: scale(1.0);
     transform-origin: center center;
     animation: intro-pot-wiggle 4s ease-in-out infinite;
@@ -685,7 +777,7 @@
   .intro-story { display: none; }
   body.on-intro .intro-story {
     display: block;
-    padding: 20px 0 32px;
+    padding: 32px 0;
     background: transparent;
   }
   .intro-story-title {
@@ -694,6 +786,11 @@
     color: var(--black);
     margin: 0 20px 8px;
     letter-spacing: -0.2px;
+  }
+  .intro-story-title-sub {
+    display: block; margin-top: 4px;
+    font-size: 17px; font-weight: 600; line-height: 1.3;
+    color: #555; letter-spacing: 0;
   }
   .intro-story-lead {
     font-size: 15px; color: #555; line-height: 1.45;
@@ -732,7 +829,7 @@
   .intro-mission { display: none; }
   body.on-intro .intro-mission {
     display: block;
-    padding: 8px 0 40px;
+    padding: 32px 0;
   }
   .intro-mission-image-wrap { padding: 0 20px; margin-top: 18px; }
   .intro-mission-image {
@@ -744,6 +841,35 @@
     object-fit: cover;
     border-radius: 14px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  /* Foto-slider voor de speurtocht — zelfde snap-behaviour als intro-story */
+  .intro-mission-scroll {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 0 4px;
+    scroll-padding-left: 20px;
+    margin-top: 18px;
+  }
+  .intro-mission-scroll::-webkit-scrollbar { display: none; }
+  .intro-mission-track {
+    display: flex;
+    gap: 12px;
+    padding: 0 32px 0 20px;
+  }
+  .intro-mission-slide {
+    flex: 0 0 82vw;
+    max-width: 400px;
+    aspect-ratio: 1 / 1;
+    scroll-snap-align: start;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #eee;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .intro-mission-slide img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
   }
   .intro-mission-title {
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
@@ -761,7 +887,7 @@
   .intro-faq { display: none; }
   body.on-intro .intro-faq {
     display: block;
-    padding: 8px 20px 20px;
+    padding: 32px 20px;
   }
   .intro-faq .faq-section { margin: 20px 0 0; }
   .intro-faq .faq-section:first-child { margin-top: 0; }
@@ -802,7 +928,7 @@
   .intro-wa { display: none; }
   body.on-intro .intro-wa {
     display: block;
-    padding: 0 20px 24px;
+    padding: 32px 20px;
   }
   .intro-wa-btn {
     display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -969,9 +1095,174 @@
   body.on-embed #admin-picker { max-width: none; width: 100%; padding: 0; }
   body.on-embed .step-eyebrow { padding: 0; }
 
+  /* ─────────────────────────────────────────────────────────────────
+     Desktop-only landing page
+     Mobile blijft exact het bestaande bestelflow-scherm. Op desktop
+     toont ellemel.nl een split-screen: links productverhaal, rechts
+     QR-code om verder te gaan op mobiel.
+     ──────────────────────────────────────────────────────────────── */
+  #desktop-landing { display: none; }
+
+  @media (min-width: 900px) {
+    body:not(.on-admin-picker):not(.on-embed) #desktop-landing {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: fixed;
+      inset: 0;
+      background: #FEE7DC;
+      z-index: 50;
+      overflow: hidden;
+    }
+    body:not(.on-admin-picker):not(.on-embed) #app,
+    body:not(.on-admin-picker):not(.on-embed) .top-banner {
+      display: none !important;
+    }
+
+    .dl-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* Schaal padding met viewport zodat er ademruimte blijft op smallere desktops
+         zonder de tekst te clippen. */
+      padding: clamp(24px, 4vw, 48px) clamp(20px, 4vw, 56px);
+      text-align: center;
+      /* Sta scrollen toe zodra content niet meer past — voorkomt cut-off op korte
+         schermen of geknepen breedtes. */
+      min-height: 100vh;
+      max-height: 100vh;
+      overflow-y: auto;
+      position: relative;
+      box-sizing: border-box;
+    }
+    .dl-col::-webkit-scrollbar { display: none; }
+    .dl-col { scrollbar-width: none; }
+    .dl-left {
+      justify-content: flex-start;
+      gap: 24px;
+    }
+    /* Vertikale grijze hairline tussen kolommen, zoals in de app */
+    .dl-right {
+      border-left: 1px solid rgba(0,0,0,0.08);
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .dl-pot {
+      width: 100%;                /* nooit breder dan de kolom-content-area */
+      max-width: 460px;
+      height: auto;
+      display: block;
+      margin-top: 0;
+    }
+    .dl-title {
+      font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 700;
+      font-size: clamp(22px, 2.1vw, 34px);
+      line-height: 1.15;
+      color: var(--red);
+      letter-spacing: -0.3px;
+      max-width: 420px;
+      /* Sta safe woord-afbreken toe zodat lange woorden nooit uit de kolom lopen. */
+      overflow-wrap: anywhere;
+      hyphens: auto;
+    }
+    .dl-desc {
+      font-size: clamp(15px, 1.1vw, 17px);
+      line-height: 1.55;
+      color: #4a4a4a;
+      max-width: 420px;
+      overflow-wrap: anywhere;
+    }
+
+    /* Wit blok met titel, sub, QR. 1px hairline + subtle wiggle. Hover = 2px rode outline (geen schaduw). */
+    .dl-card {
+      background: var(--white);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: var(--radius-lg);
+      padding: 28px 28px 22px;
+      box-shadow: 0 18px 50px rgba(139,26,14,0.06);
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+      animation: dl-wiggle 4s ease-in-out infinite;
+      transform-origin: center center;
+      transition: box-shadow 180ms ease-out;
+    }
+    .dl-card:hover {
+      box-shadow: 0 0 0 2px var(--red), 0 18px 50px rgba(139,26,14,0.06);
+      animation-play-state: paused;
+    }
+    @keyframes dl-wiggle {
+      /* Standaard ~5° tilt naar rechts. Twee snelle schuddingen, dan lange pauze in rust */
+      0%   { transform: rotate(5deg); }
+      4%   { transform: rotate(1deg); }
+      8%   { transform: rotate(9deg); }
+      12%  { transform: rotate(2deg); }
+      16%  { transform: rotate(8deg); }
+      20%  { transform: rotate(5deg); }
+      100% { transform: rotate(5deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .dl-card { animation: none; }
+    }
+    .dl-card-title {
+      font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 700;
+      font-size: clamp(20px, 1.6vw, 24px);
+      line-height: 1.2;
+      color: var(--black);
+      letter-spacing: -0.2px;
+      margin-bottom: 8px;
+    }
+    .dl-card-sub {
+      font-size: 17px;
+      line-height: 1.55;
+      color: #4a4a4a;
+      margin-bottom: 22px;
+    }
+    .dl-qr {
+      width: 220px;
+      height: 220px;
+      display: block;
+      margin: 0 auto 25px;
+    }
+    /* Sticky logo rechtsonder op de pagina */
+    .dl-corner-logo {
+      position: fixed;
+      right: 32px;
+      bottom: 32px;
+      width: 106px;
+      height: auto;
+      display: block;
+      z-index: 60;
+      pointer-events: none;
+    }
+  }
+
 </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TXDQ6849"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<!-- Desktop-only landing: split-screen met QR-code naar mobiel. Mobiel: display:none. -->
+<div id="desktop-landing" aria-hidden="true">
+  <div class="dl-col dl-left">
+    <img class="dl-pot" src="/Images/koken-pot.jpg?v=6" alt="Pot Ellemel chocopasta">
+    <h1 class="dl-title">(H)éerlijke chocopasta door Ellis en Melle uit Haarlem</h1>
+    <p class="dl-desc">Chocopasta, dat moet je eigenlijk niet in huis hebben. Of tenminste dat dachten we. Tot we zelf iets maakten: noten in de blender, beetje agave, cacao. Mega lekker!</p>
+  </div>
+  <div class="dl-col dl-right">
+    <div class="dl-card">
+      <h2 class="dl-card-title">Bestellen doe je op je mobiel</h2>
+      <p class="dl-card-sub">Scan de QR-code met je telefoon om verder te gaan.</p>
+      <img class="dl-qr" src="https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fellemel.nl%2F%3Fintro%3D1&size=520x520&color=000000&bgcolor=ffffff&margin=0&qzone=1" alt="QR-code naar ellemel.nl">
+    </div>
+  </div>
+  <img class="dl-corner-logo" src="/assets/ellemel-logo.svg" alt="Ellemel">
+</div>
 
 <!-- Hidden static form: lets Netlify Forms detect & capture submissions even when JS posts dynamically -->
 <form name="ellemelle-signup" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
@@ -991,6 +1282,15 @@
   <input name="customer_identifier" type="text">
   <input name="bot-field" type="text">
 </form>
+
+<!-- Notificatiebalk voor bezoekers die een fysieke tegel scanden (?from_tile=T01) -->
+<div id="tile-scan-notice" hidden role="status" aria-live="polite">
+  <div class="tile-scan-notice-inner">
+    <strong>Ben je bezig met de speurtocht?</strong>
+    <span>Scan de tegel via je speurtocht-pagina (open je pot-QR opnieuw), anders herkent 'ie de tegel niet.</span>
+  </div>
+  <button type="button" class="tile-scan-close" id="tile-scan-close" aria-label="Sluit melding">×</button>
+</div>
 
 <!-- Top status banner: dynamic levering-indicator -->
 <div class="top-banner" id="counter">
@@ -1124,13 +1424,16 @@
       <h1 class="step-question">Hoeveel potten wil je?</h1>
       <div class="kanaal-options">
         <button class="kanaal-card aantal-card" data-aantal="1" type="button">
-          <span><span class="label">1 pot</span><span class="sub">5 euro plus 1 euro statiegeld</span></span>
+          <span><span class="label">1 pot</span><span class="sub">5 euro plus 3 euro statiegeld</span></span>
+          <span class="card-tag" data-tag-for="1" hidden></span>
         </button>
         <button class="kanaal-card aantal-card" data-aantal="2" type="button">
-          <span><span class="label">2 potten</span><span class="sub">10 euro plus 2 euro statiegeld</span></span>
+          <span><span class="label">2 potten</span><span class="sub">10 euro plus 6 euro statiegeld</span></span>
+          <span class="card-tag" data-tag-for="2" hidden></span>
         </button>
         <button class="kanaal-card aantal-card" data-aantal="3" type="button">
-          <span><span class="label">3 potten</span><span class="sub">15 euro plus 3 euro statiegeld</span></span>
+          <span><span class="label">3 potten</span><span class="sub">15 euro plus 9 euro statiegeld</span></span>
+          <span class="card-tag" data-tag-for="3" hidden></span>
         </button>
       </div>
       <div class="error" data-step-error></div>
@@ -1198,38 +1501,45 @@
 
 <!-- Pot photo, edge-to-edge under the form -->
 <section class="product-hero">
-  <img class="product-img" src="Images/koken-pot.jpg" alt="ELLEMELLE chocopasta pot" loading="eager" fetchpriority="high">
-  <a href="#" class="btn-primary intro-cta" id="intro-cta" data-next role="button">Ja, ik wil 'em! →</a>
+  <img class="product-img" src="Images/koken-pot.jpg?v=6" alt="Ellemel chocopasta pot" loading="eager" fetchpriority="high">
+  <a href="#" class="btn-primary intro-cta" id="intro-cta" data-next role="button">Ja, ik wil chocopasta! →</a>
   <div class="intro-levering" id="intro-levering" aria-live="polite">
-    <span class="intro-dot" id="intro-dot" aria-hidden="true"></span>
-    <span id="intro-levering-text">Even kijken...</span>
+    <div class="intro-levering-head">
+      <span class="intro-dot" id="intro-dot" aria-hidden="true"></span>
+      <span class="intro-levering-title" id="intro-levering-title">Even kijken...</span>
+    </div>
+    <div class="intro-levering-sub" id="intro-levering-text"></div>
   </div>
 </section>
 
 <!-- Verhaal-sectie 1: kern-pitch + foto-slideshow (alleen zichtbaar op intro) -->
 <section class="intro-story" aria-labelledby="intro-story-title">
-  <h2 class="intro-story-title" id="intro-story-title">Gezondere chocopasta voor alle kids in Haarlem</h2>
-  <p class="intro-story-lead">Ellis en Melle maken thuis met Michiel gezondere chocopasta — biologisch, 42% noten en veel minder suiker dan wat er in het schap ligt.</p>
+  <h2 class="intro-story-title" id="intro-story-title">Gezondere chocopasta voor kids in Haarlem</h2>
+  <p class="intro-story-lead">Biologisch, 42% noten, geen palmolie en minder suiker dan de bekende potten uit de supermarkt.</p>
   <div class="intro-story-scroll">
     <div class="intro-story-track">
-      <div class="intro-story-slide"><img src="Images/story/story-1-pot-tuin.jpg" alt="Pot Ellemel chocopasta in de tuin" loading="lazy"></div>
-      <div class="intro-story-slide"><img src="Images/story/story-2-kids-schaal.jpg" alt="Ellis en Melle met verse chocopasta" loading="lazy"></div>
-      <div class="intro-story-slide"><img src="Images/story/story-6-drie-potten.jpg" alt="Drie potten Ellemel op tafel" loading="lazy"></div>
-      <div class="intro-story-slide"><img src="Images/story/story-4-melle-hazelnoten.jpg" alt="Melle met zakken hazelnoten" loading="lazy"></div>
-      <div class="intro-story-slide"><img src="Images/story/story-7-label-close.jpg" alt="Label van dichtbij — veel minder suiker" loading="lazy"></div>
-      <div class="intro-story-slide"><img src="Images/story/story-3-ingredienten.jpg" alt="Ingrediënten: noten, cacao en poeder" loading="lazy"></div>
-      <div class="intro-story-slide"><img src="Images/story/story-5-qr-game.jpg" alt="QR-speurtocht op de deksel" loading="lazy"></div>
-      <div class="intro-story-slide"><img src="Images/story/story-8-verse-potten.jpg" alt="Verse potten net gevuld in de keuken" loading="lazy"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-1-pot-tuin.jpg" alt="Pot Ellemel chocopasta in de tuin"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-2-kids-schaal.jpg" alt="Ellis en Melle met verse chocopasta"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-6-drie-potten.jpg" alt="Drie potten Ellemel op tafel"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-4-melle-hazelnoten.jpg" alt="Melle met zakken hazelnoten"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-7-label-close.jpg" alt="Label van dichtbij — veel minder suiker"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-3-ingredienten.jpg" alt="Ingrediënten: noten, cacao en poeder"></div>
+      <div class="intro-story-slide"><img src="Images/story/story-8-verse-potten.jpg" alt="Verse potten net gevuld in de keuken"></div>
     </div>
   </div>
 </section>
 
 <!-- Verhaal-sectie 2: missie / speurtocht (alleen zichtbaar op intro) -->
 <section class="intro-mission" aria-labelledby="intro-mission-title">
-  <h2 class="intro-mission-title" id="intro-mission-title">Scan je pot chocoladepasta en doe een speurtocht door de buurt</h2>
+  <h2 class="intro-mission-title" id="intro-mission-title">Scan je pot chocoladepasta en doe een speurtocht door de buurt 🎉</h2>
   <p class="intro-mission-lead">Bij elke pot krijgen kids een missie via de QR-code op de deksel — een echte speurtocht door de Potgietersbuurt met geluidsfragmenten, aanwijzingen en een verdiend crew-bandje aan het einde.</p>
-  <div class="intro-mission-image-wrap">
-    <img src="Images/story/story-5-qr-game.jpg" alt="Kind scant de QR-code op de deksel" class="intro-mission-image" loading="lazy">
+  <div class="intro-mission-scroll">
+    <div class="intro-mission-track">
+      <div class="intro-mission-slide"><img src="Images/mission/mission-2-crouched-scan.jpg" alt="Kind gehurkt bij een check-in tegel op de muur"></div>
+      <div class="intro-mission-slide"><img src="Images/mission/mission-4-pot-qr.jpg" alt="Ellemel-pot met QR-speurtocht op de deksel"></div>
+      <div class="intro-mission-slide"><img src="Images/mission/mission-3-crew-bandje.jpg" alt="Verdiend crew-bandje om de pols"></div>
+      <div class="intro-mission-slide"><img src="Images/mission/mission-1-scan-check-in.jpg" alt="Hand scant een Ellemel check-in tegel"></div>
+    </div>
   </div>
 </section>
 
@@ -1260,7 +1570,7 @@
         <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="faq-a">
-        <p>€5 voor de pot chocopasta, plus €3 statiegeld voor het glazen potje. Het statiegeld krijg je terug bij je volgende bestelling of storten we terug als je een keer stopt.</p>
+        <p>€5 voor de pot chocopasta, plus €3 statiegeld voor de glazen pot. Het statiegeld krijg je terug bij je volgende bestelling of storten we terug als je een keer stopt.</p>
       </div>
     </div>
     <div class="faq-item">
@@ -1457,6 +1767,9 @@
     // Substitute name slot
     $$('[data-name-slot]').forEach(el => { el.textContent = formData.voornaam || 'jij'; });
 
+    // Step 5 (aantal) — render stock-tags per kaart op basis van levering-info.
+    if (n === 5) updateAantalTags();
+
     // Pickup-only mode: rewrite step 5 + step 7 + confirm-row copy so the customer
     // sees ophaal-taal instead of bezorg-taal.
     const pickup = !!window.__pickupOnly;
@@ -1526,12 +1839,19 @@
         return true;
       }
       case 3: {
+        // Pickup-only mode already actief? Postcode is dan niet relevant — gebruiker
+        // haalt op bij ons adres. Skip format- en area-checks, ga gewoon door.
+        if (window.__pickupOnly) return true;
         const raw = $('#input-postcode').value.replace(/\s+/g, '').toUpperCase();
         if (!raw) { showError('Vul je postcode in.'); return false; }
-        if (!/^\d{4}[A-Z]{2}$/.test(raw)) {
+        // Als de 4-cijferige prefix al buiten ons bezorggebied valt, hoeven we geen volledige
+        // postcode-met-letters te eisen — switch direct naar pickup-mode.
+        const earlyPrefix = (raw.match(/^(\d{4})/) || [])[1];
+        const earlyOutOfArea = earlyPrefix && !ALLOWED_POSTCODES.includes(earlyPrefix);
+        if (!earlyOutOfArea && !/^\d{4}[A-Z]{2}$/.test(raw)) {
           showError('Vul een geldige NL postcode in, bv. 2032 VJ.'); return false;
         }
-        const prefix = raw.slice(0,4);
+        const prefix = earlyPrefix || raw.slice(0,4);
         if (!ALLOWED_POSTCODES.includes(prefix)) {
           // Out of area — auto-switch into pickup-only mode. Address fields swap to the pickup
           // point so the recap shows Ophaaladres, and nextStepAfter routes from step 3 → 5.
@@ -1719,7 +2039,7 @@
         : 'Wordt vers gemaakt, als niet binnen 4 weken geleverd wordt storten we je geld terug.';
     }
     return '<div class="levering-block">' +
-      '<strong>' + (pickup ? 'Ophalen' : 'Levering') + '</strong>' +
+      '<strong>' + (pickup ? 'Ophaaldatum' : 'Bezorgdatum') + '</strong>' +
       '<div class="delivery-info"><span class="status-dot ' + dot + '"></span><span>' + text + '</span></div>' +
     '</div>';
   }
@@ -1730,6 +2050,33 @@
       if (r.ok) return await r.json();
     } catch {}
     return null;
+  }
+  // Render "Op voorraad" / "Beschikbaar dd-m" badges per aantal-kaart (1 / 2 / 3) — dynamisch
+  // op basis van levering-info. Wordt aangeroepen wanneer step 5 wordt geprepareerd.
+  function fmtDayMonth(iso) {
+    if (!iso) return '';
+    const [, m, d] = String(iso).split('-');
+    if (!d || !m) return '';
+    return parseInt(d, 10) + '-' + parseInt(m, 10);
+  }
+  async function updateAantalTags() {
+    const cards = [1, 2, 3];
+    await Promise.all(cards.map(async (n) => {
+      const tag = document.querySelector('.card-tag[data-tag-for="' + n + '"]');
+      if (!tag) return;
+      const info = await loadLeveringInfo(n);
+      tag.classList.remove('stock', 'upcoming');
+      if (!info) { tag.hidden = true; tag.textContent = ''; return; }
+      if (info.in_stock) {
+        tag.classList.add('stock');
+        tag.textContent = 'Op voorraad';
+      } else {
+        tag.classList.add('upcoming');
+        const d = fmtDayMonth(info.delivery_date);
+        tag.textContent = d ? 'Beschikbaar ' + d : 'Binnen 4 weken';
+      }
+      tag.hidden = false;
+    }));
   }
 
   function fmtEuro(cents) {
@@ -1744,7 +2091,7 @@
     const contact = formData.kanaal === 'whatsapp' ? formData.telefoon : formData.email;
     const n = Math.max(1, parseInt(formData.aantal, 10) || 1);
     const potsTotal = n * 500; // €5.00 per pot in cents
-    const stat = n * 100;       // €1.00 statiegeld per pot
+    const stat = n * 300;       // €3.00 statiegeld per pot
     // Outstanding deposit credit from previous pots (admin reorder for an existing klant).
     // Per Michiel: show + apply the FULL credit, regardless of the new-order pot count.
     // The credit represents pots the klant still has out at home; it's the klant's money,
@@ -1752,7 +2099,7 @@
     const credit = (__adminMode === 'existing')
       ? Math.max(0, Number(formData.__statiegeld_credit) || 0)
       : 0;
-    const creditDeduction = credit * 100;
+    const creditDeduction = credit * 300; // €3 per outstanding pot
     const total = potsTotal + stat - creditDeduction;
     const creditLine = creditDeduction > 0
       ? '<div class="order-line"><span>Statiegeld crediet</span><span>−' + fmtEuro(creditDeduction) + '</span></div>'
@@ -1765,7 +2112,7 @@
     const pickup = !!window.__pickupOnly;
     const addrHeader = pickup ? 'Ophaaladres' : 'Bezorgadres';
     const baseHtml = (lev) =>
-      '<div class="order-line"><span>' + n + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(potsTotal) + '</span></div>' +
+      '<div class="order-line"><span>' + n + '× Ellemel pot 250g</span><span>' + fmtEuro(potsTotal) + '</span></div>' +
       '<div class="order-line"><span>Statiegeld (' + n + ' pot' + (n===1?'':'ten') + ')</span><span>' + fmtEuro(stat) + '</span></div>' +
       creditLine +
       '<div class="order-line total"><span>Totaal</span><span>' + fmtEuro(total) + '</span></div>' +
@@ -2081,7 +2428,7 @@
     if (!isRetry && shareBtn && !shareBtn.dataset.bound) {
       shareBtn.dataset.bound = '1';
       shareBtn.addEventListener('click', () => {
-        const msg = 'Hi, een paar kids uit de buurt maken zelf gezonde chocopasta. Ik heb net een pot besteld, ze komen het brengen aan de deur. Jullie ook? https://ellemelle.netlify.app/';
+        const msg = 'Hi, een paar kids uit de buurt maken zelf gezonde chocopasta. Ik heb net een pot besteld, ze komen het brengen aan de deur. Jullie ook? https://ellemel.nl/';
         const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
         window.open(url, '_blank', 'noopener');
       });
@@ -2094,9 +2441,9 @@
         const stad  = (data.postcode || '') + ' ' + (data.plaats || 'Haarlem');
         const contact = data.kanaal === 'whatsapp' ? data.telefoon : data.email;
         const sn = Math.max(1, parseInt(data.aantal, 10) || 1);
-        const sPots = sn * 500, sStat = sn * 100;
+        const sPots = sn * 500, sStat = sn * 300; // €3 statiegeld per pot
         const sCredit = Math.max(0, Number(data.statiegeld_credit) || 0);
-        const sCreditDed = sCredit * 100;
+        const sCreditDed = sCredit * 300; // €3 per outstanding pot
         const sTot = sPots + sStat - sCreditDed;
         const sCreditLine = sCreditDed > 0
           ? '<div class="order-line"><span>Statiegeld crediet</span><span>−' + fmtEuro(sCreditDed) + '</span></div>'
@@ -2109,7 +2456,7 @@
         const sPickup = String(data.pickup_only || '').toLowerCase() === 'true' || !!window.__pickupOnly;
         const sAddrHeader = sPickup ? 'Ophaaladres' : 'Bezorgadres';
         recap.innerHTML =
-          '<div class="order-line"><span>' + sn + '× ELLEMELLE pot 250g</span><span>' + fmtEuro(sPots) + '</span></div>' +
+          '<div class="order-line"><span>' + sn + '× Ellemel pot 250g</span><span>' + fmtEuro(sPots) + '</span></div>' +
           '<div class="order-line"><span>Statiegeld (' + sn + ' pot' + (sn===1?'':'ten') + ')</span><span>' + fmtEuro(sStat) + '</span></div>' +
           sCreditLine +
           '<div class="order-line total"><span>' + totalLbl + '</span><span>' + fmtEuro(sTot) + '</span></div>' +
@@ -2265,31 +2612,64 @@
   function updateBanner(info) {
     const dots = [document.getElementById('banner-dot'), document.getElementById('intro-dot')].filter(Boolean);
     const texts = [document.getElementById('counter-text'), document.getElementById('intro-levering-text')].filter(Boolean);
+    const introTitleEl = document.getElementById('intro-levering-title');
     if (dots.length === 0 || texts.length === 0) return;
-    dots.forEach(d => d.classList.remove('green', 'amber', 'lightblue'));
+    dots.forEach(d => d.classList.remove('green', 'amber', 'lightblue', 'red'));
     if (!info) {
       texts.forEach(t => t.textContent = 'Even kijken...');
+      if (introTitleEl) introTitleEl.textContent = 'Even kijken...';
+      return;
+    }
+    // Cache for click-time gating on the intro CTA
+    window.__leveringCached = info;
+    // Klantenstop wint: rode stip + uitleg, override mode-teksten
+    if (info.customer_stop) {
+      dots.forEach(d => d.classList.add('red'));
+      texts.forEach(t => {
+        if (t.id === 'intro-levering-text') {
+          t.textContent = 'Bestaande klanten hebben nu voorrang. Join de WhatsApp-groep voor updates.';
+        } else {
+          t.textContent = 'Klantenstop actief. Bestaande klanten hebben voorrang.';
+        }
+      });
+      if (introTitleEl) introTitleEl.textContent = 'Klantenstop actief';
       return;
     }
     const mode = info.mode || (info.in_stock ? 'stock' : (info.next_production_date ? 'production' : 'no_schedule'));
-    let cls, text;
+    // `text` = compacte regel voor de bovenbalk (banner-dot + counter-text).
+    // `title` + `sub` = tweeregel status voor de intro-kaart (kleine titel + grijze subtekst).
+    let cls, text, title, sub;
     if (mode === 'stock') {
       const stock = parseInt(info.stock_count, 10) || 0;
       cls = 'green';
       text = stock + ' pot' + (stock === 1 ? '' : 'ten') + ' op voorraad, komend weekend gebracht';
+      title = 'Op voorraad';
+      sub = stock + ' pot' + (stock === 1 ? '' : 'ten') + ' beschikbaar, komend weekend bezorgd';
     } else if (mode === 'production') {
       cls = 'amber';
       const prodTxt = fmtDayDateLong(info.next_production_date);
       const delTxt = info.delivery_date ? fmtDayDateLong(info.delivery_date) : '';
-      text = delTxt
-        ? 'Verse batch ' + prodTxt + ', thuis bezorgd op ' + delTxt
-        : 'Verse batch ' + prodTxt + ', bezorging binnen 2 weken';
+      text = 'Nog even geduld, de volgende batch wordt gemaakt op ' + prodTxt;
+      title = 'Beschikbaarheid';
+      sub = delTxt
+        ? 'Nog even geduld, de volgende batch wordt gemaakt op ' + prodTxt + '. Uiterlijk ' + delTxt + ' bij je thuis of af te halen in de Potgieterbuurt.'
+        : 'Nog even geduld, de volgende batch wordt gemaakt op ' + prodTxt + '.';
     } else {
       cls = 'lightblue';
-      text = 'Binnenkort verse batch, binnen 4 weken bezorgd';
+      text = 'Nog even geduld, de volgende batch wordt binnenkort gemaakt';
+      title = 'Beschikbaarheid';
+      sub = 'Nog even geduld, de volgende batch wordt binnenkort gemaakt. Binnen 4 weken bij je thuis of af te halen in de Potgieterbuurt.';
     }
     dots.forEach(d => d.classList.add(cls));
-    texts.forEach(t => t.textContent = text);
+    texts.forEach(t => {
+      // Alleen de intro-subregel krijgt de grijze specifics; counter-text houdt de één-regel-versie.
+      if (t.id === 'intro-levering-text') {
+        t.textContent = sub;
+      } else {
+        t.textContent = text;
+      }
+    });
+    if (introTitleEl) introTitleEl.textContent = title;
   }
 
   async function loadConfig() {
@@ -2578,59 +2958,53 @@
       showStep(9);
       setTimeout(burstConfetti, 200);
       try { history.replaceState({}, '', location.pathname); } catch {}
-    } else if (saved && saved.data && saved.step >= 1 && saved.step <= TOTAL_STEPS) {
-      // Returning visitor with progress → jump to saved step (not intro)
-      Object.assign(formData, saved.data);
-      // Hydrate inputs
-      Object.entries(FIELD_MAP).forEach(([id, key]) => {
-        const el = document.getElementById(id);
-        if (el && formData[key]) el.value = formData[key];
-      });
-      // Hydrate postcode formatted
-      const pcEl = document.getElementById('input-postcode');
-      if (pcEl && formData.postcode) {
-        const v = formData.postcode.replace(/\s+/g,'').toUpperCase();
-        pcEl.value = v.length > 4 ? v.slice(0,4) + ' ' + v.slice(4) : v;
-      }
-      // Hydrate kanaal selection (highlight matching kanaal-card + enable button)
-      if (formData.kanaal) {
-        $$('.kanaal-card[data-kanaal]').forEach(c => {
-          c.classList.toggle('selected', c.dataset.kanaal === formData.kanaal); c.style.borderColor = '';
-        });
-        const kb = document.getElementById('kanaal-next');
-        if (kb) kb.disabled = false;
-      }
-      // Hydrate methode selection — keeps the methode card highlighted + restores __pickupOnly
-      // when the visitor lands back mid-flow.
-      if (formData.methode) {
-        $$('.kanaal-card[data-methode]').forEach(c => {
-          c.classList.toggle('selected', c.dataset.methode === formData.methode); c.style.borderColor = '';
-        });
-        const mb = document.getElementById('methode-next');
-        if (mb) mb.disabled = false;
-        window.__pickupOnly = (formData.methode === 'ophalen');
-      }
-      // Hydrate aantal selection
-      if (formData.aantal) {
-        $$('.aantal-card').forEach(c => {
-          c.classList.toggle('selected', parseInt(c.dataset.aantal, 10) === formData.aantal);
-        });
-      }
-      // Jump to saved step (prepare + show)
-      currentStep = saved.step;
-      prepareStep(currentStep);
-      showStep(currentStep);
-      // If on the address step, trigger a lookup so the preview re-populates
-      if (currentStep === 4 && formData.postcode && formData.huisnummer) {
-        setTimeout(() => { lastLookup = ''; lookupAddress(); }, 200);
-      }
     } else {
+      // Hydrate eerder ingevulde form-data uit localStorage (stil), zodat als de bezoeker via stap 0
+      // doorklikt naar stap 1 hun naam etc. al weer ingevuld staat. We jumpen NIET meer naar de
+      // opgeslagen stap — een link openen op ellemel.nl moet altijd home (= stap 0) tonen. De
+      // bezoeker kan zelf doorklikken via de "Ja, ik wil 'em" knop.
+      if (saved && saved.data) {
+        Object.assign(formData, saved.data);
+        Object.entries(FIELD_MAP).forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el && formData[key]) el.value = formData[key];
+        });
+        const pcEl = document.getElementById('input-postcode');
+        if (pcEl && formData.postcode) {
+          const v = formData.postcode.replace(/\s+/g,'').toUpperCase();
+          pcEl.value = v.length > 4 ? v.slice(0,4) + ' ' + v.slice(4) : v;
+        }
+        if (formData.kanaal) {
+          $$('.kanaal-card[data-kanaal]').forEach(c => {
+            c.classList.toggle('selected', c.dataset.kanaal === formData.kanaal); c.style.borderColor = '';
+          });
+          const kb = document.getElementById('kanaal-next');
+          if (kb) kb.disabled = false;
+        }
+        if (formData.methode) {
+          $$('.kanaal-card[data-methode]').forEach(c => {
+            c.classList.toggle('selected', c.dataset.methode === formData.methode); c.style.borderColor = '';
+          });
+          const mb = document.getElementById('methode-next');
+          if (mb) mb.disabled = false;
+          window.__pickupOnly = (formData.methode === 'ophalen');
+        }
+        if (formData.aantal) {
+          $$('.aantal-card').forEach(c => {
+            c.classList.toggle('selected', parseInt(c.dataset.aantal, 10) === formData.aantal);
+          });
+        }
+      }
       // Check query params: ?start=admin → show customer picker; ?start=1 → jump to step 1
       const params = new URLSearchParams(location.search);
       if (params.get('start') === 'admin') {
         showAdminPicker();
         try { history.replaceState({}, '', location.pathname); } catch {}
       } else if (params.get('start') === '1') {
+        // Wanneer we vanuit een admin-iframe (embed) een fresh "Nieuwe klant" flow openen,
+        // moet de admin-variant getoond worden (QR i.p.v. iDEAL knop op step 8). Public sessies
+        // op /?start=1 blijven gewone klant-flow.
+        if (window.__isEmbed) __adminMode = 'new';
         currentStep = 1;
         prepareStep(1);
         showStep(1);
@@ -2676,7 +3050,7 @@
       qrFrame.innerHTML = '';
       try {
         new QRCode(qrFrame, {
-          text: 'https://ellemelle.netlify.app/',
+          text: 'https://ellemel.nl/',
           width: 480, height: 480,
           colorDark: '#000000', colorLight: '#FFFFFF',
           correctLevel: QRCode.CorrectLevel.M
@@ -2719,8 +3093,8 @@
     // Share button — Web Share API with clipboard fallback
     const shareBtn = document.getElementById('admin-share-btn');
     async function doAdminShare() {
-      const url = 'https://ellemelle.netlify.app/';
-      const title = 'ELLEMELLE chocopasta — bestel jouw pot';
+      const url = 'https://ellemel.nl/';
+      const title = 'Ellemel chocopasta — bestel jouw pot';
       const text = 'Verse chocopasta gemaakt door Ellis en Melle. Bestel jouw pot!';
       if (navigator.share) {
         try { await navigator.share({ url, title, text }); return; } catch (e) { /* user cancelled */ return; }
@@ -2814,8 +3188,70 @@
 
     // Refresh counter every 30s
     setInterval(loadBanner, 30000);
+
+    // --- Tile-scan notice: show when visitor arrived via ?from_tile=T01 ---
+    try {
+      const fromTile = new URLSearchParams(location.search).get('from_tile');
+      if (fromTile) {
+        const notice = document.getElementById('tile-scan-notice');
+        const closeBtn = document.getElementById('tile-scan-close');
+        if (notice) notice.hidden = false;
+        if (closeBtn) closeBtn.addEventListener('click', () => { if (notice) notice.hidden = true; });
+      }
+    } catch {}
+
+    // --- Klantenstop drawer: intercept intro-CTA and hero-click when active ---
+    const stopBackdrop = document.getElementById('stop-drawer-backdrop');
+    const stopDrawer = document.getElementById('stop-drawer');
+    const stopWaBtn = document.getElementById('stop-wa-btn');
+    const stopCancelBtn = document.getElementById('stop-cancel-btn');
+    // Hardcoded WhatsApp-groep invite (placeholder — vervang bij launch)
+    const STOP_WA_URL = 'https://chat.whatsapp.com/PLACEHOLDER';
+    function openStopDrawer() {
+      if (stopWaBtn) {
+        stopWaBtn.href = STOP_WA_URL;
+        stopWaBtn.textContent = 'Krijg WhatsApp-melding';
+        stopWaBtn.style.display = 'block';
+      }
+      if (stopBackdrop) stopBackdrop.classList.add('open');
+      if (stopDrawer) stopDrawer.classList.add('open');
+    }
+    function closeStopDrawer() {
+      if (stopBackdrop) stopBackdrop.classList.remove('open');
+      if (stopDrawer) stopDrawer.classList.remove('open');
+    }
+    if (stopBackdrop) stopBackdrop.addEventListener('click', closeStopDrawer);
+    if (stopCancelBtn) stopCancelBtn.addEventListener('click', closeStopDrawer);
+    // Capture-phase interception on the intro CTA and product-hero so we run BEFORE data-next handlers
+    const introCta = document.getElementById('intro-cta');
+    const productHero = document.querySelector('.product-hero');
+    function stopIfActive(e) {
+      // Admin/embed flows (existing-customer reorder, admin new order) mogen ALTIJD door.
+      if (window.__isEmbed || __adminMode) return;
+      const info = window.__leveringCached;
+      if (info && info.customer_stop) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        openStopDrawer();
+      }
+    }
+    if (introCta) introCta.addEventListener('click', stopIfActive, true);
+    if (productHero) productHero.addEventListener('click', stopIfActive, true);
   });
 })();
 </script>
+
+<!-- Klantenstop bottom drawer (shown when admin heeft klantenstop actief en bezoeker klikt Bestel-CTA) -->
+<div class="stop-drawer-backdrop" id="stop-drawer-backdrop" aria-hidden="true"></div>
+<div class="stop-drawer" id="stop-drawer" role="dialog" aria-modal="true" aria-labelledby="stop-drawer-title">
+  <div class="drawer-handle"></div>
+  <h2 id="stop-drawer-title">Het gaat hard! We hebben tijdelijk een klantenstop</h2>
+  <p>Bestaande klanten hebben nu voorrang. Sluit je aan bij onze WhatsApp-groep. Daar melden we wanneer we weer nieuwe klanten aannemen.</p>
+  <div class="stop-actions">
+    <a class="btn-primary" id="stop-wa-btn" href="#" target="_blank" rel="noopener">Krijg WhatsApp-melding</a>
+    <button class="btn-outline" id="stop-cancel-btn" type="button">Sluiten</button>
+  </div>
+</div>
 </body>
 </html>

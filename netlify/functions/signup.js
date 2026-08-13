@@ -9,7 +9,7 @@
 //
 // Optional:
 //   RESEND_API_KEY            — if set, sends a confirmation e-mail
-//   RESEND_FROM               — default: 'ELLEMELLE <onboarding@resend.dev>'
+//   RESEND_FROM               — default: 'Ellemel <onboarding@resend.dev>'
 
 exports.handler = async (event) => {
   const headers = { 'Content-Type': 'application/json' };
@@ -85,13 +85,13 @@ exports.handler = async (event) => {
 };
 
 async function sendConfirmationMail(p) {
-  const from = process.env.RESEND_FROM || 'ELLEMELLE <onboarding@resend.dev>';
-  const subject = `Yes ${p.voornaam}, je staat op de ELLEMELLE lijst 🎉`;
+  const from = process.env.RESEND_FROM || 'Ellemel <onboarding@resend.dev>';
+  const subject = `Yes ${p.voornaam}, je staat op de Ellemel lijst 🎉`;
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#1A1A1A;">
-      <h1 style="color:#D9301E;font-family:Impact,sans-serif;letter-spacing:1px;">ELLEMELLE</h1>
+      <h1 style="color:#D9301E;font-family:Impact,sans-serif;letter-spacing:1px;">Ellemel</h1>
       <p>Hoi ${escapeHtml(p.voornaam)},</p>
-      <p>Yes! Je staat op de lijst voor één pot ambachtelijke ELLEMELLE chocopasta.</p>
+      <p>Yes! Je staat op de lijst voor één pot ambachtelijke Ellemel chocopasta.</p>
       <p>
         <strong>Bezorgadres</strong><br>
         ${escapeHtml(p.straat)} ${escapeHtml(p.huisnummer)}${p.toevoeging ? '-'+escapeHtml(p.toevoeging) : ''}<br>

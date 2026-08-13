@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#D9301E">
-<title>ELLEMELLE — voorraad</title>
+<title>ELLEMELLE — potten</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
@@ -87,7 +87,7 @@
     margin-bottom: 6px;
   }
   .stats { color: #666; font-size: 13px; text-align: left; margin: 0 0 14px; font-weight: 500; }
-  .progress-text { color: var(--red-dark); font-size: 13px; font-weight: 700; text-align: left; letter-spacing: 0.4px; text-transform: uppercase; opacity: 0.55; margin-bottom: 6px; display: block; }
+  .progress-text { color: #666; font-size: 13px; font-weight: 700; text-align: left; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 6px; display: block; }
 
   /* Top bar */
   .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
@@ -100,16 +100,50 @@
   /* Pot grid */
   .pot-grid {
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
-    margin-top: 14px;
+    margin-top: 10px;
   }
+  .pot-section { margin-top: 22px; }
+  .pot-section:first-of-type { margin-top: 18px; }
+  .section-eyebrow { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 10px; }
   .pot-card {
     background: var(--white); border: 1px solid rgba(0,0,0,0.08);
     border-radius: var(--radius-md); padding: 12px 14px;
     cursor: pointer; text-align: left;
     -webkit-tap-highlight-color: transparent;
     transition: transform 90ms;
+    /* Prevent the native long-press text-selection + iOS callout popup on the tile,
+       so a long-press cleanly maps to our multi-select toggle. */
+    user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .pot-card * { user-select: none; -webkit-user-select: none; }
+  .pot-card img {
+    pointer-events: none; user-drag: none; -webkit-user-drag: none;
   }
   .pot-card:active { transform: scale(0.98); }
+  /* Batch-select state: 2px red outline + red check badge in the top-right corner. */
+  .pot-card { position: relative; }
+  .pot-card.selected { outline: 2px solid var(--red); outline-offset: -2px; }
+  .pot-card.selected::after {
+    content: '✓'; position: absolute; top: 6px; right: 8px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    font-size: 13px; line-height: 22px; text-align: center; font-weight: 700;
+  }
+  /* Filter row with batch-edit button to its right. */
+  .filter-row { display: flex; align-items: stretch; gap: 10px; }
+  .filter-row select { flex: 1; min-width: 0; }
+  .batch-edit-btn {
+    flex: 0 0 56px; width: 56px; min-height: 56px;
+    background: var(--red); color: var(--white);
+    border: none; border-radius: var(--radius-md);
+    cursor: pointer; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-cta);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .batch-edit-btn[hidden] { display: none; }
+  .batch-edit-btn svg { width: 22px; height: 22px; display: block; }
   .pot-card .pid { font-weight: 700; font-size: 15px; color: var(--black); }
   .pot-card .badge {
     display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 999px;
@@ -120,6 +154,8 @@
   .badge.voorraad      { background: rgba(31,157,85,0.12); color: var(--green); }
   .badge.delivered     { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .badge.returned      { background: rgba(139,26,14,0.08); color: var(--red-dark); }
+  .badge.pickup-requested,
+  .badge.pickup-with-reorder { background: rgba(240,173,0,0.16); color: #a06c00; }
   .pot-card .meta { color: #888; font-size: 11px; margin-top: 6px; line-height: 1.3; }
 
   /* Bottom sheet drawer */
@@ -130,7 +166,7 @@
   .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
   .drawer {
     position: fixed; left: 0; right: 0; bottom: 0;
-    background: var(--white); border-radius: 18px 18px 0 0;
+    background: var(--cream); border-radius: 18px 18px 0 0;
     padding: 24px 20px calc(28px + env(safe-area-inset-bottom));
     transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
     z-index: 100; max-height: 86dvh; overflow-y: auto;
@@ -226,6 +262,7 @@
   body.on-login #login-view input { text-align: left; }
   body.on-login #login-view input::placeholder { text-align: left; }
   body.on-login #login-view .btn-primary { margin-top: 14px; }
+  body.on-login .fab, body.on-login #fab-add, body.on-login #fab-scan { display: none !important; }
   body.on-login .login-hero {
     width: 240px; max-width: 70vw; margin: 4px auto 18px; display: block;
     animation: wiggle 2.6s ease-in-out infinite;
@@ -247,7 +284,7 @@
 
   /* Floating + FAB */
   .fab {
-    position: fixed; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom));
+    position: fixed !important; right: 22px !important; bottom: calc(22px + env(safe-area-inset-bottom));
     width: 56px; height: 56px; border-radius: 50%;
     background: var(--white); color: var(--red);
     border: none; cursor: pointer;
@@ -310,6 +347,8 @@
   .pot-transition { display: grid; grid-template-columns: 1fr 36px 1fr; align-items: center; gap: 10px; margin: 14px 0 6px; }
   .pot-transition img { width: 100%; max-width: 140px; height: 120px; object-fit: contain; margin: 0 auto; display: block; mix-blend-mode: multiply; }
   .pot-transition .arrow { color: var(--red); font-size: 22px; font-weight: 700; text-align: center; line-height: 1; }
+
+
 
 </style>
 <script>
@@ -389,6 +428,7 @@
     opacity: 0; cursor: pointer;
   }
 
+
 </style>
 <link rel="manifest" href="/admin-manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -397,6 +437,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-touch-icon-152.png">
 <link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/apple-touch-icon-167.png">
+<script src="/assets/notifications.js" defer></script>
+<script src="/assets/settings.js?v=3" defer></script>
 </head>
 <body>
 
@@ -404,12 +446,16 @@
 <div class="menu-backdrop" id="menu-backdrop"></div>
 <div class="menu-panel" id="menu-panel">
   <div class="drawer-handle"></div>
-  <a href="/koken">Koken</a>
-  <a href="/voorraad">Voorraad</a>
-  <a href="/bezorger">Bezorgen</a>
   <a href="/bestellingen">Bestellingen</a>
-  <button class="btn-outline" id="push-toggle-btn" type="button" style="margin-bottom: 10px;">🔔 Schakel meldingen in</button>
-  <button class="btn-outline menu-logout-btn" id="menu-logout" type="button">Uitloggen</button>
+  <a href="/koken">Koken</a>
+  <a href="/voorraad">Potten</a>
+  <a href="/bezorger">Bezorgen</a>
+  <a href="/game/POT-001?password=100knuffels&game_id=quest-1-hazelnoten">Speurtocht</a>
+</div>
+<!-- Hidden fallback controls — settings page delegates to these so the underlying push + session logic stays untouched. -->
+<div style="display: none;">
+  <button id="push-toggle-btn" type="button">🔔 Schakel meldingen in</button>
+  <button id="menu-logout" type="button">Uitloggen</button>
 </div>
 
 <main id="app">
@@ -429,8 +475,8 @@
   <section id="main-view">
     <div class="topbar" style="align-items: flex-start;">
       <div style="flex: 1; min-width: 0;">
-        <span class="progress-text" id="stock-stats">0 potten op voorraad</span>
-        <h1 class="step-question" style="margin-bottom: 0;">Voorraad</h1>
+        <span class="progress-text" id="stock-stats">Geen voorraad</span>
+        <h1 class="step-question" style="margin-bottom: 0;">Potten</h1>
       </div>
       <button class="menu-btn" id="menu-open" aria-label="Menu" type="button" style="color: var(--black);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -441,7 +487,7 @@
       </button>
     </div>
 
-    <div class="field" style="margin-top: 14px;">
+    <div class="field filter-row" style="margin-top: 14px;">
       <select id="filter-select">
         <option value="all">Filter</option>
         <option value="voorraad">Gevuld</option>
@@ -449,6 +495,13 @@
         <option value="returned">Retour</option>
         <option value="available">Leeg</option>
       </select>
+      <!-- Batch edit button: visible once one or more tiles are selected. -->
+      <button type="button" id="batch-edit-btn" class="batch-edit-btn" hidden aria-label="Bewerk geselecteerde potten">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
+        </svg>
+      </button>
     </div>
 
     <button class="btn-outline" id="scan-btn" type="button" style="margin-top: 14px;">Pot in voorraad zetten</button>
@@ -461,11 +514,53 @@
       <button class="btn-outline" id="scan-cancel" type="button">Annuleer</button>
     </div>
 
-    <div class="pot-grid" id="pot-grid"></div>
+    <div id="pot-section-voorraad" class="pot-section" hidden>
+      <div class="section-eyebrow">Voorraad</div>
+      <div class="pot-grid" id="pot-grid-voorraad"></div>
+    </div>
+    <div id="pot-section-ophalen" class="pot-section" hidden>
+      <div class="section-eyebrow">Ophalen</div>
+      <div class="pot-grid" id="pot-grid-ophalen"></div>
+    </div>
+    <div id="pot-section-bezorgd" class="pot-section" hidden>
+      <div class="section-eyebrow">Bezorgd</div>
+      <div class="pot-grid" id="pot-grid-bezorgd"></div>
+    </div>
+    <div id="pot-section-retour" class="pot-section" hidden>
+      <div class="section-eyebrow">Retour</div>
+      <div class="pot-grid" id="pot-grid-retour"></div>
+    </div>
+    <div id="pot-section-leeg" class="pot-section" hidden>
+      <div class="section-eyebrow">Leeg</div>
+      <div class="pot-grid" id="pot-grid-leeg"></div>
+    </div>
+    <div id="pot-empty" class="stats" hidden>Geen pots in deze filter.</div>
   </section>
 </main>
 
 <!-- Pot tap drawer is provided by the shared scan-FAB module (assets/scan-fab.js). -->
+
+<!-- Batch-edit drawer: bulk-update or delete the currently selected pots. -->
+<div class="drawer-backdrop" id="batch-drawer-backdrop"></div>
+<div class="drawer" id="batch-drawer" role="dialog" aria-modal="true" aria-labelledby="batch-drawer-title">
+  <div class="drawer-handle"></div>
+  <h2 id="batch-drawer-title">Wat wil je doen?</h2>
+  <div class="sub">Kies een actie voor de geselecteerde potten.</div>
+  <div style="display:grid; gap:8px; margin-top: 6px;">
+    <button class="btn-outline" id="batch-fill-btn" type="button" style="margin-top:0;">Update naar gevuld</button>
+    <button class="btn-outline" id="batch-empty-btn" type="button" style="margin-top:0;">Update naar leeg</button>
+    <button class="btn-outline" id="batch-delete-btn" type="button" style="margin-top:0;">Verwijderen</button>
+  </div>
+
+  <!-- Games sectie — koppel een loyaliteits-speurtocht aan deze pot(ten). -->
+  <div style="margin-top: 22px; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 16px;">
+    <div class="actions-label">Games</div>
+    <select id="batch-game-select" style="margin-top: 6px;">
+      <option value="">Geen game</option>
+    </select>
+    <button class="btn-primary" id="batch-game-save-btn" type="button" style="margin-top: 10px;">Bewaar game</button>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -475,14 +570,16 @@
   const $ = sel => document.querySelector(sel);
   const STORAGE_KEY = 'ellemelle_admin_session_v1'; // shared with /bezorger
   const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
-  const STATE = { password: null, pots: [], config: { next_production_date: null }, currentPot: null, qrScanner: null };
+  const STATE = { password: null, pots: [], config: { next_production_date: null }, currentPot: null, qrScanner: null, selected: new Set() };
 
   const STATUS_LABELS = {
-    uninitialized: 'Niet geseed',
-    available:     'Leeg',
-    voorraad:      'Gevuld',
-    delivered:     'Bezorgd',
-    returned:      'Retour',
+    uninitialized:         'Niet geseed',
+    available:             'Leeg',
+    voorraad:              'Gevuld',
+    delivered:             'Bezorgd',
+    returned:              'Retour',
+    'pickup-requested':    'Ophalen',
+    'pickup-with-reorder': 'Ophalen',
   };
   function potImageFor(status) {
     // Gevulde pot met etiket
@@ -661,21 +758,41 @@
     if (!res.ok) { showToast(res.data.error || 'Laden mislukt', 'error'); return; }
     STATE.pots = res.data.pots || [];
     STATE.config = res.data.config || { next_production_date: null };
-    $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
+    $('#stock-stats').textContent = res.data.stock_count === 0 ? 'Geen voorraad' : `${res.data.stock_count} POTTEN OP VOORRAAD`;
     renderGrid();
   }
 
+  // Bucket a pot's raw status into one of the visible sections.
+  function sectionFor(status) {
+    if (status === 'voorraad') return 'voorraad';
+    if (status === 'pickup-requested' || status === 'pickup-with-reorder') return 'ophalen';
+    if (status === 'delivered') return 'bezorgd';
+    if (status === 'returned') return 'retour';
+    return 'leeg'; // uninitialized + available
+  }
+
   function renderGrid() {
-    const grid = $('#pot-grid');
     const filter = $('#filter-select').value;
-    grid.innerHTML = '';
     const pots = filter === 'all'
       ? STATE.pots
       : STATE.pots.filter(p => (p.status || 'uninitialized') === filter);
+    // Reset all 5 grids + section visibility.
+    const SECTIONS = ['voorraad', 'ophalen', 'bezorgd', 'retour', 'leeg'];
+    const grids = {};
+    SECTIONS.forEach(k => {
+      const g = document.getElementById('pot-grid-' + k);
+      if (g) { g.innerHTML = ''; grids[k] = g; }
+      const s = document.getElementById('pot-section-' + k);
+      if (s) s.hidden = true;
+    });
+    const emptyMsg = document.getElementById('pot-empty');
+    if (emptyMsg) emptyMsg.hidden = true;
     if (pots.length === 0) {
-      grid.innerHTML = '<div class="stats" style="grid-column: 1 / -1;">Geen pots in deze filter.</div>';
+      if (emptyMsg) emptyMsg.hidden = false;
       return;
     }
+    // Legacy alias so the tile-builder can keep using the old variable name.
+    const grid = grids.leeg; // fallback if bucket unknown — should never fire in practice
     pots.forEach(p => {
       const status = p.status || 'uninitialized';
       const card = document.createElement('button');
@@ -687,7 +804,8 @@
         const e = expiryText(p.expiry_date);
         meta = e.text;
         metaExpired = e.expired;
-      } else if (status === 'delivered' && p.customer && p.customer.voornaam) {
+      } else if ((status === 'delivered' || status === 'pickup-requested' || status === 'pickup-with-reorder')
+                 && p.customer && p.customer.voornaam) {
         // Show klant voornaam — cleaner than raw order id
         meta = p.customer.voornaam;
       }
@@ -698,19 +816,56 @@
         <div class="badge ${status}">${STATUS_LABELS[status] || status}</div>
         ${meta ? `<div class="meta"${metaExpired ? ' style="color: var(--red);"' : ''}>${meta}</div>` : ''}
       `;
-      card.addEventListener('click', () => {
-        // Tap on a delivered pot tile → jump straight to the linked bestelling page.
-        // Faster than going through the drawer when admin just wants to inspect/edit the order.
-        if (p.status === 'delivered' && p.order_id) {
-          window.location.href = '/bestelling/' + p.order_id;
+      // Reflect current selection state in the rendered tile.
+      if (STATE.selected.has(p.id)) card.classList.add('selected');
+      // Long-press → toggle selection. Plain tap → open the scan-FAB drawer (default behavior).
+      // Two state flags coordinate touch/mouse handling without firing both on long-press.
+      let __pressTimer = null;
+      let __longPressed = false;
+      const LONG_PRESS_MS = 450;
+      const startPress = () => {
+        __longPressed = false;
+        __pressTimer = setTimeout(() => {
+          __longPressed = true;
+          if (STATE.selected.has(p.id)) STATE.selected.delete(p.id);
+          else STATE.selected.add(p.id);
+          card.classList.toggle('selected', STATE.selected.has(p.id));
+          updateBatchEditButton();
+          // Haptic nudge on supported devices to confirm the long-press selection.
+          if (navigator.vibrate) try { navigator.vibrate(15); } catch {}
+        }, LONG_PRESS_MS);
+      };
+      const cancelPress = () => { if (__pressTimer) { clearTimeout(__pressTimer); __pressTimer = null; } };
+      card.addEventListener('touchstart', startPress, { passive: true });
+      card.addEventListener('touchend',   cancelPress, { passive: true });
+      card.addEventListener('touchcancel', cancelPress, { passive: true });
+      card.addEventListener('touchmove',  cancelPress, { passive: true });
+      card.addEventListener('mousedown', startPress);
+      card.addEventListener('mouseup',   cancelPress);
+      card.addEventListener('mouseleave', cancelPress);
+      // Suppress the synthetic click that fires after a long-press selection.
+      card.addEventListener('click', (e) => {
+        if (__longPressed) { e.preventDefault(); e.stopImmediatePropagation(); __longPressed = false; return; }
+        // If something is already in the selection set, treat plain tap as "toggle this one too"
+        // — feels more natural than mixing tap-opens-drawer with long-press-selects mid-flow.
+        if (STATE.selected.size > 0) {
+          if (STATE.selected.has(p.id)) STATE.selected.delete(p.id);
+          else STATE.selected.add(p.id);
+          card.classList.toggle('selected', STATE.selected.has(p.id));
+          updateBatchEditButton();
           return;
         }
-        // All other statuses: open the shared state-aware scan-FAB drawer.
+        // Default: open the shared scan-FAB drawer for this pot.
         if (window.__sfb && typeof window.__sfb.handlePotScan === 'function') {
           window.__sfb.handlePotScan(p.id);
         }
       });
-      grid.appendChild(card);
+      // Route the card to its section grid (falls back to Leeg if bucket unknown).
+      const bucket = sectionFor(status);
+      const target = grids[bucket] || grid;
+      target.appendChild(card);
+      const sec = document.getElementById('pot-section-' + bucket);
+      if (sec) sec.hidden = false;
     });
   }
 
@@ -729,13 +884,19 @@
       if (!m) return;
       playScanSuccess();
       const potId = m[0].toUpperCase();
-      // immediately set to voorraad with today as production date
+      stopScan();
+      // Try to put the pot in voorraad with today as production date.
+      // If the pot can't go into voorraad (delivered/returned/pickup), fall back
+      // to opening the shared admin drawer so the user sees what to do.
       const res = await api('voorraad-set-pot', { pot_id: potId, status: 'voorraad', production_date: todayISO() });
       if (res.ok) {
         showToast(`${potId} in voorraad (vandaag geproduceerd)`, 'success');
         await refresh();
+      } else if (window.__sfb && typeof window.__sfb.handlePotScan === 'function') {
+        // Open the admin drawer for this pot — it adapts to delivered/returned/etc.
+        window.__sfb.handlePotScan(potId);
       } else {
-        showToast(res.data.error || 'Mislukt', 'error');
+        showToast((res.data && res.data.error) || 'Mislukt', 'error');
       }
     }, { highlightScanRegion: true, returnDetailedScanResult: true });
     try { await STATE.qrScanner.start(); }
@@ -766,16 +927,152 @@
       });
       STATE.pots = res.data.pots || [];
       STATE.config = res.data.config || {};
-      $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
+      $('#stock-stats').textContent = res.data.stock_count === 0 ? 'Geen voorraad' : `${res.data.stock_count} POTTEN OP VOORRAAD`;
       renderGrid();
       $('#login-view').hidden = true; document.body.classList.remove('on-login');
       $('#main-view').hidden = false;
+      initTopbarButtons();
     } else {
       $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
     }
   });
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
   $('#filter-select').addEventListener('change', renderGrid);
+
+  // --- Batch-edit (multi-select potten) ---
+  function updateBatchEditButton() {
+    const btn = document.getElementById('batch-edit-btn');
+    if (!btn) return;
+    btn.hidden = STATE.selected.size === 0;
+  }
+  async function openBatchDrawer() {
+    const n = STATE.selected.size;
+    if (n === 0) return;
+    document.getElementById('batch-drawer-title').textContent = n + ' pot' + (n === 1 ? '' : 'ten') + ' geselecteerd, wat wil je doen?';
+    document.getElementById('batch-delete-btn').textContent = n + ' pot' + (n === 1 ? '' : 'ten') + ' verwijderen';
+    document.getElementById('batch-drawer-backdrop').classList.add('open');
+    document.getElementById('batch-drawer').classList.add('open');
+    // Games dropdown vullen
+    await ensureGamesLoaded();
+    // Default: huidige game van de eerste geselecteerde pot (als alle hetzelfde, anders 'Geen game')
+    const ids = Array.from(STATE.selected);
+    const games = new Set(ids.map(id => {
+      const p = STATE.pots.find(x => x.id === id);
+      return p && p.game_id ? p.game_id : '';
+    }));
+    const sel = document.getElementById('batch-game-select');
+    sel.value = (games.size === 1) ? [...games][0] : '';
+  }
+  let __gamesLoaded = false;
+  async function ensureGamesLoaded() {
+    if (__gamesLoaded) return;
+    try {
+      const r = await api('games-list');
+      if (r.ok && Array.isArray(r.data.games)) {
+        const sel = document.getElementById('batch-game-select');
+        // Wis bestaande extra opties (behalve "Geen game")
+        sel.innerHTML = '<option value="">Geen game</option>';
+        r.data.games.forEach(g => {
+          const o = document.createElement('option');
+          o.value = g.id; o.textContent = g.name;
+          sel.appendChild(o);
+        });
+        __gamesLoaded = true;
+      }
+    } catch {}
+  }
+  function closeBatchDrawer() {
+    document.getElementById('batch-drawer-backdrop').classList.remove('open');
+    document.getElementById('batch-drawer').classList.remove('open');
+  }
+  function clearSelection() {
+    STATE.selected.clear();
+    updateBatchEditButton();
+    document.querySelectorAll('.pot-card.selected').forEach(c => c.classList.remove('selected'));
+  }
+  async function runBatch(actionLabel, perPotApi) {
+    const ids = Array.from(STATE.selected);
+    if (ids.length === 0) return;
+    closeBatchDrawer();
+    let okCount = 0, failCount = 0;
+    for (const id of ids) {
+      try {
+        const res = await perPotApi(id);
+        if (res && res.ok) okCount++; else failCount++;
+      } catch { failCount++; }
+    }
+    showToast(actionLabel + ': ' + okCount + ' ok' + (failCount ? ', ' + failCount + ' mislukt' : ''), failCount ? 'error' : 'success');
+    clearSelection();
+    await refresh();
+  }
+  document.getElementById('batch-edit-btn').addEventListener('click', openBatchDrawer);
+  document.getElementById('batch-drawer-backdrop').addEventListener('click', closeBatchDrawer);
+  // Stock updates only touch pots that are in an updateable lifecycle state:
+  // nieuw (uninitialized), gevuld (voorraad), of leeg (available). Anything else
+  // (delivered/returned/pickup-*) wordt stilzwijgend overgeslagen.
+  const STOCK_UPDATE_STATUSES = new Set(['uninitialized', 'voorraad', 'available']);
+  function filterUpdatableSelection() {
+    const ids = Array.from(STATE.selected);
+    const byId = new Map(STATE.pots.map(p => [p.id, p.status || 'uninitialized']));
+    const ok = [];
+    let skipped = 0;
+    for (const id of ids) {
+      if (STOCK_UPDATE_STATUSES.has(byId.get(id))) ok.push(id);
+      else skipped++;
+    }
+    return { ok, skipped };
+  }
+  async function runBatchUpdatable(actionLabel, perPotApi) {
+    const { ok, skipped } = filterUpdatableSelection();
+    if (ok.length === 0) {
+      closeBatchDrawer();
+      showToast('Geen potten met status nieuw/vol/leeg geselecteerd', 'error');
+      return;
+    }
+    closeBatchDrawer();
+    let okCount = 0, failCount = 0;
+    for (const id of ok) {
+      try { const res = await perPotApi(id); if (res && res.ok) okCount++; else failCount++; }
+      catch { failCount++; }
+    }
+    const skipSuffix = skipped ? ', ' + skipped + ' overgeslagen' : '';
+    showToast(actionLabel + ': ' + okCount + ' ok' + (failCount ? ', ' + failCount + ' mislukt' : '') + skipSuffix, failCount ? 'error' : 'success');
+    clearSelection();
+    await refresh();
+  }
+  document.getElementById('batch-fill-btn').addEventListener('click', () => {
+    runBatchUpdatable('Naar gevuld', id => api('voorraad-set-pot', { pot_id: id, status: 'voorraad', production_date: todayISO() }));
+  });
+  document.getElementById('batch-empty-btn').addEventListener('click', () => {
+    runBatchUpdatable('Naar leeg', id => api('voorraad-set-pot', { pot_id: id, status: 'available' }));
+  });
+  document.getElementById('batch-delete-btn').addEventListener('click', () => {
+    const n = STATE.selected.size;
+    if (!confirm('Weet je zeker dat je ' + n + ' pot' + (n === 1 ? '' : 'ten') + ' wilt verwijderen?')) return;
+    runBatch('Verwijderd', id => api('voorraad-delete-pot', { pot_id: id }));
+  });
+  document.getElementById('batch-game-save-btn').addEventListener('click', async () => {
+    const ids = Array.from(STATE.selected);
+    if (ids.length === 0) return;
+    const sel = document.getElementById('batch-game-select');
+    const gameId = sel.value || null;
+    const btn = document.getElementById('batch-game-save-btn');
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Bezig…';
+    try {
+      const r = await api('pot-game-link', { pot_ids: ids, game_id: gameId });
+      if (r.ok) {
+        showToast(gameId ? 'Game gekoppeld aan ' + ids.length + ' pot' + (ids.length === 1 ? '' : 'ten') : 'Game ontkoppeld', 'success');
+        closeBatchDrawer();
+        clearSelection();
+        await refresh();
+      } else {
+        showToast((r.data && r.data.error) || 'Mislukt', 'error');
+      }
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
+  });
+
   $('#scan-btn').addEventListener('click', () => { if (STATE.qrScanner) stopScan(); else startScan(); });
   $('#scan-cancel').addEventListener('click', stopScan);
   // Drawer event bindings removed — the shared scan-FAB drawer handles its own clicks.
@@ -787,15 +1084,19 @@
 
   // Boot
   STATE.password = loadSession();
+  if (!STATE.password) {
+    document.body.classList.add('on-login');
+  }
   if (STATE.password) {
     api('voorraad-list').then(res => {
       if (res.ok) {
         STATE.pots = res.data.pots || [];
         STATE.config = res.data.config || {};
-        $('#stock-stats').textContent = `${res.data.stock_count} POTTEN OP VOORRAAD`;
+        $('#stock-stats').textContent = res.data.stock_count === 0 ? 'Geen voorraad' : `${res.data.stock_count} POTTEN OP VOORRAAD`;
         renderGrid();
         $('#login-view').hidden = true; document.body.classList.remove('on-login');
         $('#main-view').hidden = false;
+        initTopbarButtons();
         // Auto-open pot drawer if ?pot=POT-XXX is present (from scan-fab)
         try {
           const params = new URLSearchParams(location.search);
@@ -810,9 +1111,26 @@
       }
     });
   }
+
+  // Notifications bell — hooks up left of the hamburger menu
+  function initTopbarButtons(attempts) {
+    attempts = attempts || 0;
+    const btn = document.getElementById('menu-open');
+    if (btn && STATE.password && window.EllemelNotif && window.EllemelSettings) {
+      window.EllemelSettings.init({
+        password: STATE.password,
+        mountBefore: btn,
+        onLogout: () => { clearSession(); location.reload(); },
+      });
+      const gear = document.getElementById('settings-gear-btn');
+      window.EllemelNotif.init({ password: STATE.password, mountBefore: gear || btn });
+    } else if (STATE.password && attempts < 20) {
+      setTimeout(() => initTopbarButtons(attempts + 1), 100);
+    }
+  }
 </script>
 
-<a class="fab" id="fab-add" href="https://ellemelle.netlify.app/?start=admin" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
+<a class="fab" id="fab-add" href="https://ellemel.nl/?start=admin" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </a>
 
@@ -994,8 +1312,9 @@
     <line x1="21" y1="17" x2="21" y2="21"/>
   </svg>
 </button>
-<script type="module" src="/assets/scan-fab.js?v=14"></script>
+<script type="module" src="/assets/scan-fab.js?v=19"></script>
 
-<script src="/assets/pull-to-refresh.js" defer></script>
+<script src="/assets/pull-to-refresh.js" defer>
+</script>
 </body>
 </html>

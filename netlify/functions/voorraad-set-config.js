@@ -20,6 +20,15 @@ exports.handler = async (event) => {
     else if (/^\d{4}-\d{2}-\d{2}$/.test(body.next_production_date)) patch.next_production_date = body.next_production_date;
     else return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid date (expected YYYY-MM-DD)' }) };
   }
+  if (typeof body.customer_stop === 'boolean') {
+    patch.customer_stop = body.customer_stop;
+  }
+  if (typeof body.customer_stop_whatsapp_url === 'string') {
+    const u = body.customer_stop_whatsapp_url.trim();
+    if (u === '') patch.customer_stop_whatsapp_url = null;
+    else if (/^https?:\/\//i.test(u)) patch.customer_stop_whatsapp_url = u;
+    else return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid whatsapp url (expected http(s)://…)' }) };
+  }
   const cfg = await setAppConfig(patch);
   return { statusCode: 200, headers, body: JSON.stringify({ ok: true, config: cfg }) };
 };

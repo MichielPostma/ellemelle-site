@@ -28,7 +28,7 @@
   #app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; position: relative; }
 
   .step-question { color: var(--red); font-size: 28px; line-height: 1.15; margin-bottom: 14px; letter-spacing: -0.2px; font-weight: 700; }
-  .progress-text { color: var(--red-dark); font-size: 13px; font-weight: 700; text-align: left; letter-spacing: 0.4px; text-transform: uppercase; opacity: 0.55; margin-bottom: 6px; display: block; }
+  .progress-text { color: #666; font-size: 13px; font-weight: 700; text-align: left; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 6px; display: block; }
 
   .field { margin-bottom: 10px; }
   input[type="password"], select {
@@ -122,12 +122,15 @@
   .badge.todo       { background: rgba(0,0,0,0.06); color: #666; }
   .badge.confirmed  { background: rgba(33,118,255,0.10); color: #2176ff; }
   .badge.delivered  { background: rgba(28,125,63,0.12); color: #1c7d3f; }
-  .badge.neighbors  { background: rgba(255,210,74,0.25); color: #b85c00; }
+  .badge.neighbors  { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .badge.retry      { background: rgba(139,26,14,0.08); color: var(--red-dark); }
+  .badge.pickup_requested      { background: rgba(139,26,14,0.10); color: var(--red-dark); }
   .badge.pickup_self_requested { background: rgba(255,193,7,0.18); color: #b75d00; }
   .badge.picked_up { background: rgba(28,125,63,0.18); color: #1c7d3f; }
   .badge.no-stock   { background: rgba(255,193,7,0.12); color: #b75d00; }
   .badge.has-stock  { background: rgba(34,197,94,0.12); color: #15803d; }
+  .badge.pot-id     { background: rgba(59,130,246,0.12); color: #1e40af; }
+  .badge.paid       { background: rgba(0,0,0,0.06); color: #666; }
   .empty { color: #888; font-size: 13px; padding: 12px 0; }
   .ratings-card { background: var(--white); border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius-md); padding: 14px 18px; margin: 0; box-shadow: var(--shadow-card); }
   .ratings-card .ratings-eyebrow { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
@@ -204,6 +207,7 @@
   body.on-login #login-view input { text-align: left; }
   body.on-login #login-view input::placeholder { text-align: left; }
   body.on-login #login-view .btn-primary { margin-top: 14px; }
+  body.on-login .fab, body.on-login #fab-add, body.on-login #fab-scan { display: none !important; }
   body.on-login .login-hero {
     width: 240px; max-width: 70vw; margin: 4px auto 18px; display: block;
     animation: wiggle 2.6s ease-in-out infinite;
@@ -256,9 +260,160 @@
   }
   .tab.active { color: var(--red); border-bottom-color: var(--red); }
 
+  /* Filter row with send-message button to its right (zelfde patroon als voorraad's batch-edit-btn). */
+  .filter-row { display: flex; align-items: stretch; gap: 10px; }
+  .filter-row select { flex: 1; min-width: 0; }
+  .send-msg-btn {
+    flex: 0 0 56px; width: 56px; min-height: 56px;
+    background: var(--red); color: var(--white);
+    border: none; border-radius: var(--radius-md);
+    cursor: pointer; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-cta);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .send-msg-btn[hidden] { display: none; }
+  .send-msg-btn svg { width: 22px; height: 22px; display: block; }
+
+  /* Bulk-actions drawer met zijwaartse slide tussen panes (4 panes: root, bezorgdatum, status, bericht) */
+  .bulk-drawer { overflow: hidden; }
+  .bulk-panes { display: flex; width: 500%; transform: translateX(0); transition: transform 280ms cubic-bezier(.2,.7,.2,1); }
+  .bulk-panes[data-pane="bezorgdatum"]     { transform: translateX(-20%); }
+  .bulk-panes[data-pane="status"]          { transform: translateX(-40%); }
+  .bulk-panes[data-pane="bericht"]         { transform: translateX(-60%); }
+  .bulk-panes[data-pane="plan-bezorging"]  { transform: translateX(-80%); }
+  .bulk-pane { width: 20%; flex-shrink: 0; padding-right: 4px; box-sizing: border-box; }
+  .bulk-pane[data-pane-name]:not([data-active="1"]) { visibility: hidden; }
+  .bulk-panes[data-pane="root"]           .bulk-pane[data-pane-name="root"]           { visibility: visible; }
+  .bulk-panes[data-pane="bezorgdatum"]    .bulk-pane[data-pane-name="bezorgdatum"]    { visibility: visible; }
+  .bulk-panes[data-pane="status"]         .bulk-pane[data-pane-name="status"]         { visibility: visible; }
+  .bulk-panes[data-pane="bericht"]        .bulk-pane[data-pane-name="bericht"]        { visibility: visible; }
+  .bulk-panes[data-pane="plan-bezorging"] .bulk-pane[data-pane-name="plan-bezorging"] { visibility: visible; }
+  /* Status-opties lijst (zelfde stijl als #status-options in bestelling.html) */
+  .bulk-status-list { display: grid; gap: 8px; margin-top: 14px; }
+  .bulk-status-list button {
+    width: 100%; padding: 14px 16px; border-radius: var(--radius-md);
+    background: var(--white); border: 2px solid transparent; cursor: pointer;
+    text-align: left; font: 500 15px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bulk-status-list button.sel { border-color: var(--red); background: rgba(217,48,30,0.04); font-weight: 700; }
+  .bulk-actions-list { display: grid; gap: 10px; margin-top: 14px; }
+  .bulk-action-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 14px 16px;
+    text-align: left; cursor: pointer; font: inherit; color: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bulk-action-row:active { transform: scale(0.99); background: rgba(0,0,0,0.02); }
+  .bulk-action-row .ba-text { flex: 1; min-width: 0; }
+  .bulk-action-row .ba-title { font-weight: 700; font-size: 16px; color: var(--black); }
+  .bulk-action-row .ba-sub { font-size: 13px; color: #666; margin-top: 2px; line-height: 1.35; }
+  .bulk-action-row .ba-arrow { width: 18px; height: 18px; flex-shrink: 0; color: #888; }
+  .bulk-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent; border: none; cursor: pointer; padding: 6px 0;
+    font: inherit; color: var(--black); font-weight: 600; font-size: 15px;
+    -webkit-tap-highlight-color: transparent; margin-bottom: 8px;
+  }
+  .bulk-back:hover { color: var(--red); }
+  .bulk-back svg { width: 18px; height: 18px; }
+  /* Date input voor bulk-bezorgdatum: zelfde stijl als de date inputs elders */
+  .bulk-date-wrap { position: relative; margin-top: 14px; }
+  .bulk-date-wrap .bulk-date-placeholder {
+    position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+    color: var(--black); opacity: 0.55; font-size: 16px; pointer-events: none;
+    transition: opacity 140ms;
+  }
+  .bulk-date-wrap.has-value .bulk-date-placeholder { opacity: 0; }
+  .bulk-date-wrap.has-value input[type="date"] { color: var(--black); }
+  .bulk-date-wrap:not(.has-value) input[type="date"] { color: transparent; caret-color: var(--black); }
+  .bulk-date-wrap input[type="date"] {
+    display: block; width: 100%; height: 56px; box-sizing: border-box;
+    background: var(--white); color: var(--black);
+    border: 2px solid transparent; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    font: 400 16px/52px 'DM Sans', system-ui, sans-serif; letter-spacing: 0.2px;
+    padding: 0 48px 0 18px;
+    appearance: none; -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    text-align: left;
+    margin: 0;
+  }
+  .bulk-date-wrap input[type="date"]:focus {
+    outline: none; border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(217,48,30,0.12), var(--shadow-card);
+  }
+  .bulk-date-wrap input[type="date"]::-webkit-date-and-time-value {
+    text-align: left; line-height: 52px; height: 52px; margin: 0;
+  }
+  .bulk-date-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute; right: 0; top: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer;
+  }
+  .bulk-date-wrap .bulk-date-arrow {
+    position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+    color: var(--red); pointer-events: none; width: 16px; height: 16px;
+  }
+  /* Box-sizing fix voor de bulk-drawer sub-pane content zodat width: 100% niet overschiet */
+  .bulk-pane .send-msg-textarea { box-sizing: border-box; }
+
+  /* Multi-select state on order- and klant-cards: 2px rode outline + check badge */
+  .order-card, .klant-card {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .order-card.selected, .klant-card.selected {
+    outline: 2px solid var(--red); outline-offset: -2px; position: relative;
+  }
+  .order-card.selected::after, .klant-card.selected::after {
+    content: '✓'; position: absolute; top: 8px; right: 10px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    font-size: 13px; line-height: 22px; text-align: center; font-weight: 700;
+    pointer-events: none;
+  }
+
+  /* Send-message drawer */
+  .send-msg-recipient {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; background: var(--white);
+    border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius-md);
+    margin-top: 8px;
+  }
+  .send-msg-recipient .name { font-weight: 700; flex: 1; }
+  .send-msg-recipient.sent  { background: rgba(31,157,85,0.06); border-color: rgba(31,157,85,0.4); }
+  .send-msg-recipient.sent .name { color: #1c7d3f; }
+  .send-msg-recipient .go {
+    background: var(--red); color: var(--white); border: none;
+    border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: 13px;
+    cursor: pointer; text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .send-msg-recipient.sent .go { background: #1c7d3f; }
+  .send-msg-textarea {
+    width: 100%; min-height: 110px; padding: 12px 14px;
+    background: var(--white); border: 2px solid transparent;
+    border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+    color: var(--black); font: 400 16px 'DM Sans', system-ui, sans-serif;
+    resize: vertical;
+  }
+  .send-msg-textarea:focus { outline: none; border-color: var(--red); }
+  .send-msg-photo-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .send-msg-photo-preview {
+    width: 64px; height: 64px; border-radius: var(--radius-md);
+    background: rgba(0,0,0,0.06); object-fit: cover; display: block;
+  }
+  .send-msg-photo-row label {
+    color: var(--red); font-weight: 700; font-size: 14px; cursor: pointer;
+    text-decoration: underline;
+  }
+
   /* Floating + button */
   .fab {
-    position: fixed; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom));
+    position: fixed !important; right: 22px !important; bottom: calc(22px + env(safe-area-inset-bottom));
     width: 56px; height: 56px; border-radius: 50%;
     background: var(--white); color: var(--red);
     border: none; cursor: pointer;
@@ -283,6 +438,40 @@
   .klant-card .count { color: #888; font-size: 12px; }
   .klant-card .addr { color: #666; font-size: 14px; }
   .klant-card .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .klant-card .klant-free-btn {
+    margin-top: 12px; width: 100%; padding: 10px 14px; border-radius: 10px;
+    background: var(--white); color: var(--red); border: 1.5px solid rgba(217,48,30,0.25);
+    font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    text-align: center; letter-spacing: 0.2px;
+    transition: background 120ms, border-color 120ms;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .klant-card .klant-free-btn:hover { background: rgba(217,48,30,0.05); border-color: var(--red); }
+  .klant-card .klant-free-btn:active { transform: scale(0.98); }
+
+  /* Free order drawer */
+  .free-drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 190; }
+  .free-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .free-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--cream); border-radius: 20px 20px 0 0; padding: 16px 20px 28px; transform: translateY(100%); transition: transform 220ms; z-index: 200; max-height: 92vh; overflow-y: auto; box-shadow: 0 -10px 30px rgba(0,0,0,0.12); padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+  .free-drawer.open { transform: translateY(0); }
+  .free-drawer h3 { margin: 4px 0 4px; font-size: 18px; color: var(--black); }
+  .free-drawer .sub { color: #666; font-size: 14px; margin-bottom: 18px; }
+  .free-drawer .label { color: #666; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin: 14px 0 8px; }
+  .free-drawer .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .free-drawer .chip { background: var(--white); border: 2px solid transparent; border-radius: 12px; padding: 12px 18px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(139,26,14,0.08); }
+  .free-drawer .chip.selected { border-color: var(--red); color: var(--red); }
+  .free-drawer input[type="date"], .free-drawer select, .free-drawer textarea {
+    display: block; width: 100%; min-height: 52px; background: var(--white); color: var(--black);
+    border: 2px solid transparent; border-radius: 12px; padding: 12px 16px;
+    font-family: inherit; font-size: 16px; box-shadow: 0 2px 10px rgba(139,26,14,0.08); box-sizing: border-box;
+  }
+  .free-drawer textarea { min-height: 72px; resize: vertical; font-family: inherit; }
+  .free-drawer .err { color: var(--red); font-size: 14px; font-weight: 600; margin-top: 10px; display: none; }
+  .free-drawer .err.show { display: block; }
+  .free-drawer .actions { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+  .free-drawer .btn-primary { background: var(--red); color: var(--white); border: none; border-radius: 14px; padding: 16px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .free-drawer .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .free-drawer .btn-ghost { background: transparent; color: var(--red); border: none; padding: 12px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
   .klant-tag {
     display: inline-block; font-size: 10px; padding: 3px 8px; border-radius: 999px;
     font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
@@ -334,6 +523,8 @@
     flex: 1; width: 100%; border: 0; background: var(--cream);
   }
 
+
+
 </style>
 <script>
 (function(){
@@ -359,6 +550,7 @@
   #login-view[hidden], #main-view[hidden], #detail-view[hidden], #list-view[hidden] { display: none !important; }
   /* Global: [hidden] always wins over display rules */
   [hidden] { display: none !important; }
+
 </style>
 <link rel="manifest" href="/admin-manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -367,6 +559,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-touch-icon-152.png">
 <link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/apple-touch-icon-167.png">
+<script src="/assets/notifications.js" defer></script>
+<script src="/assets/settings.js?v=3" defer></script>
 </head>
 <body>
 
@@ -374,12 +568,16 @@
 <div class="menu-backdrop" id="menu-backdrop"></div>
 <div class="menu-panel" id="menu-panel">
   <div class="drawer-handle"></div>
-  <a href="/koken">Koken</a>
-  <a href="/voorraad">Voorraad</a>
-  <a href="/bezorger">Bezorgen</a>
   <a href="/bestellingen">Bestellingen</a>
-  <button class="btn-outline" id="push-toggle-btn" type="button" style="margin-bottom: 10px;">🔔 Schakel meldingen in</button>
-  <button class="btn-outline menu-logout-btn" id="menu-logout" type="button">Uitloggen</button>
+  <a href="/koken">Koken</a>
+  <a href="/voorraad">Potten</a>
+  <a href="/bezorger">Bezorgen</a>
+  <a href="/game/POT-001?password=100knuffels&game_id=quest-1-hazelnoten">Speurtocht</a>
+</div>
+<!-- Hidden fallback controls — settings page delegates to these so the underlying push + session logic stays untouched. -->
+<div style="display: none;">
+  <button id="push-toggle-btn" type="button">🔔 Schakel meldingen in</button>
+  <button id="menu-logout" type="button">Uitloggen</button>
 </div>
 
 <main id="app">
@@ -414,7 +612,7 @@
 
     <!-- Bestellingen tab content -->
     <div id="tab-content-bestellingen">
-      <div class="field" style="margin-top: 14px;">
+      <div class="field filter-row" style="margin-top: 14px;">
         <select id="filter-select">
           <option value="all">Filter</option>
           <option value="stock">Op voorraad</option>
@@ -422,21 +620,28 @@
           <option value="delivered">Bezorgd</option>
           <option value="todo">Open (todo)</option>
         </select>
+        <button class="send-msg-btn" id="send-msg-orders-btn" type="button" hidden aria-label="Acties voor geselecteerde bestellingen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+        </button>
       </div>
       <div id="orders-section-new" style="margin-top: 18px;">
         <div class="section-eyebrow">Nieuw</div>
         <button class="btn-primary" id="batch-confirm-cta" type="button" hidden style="margin-bottom: 12px;">Bevestig bestellingen →</button>
         <div id="orders-list-new"></div>
       </div>
-      <div id="orders-section-other" style="margin-top: 22px;">
-        <div class="section-eyebrow">Lopend</div>
-        <div id="orders-list-other"></div>
+      <div id="orders-section-confirmed" style="margin-top: 22px;">
+        <div class="section-eyebrow">Bevestigd</div>
+        <div id="orders-list-confirmed"></div>
+      </div>
+      <div id="orders-section-delivered" style="margin-top: 22px;">
+        <div class="section-eyebrow">Bezorgd</div>
+        <div id="orders-list-delivered"></div>
       </div>
     </div>
 
     <!-- Klanten tab content -->
     <div id="tab-content-klanten" hidden>
-      <div class="field" style="margin-top: 14px;">
+      <div class="field filter-row" style="margin-top: 14px;">
         <select id="klanten-filter">
           <option value="all">Filter</option>
           <option value="no_active">Geen actieve bestelling</option>
@@ -445,6 +650,9 @@
           <option value="pot_home">Pot in huis</option>
           <option value="no_pot_home">Geen pot in huis</option>
         </select>
+        <button class="send-msg-btn" id="send-msg-klanten-btn" type="button" hidden aria-label="Acties voor geselecteerde klanten">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+        </button>
       </div>
       <div id="ratings-wrap" hidden>
         <div class="actions-label" style="margin-top: 14px;">Feedback</div>
@@ -469,6 +677,113 @@
   <div class="sub">Tik op de knop naast een klant om de bevestiging te versturen.</div>
   <div id="batch-confirm-list" style="display: grid; gap: 10px; margin-top: 14px;"></div>
   <div id="batch-confirm-empty" hidden style="color:#666;font-size:15px;padding:24px 0;text-align:center;">🎉 Alle bestellingen bevestigd</div>
+</div>
+
+<!-- Bulk-actions drawer met root menu + zijwaartse slide naar sub-panes (bericht / bezorgdatum) -->
+<div class="drawer-backdrop" id="send-msg-backdrop"></div>
+<div class="drawer bulk-drawer" id="send-msg-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <div class="bulk-panes" id="bulk-panes" data-pane="root">
+    <!-- Pane: root (lijst met acties) -->
+    <div class="bulk-pane" data-pane-name="root">
+      <h2 id="bulk-root-title">Wat wil je doen?</h2>
+      <div class="sub" id="bulk-root-sub">Kies een actie voor de geselecteerde items.</div>
+      <div class="bulk-actions-list">
+        <button class="bulk-action-row" type="button" data-action="plan-bezorging">
+          <div class="ba-text">
+            <div class="ba-title">Plan bezorging</div>
+            <div class="ba-sub">Bundel geselecteerde bestellingen in een nieuwe bezorging met eigen datum en naam</div>
+          </div>
+          <svg class="ba-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="bulk-action-row" type="button" data-action="bezorgdatum">
+          <div class="ba-text">
+            <div class="ba-title">Update bezorgdatum</div>
+            <div class="ba-sub">Pas de uiterlijke bezorgdatum aan voor alle geselecteerde bestellingen</div>
+          </div>
+          <svg class="ba-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="bulk-action-row" type="button" data-action="status">
+          <div class="ba-text">
+            <div class="ba-title">Update status</div>
+            <div class="ba-sub">Zet alle geselecteerde bestellingen op dezelfde status</div>
+          </div>
+          <svg class="ba-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="bulk-action-row" type="button" data-action="bericht">
+          <div class="ba-text">
+            <div class="ba-title">Stuur bericht</div>
+            <div class="ba-sub">Verstuur 1 voor 1 een persoonlijk bericht via WhatsApp / e-mail</div>
+          </div>
+          <svg class="ba-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Pane: bezorgdatum update -->
+    <div class="bulk-pane" data-pane-name="bezorgdatum">
+      <button type="button" class="bulk-back" data-back="root">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Vorige
+      </button>
+      <h2>Update bezorgdatum</h2>
+      <div class="sub" id="bezorgdatum-sub">Kies een nieuwe uiterlijke bezorgdatum voor de geselecteerde bestellingen.</div>
+      <div class="bulk-date-wrap" id="bezorgdatum-wrap">
+        <input type="date" id="bezorgdatum-input" aria-label="Kies nieuwe bezorgdatum">
+        <span class="bulk-date-placeholder">Kies nieuwe bezorgdatum</span>
+        <svg class="bulk-date-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <button class="btn-primary" id="bezorgdatum-apply" type="button" style="margin-top: 14px;">Toepassen op <span id="bezorgdatum-count">0</span> bestelling<span id="bezorgdatum-plural">en</span></button>
+      <div id="bezorgdatum-status" hidden style="margin-top: 12px; color: #1c7d3f; font-weight: 700; text-align: center;"></div>
+    </div>
+
+    <!-- Pane: status update -->
+    <div class="bulk-pane" data-pane-name="status">
+      <button type="button" class="bulk-back" data-back="root">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Vorige
+      </button>
+      <h2>Update status</h2>
+      <div class="sub">Kies welke status alle geselecteerde bestellingen krijgen.</div>
+      <div id="bulk-status-options" class="bulk-status-list"></div>
+      <button class="btn-primary" id="status-apply" type="button" style="margin-top: 14px;" disabled>Toepassen op <span id="status-count">0</span> bestelling<span id="status-plural">en</span></button>
+      <div id="status-applied-tip" hidden style="margin-top: 12px; color: #1c7d3f; font-weight: 700; text-align: center;"></div>
+    </div>
+
+    <!-- Pane: bericht (oude send-msg inhoud) -->
+    <div class="bulk-pane" data-pane-name="bericht">
+      <button type="button" class="bulk-back" data-back="root">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Vorige
+      </button>
+      <h2 id="send-msg-title">Stuur een berichtje</h2>
+      <div class="sub" id="send-msg-sub">Type je bericht en tap een voor een op de berichtknop bij elke ontvanger.</div>
+      <select id="msg-template" style="margin-top: 14px;">
+        <option value="">Kies template</option>
+      </select>
+      <textarea class="send-msg-textarea" id="send-msg-text" placeholder="Hé! Snel even iets…" rows="6" style="margin-top: 10px;"></textarea>
+      <div id="send-msg-list" style="display: grid; gap: 10px; margin-top: 14px;"></div>
+      <div id="send-msg-done-tip" hidden style="margin-top: 12px; color: #1c7d3f; font-weight: 700; text-align: center;">Klaar! Alles verstuurd.</div>
+    </div>
+
+    <!-- Pane: plan-bezorging (nieuwe bezorging plannen met datum + naam) -->
+    <div class="bulk-pane" data-pane-name="plan-bezorging">
+      <button type="button" class="bulk-back" data-back="root">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Vorige
+      </button>
+      <h2>Plan bezorging</h2>
+      <div class="sub" id="plan-bezorging-sub">Kies een datum en naam voor deze bezorging. Alle geselecteerde bestellingen krijgen deze datum.</div>
+      <div class="bulk-date-wrap" id="plan-bezorging-date-wrap" style="margin-top: 4px;">
+        <input type="date" id="plan-bezorging-date" aria-label="Datum bezorging">
+        <span class="bulk-date-placeholder">Datum bezorging</span>
+        <svg class="bulk-date-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <input type="text" id="plan-bezorging-name" placeholder="Naam bezorging" aria-label="Naam bezorging" style="width:100%;padding:14px 16px;font-size:16px;font-family:inherit;border-radius:var(--radius-md);border:2px solid transparent;background:var(--white);box-shadow:var(--shadow-card);margin-top:10px;">
+      <button class="btn-primary" id="plan-bezorging-apply" type="button" style="margin-top: 14px;">Opslaan (<span id="plan-bezorging-count">0</span> bestelling<span id="plan-bezorging-plural">en</span>)</button>
+      <div id="plan-bezorging-status" hidden style="margin-top: 12px; color: #1c7d3f; font-weight: 700; text-align: center;"></div>
+    </div>
+  </div>
 </div>
 
 <!-- Bevestig bestelling drawer -->
@@ -512,6 +827,8 @@
   const STORAGE_KEY = 'ellemelle_admin_session_v1';
   const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
   const STATE = { password: null, orders: [], klanten: [], klantenLoaded: false, config: { next_production_date: null } };
+  // Expose voor de send-message IIFE buiten dit script-blok (STATE + render-helpers).
+  window.STATE = STATE;
 
   function loadSession() {
     try {
@@ -612,9 +929,26 @@
     clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
   }
 
-  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_requested: 'Lege pot ophalen', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
 
+  function daysAgoLabel(iso) {
+    if (!iso) return '';
+    const then = new Date(iso);
+    if (isNaN(then.getTime())) return '';
+    const today = new Date();
+    const a = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    const b = Date.UTC(then.getUTCFullYear(), then.getUTCMonth(), then.getUTCDate());
+    const diff = Math.round((a - b) / (1000 * 60 * 60 * 24));
+    if (diff <= 0) return 'Vandaag bezorgd';
+    if (diff === 1) return 'Gisteren bezorgd';
+    return diff + ' dagen geleden bezorgd';
+  }
   function shortDeadline(o) {
+    const status = o.order_status || 'todo';
+    // Bezorgde bestellingen tonen "X dagen geleden bezorgd" i.p.v. de countdown — nooit "te laat".
+    if (['delivered', 'neighbors', 'picked_up'].includes(status) && (o.delivered_at || o.delivery_date)) {
+      return { text: daysAgoLabel(o.delivered_at || o.delivery_date), late: false };
+    }
     const cd = deliveryCountdown(o.uiterlijke_bezorgdatum || o.delivery_date);
     const isLate = !!o.is_te_laat;
     let txt = cd.label || '';
@@ -627,27 +961,50 @@
     opts = opts || {};
     const card = document.createElement('div');
     card.className = 'order-card';
+    // Order-id op de card zelf zodat multi-select (long-press) betrouwbaar
+    // teruglinkt naar de order — onafhankelijk van de titel-tekst.
+    if (o.id) card.dataset.orderId = o.id;
     const status = o.order_status || 'todo';
-    const hasStock = (o.delivery_mode === 'stock');
+    // Stock tag rendering:
+    //   - Coupled pot(s) → show the pot id(s) ("POT-001" or "POT-001, POT-002")
+    //   - Auto-allocated to stock → generic "Voorraad" badge
+    //   - Otherwise → amber "Geen voorraad" badge
+    const coupledPots = o.delivered_pot
+      ? [o.delivered_pot]
+      : (Array.isArray(o.assigned_pots) ? o.assigned_pots : []);
+    const hasStock = (o.delivery_mode === 'stock') || coupledPots.length > 0;
     // Only render the action button for orders that still need to be confirmed (todo).
     // Confirmed orders no longer need a follow-up icon — the status badge already says "Bevestigd".
     const showMsgBtn = opts.allowMsgBtn !== false && status === 'todo';
     const confirmedCls = '';
-    const iconChat  = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+    const iconChat  = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
     const iconCheck = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     const dl = shortDeadline(o);
-    const stockTag = hasStock
-      ? `<span class="badge has-stock right-tag">Voorraad</span>`
-      : `<span class="badge no-stock right-tag">Geen voorraad</span>`;
+    const stockTag = coupledPots.length > 0
+      ? `<span class="badge pot-id right-tag">${coupledPots.join(', ')}</span>`
+      : hasStock
+        ? `<span class="badge has-stock right-tag">Voorraad</span>`
+        : `<span class="badge no-stock right-tag">Geen voorraad</span>`;
+    // Betaald-bedrag tag (uit Stripe). Alleen tonen als het bedrag bekend is —
+    // ontbreekt voor Tikkie/handmatig aangemaakte orders.
+    const paidCents = (typeof o.paid_amount_cents === 'number') ? o.paid_amount_cents : null;
+    const paidTag = paidCents !== null
+      ? `<span class="badge paid right-tag">${Math.round(paidCents / 100)} euro</span>`
+      : '';
     const naam = o.voornaam || '(geen naam)';
-    const titleText = o.pickup_only ? ('Pickup ' + naam) : ('Bezorging ' + naam);
+    // Titel: "{naam} bestelde {aantal} pot(ten)"; Pickup/Bezorging-modus staat
+    // als prefix op de deadline-regel eronder.
+    const aantal = Math.max(1, parseInt(o.aantal, 10) || 1);
+    const titleText = `${naam} bestelde ${aantal} ${aantal === 1 ? 'pot' : 'potten'}`;
+    const modeLabel = o.pickup_only ? 'Pickup' : 'Bezorging';
     card.innerHTML = `
       <div class="info">
         <div class="name">${titleText}</div>
-        <div class="deadline${dl.late ? ' late' : ''}">${dl.text}</div>
+        <div class="deadline${dl.late ? ' late' : ''}">${modeLabel} · ${dl.text}</div>
         <div class="tags-row">
           <span class="badge ${status}">${STATUS_LABELS[status] || status}</span>
           ${stockTag}
+          ${paidTag}
         </div>
       </div>
       ${showMsgBtn ? `<button type="button" class="msg-btn${confirmedCls}" data-order-id="${o.id}" aria-label="Bevestig bestelling">${status==='confirmed' ? iconCheck : iconChat}</button>` : ''}
@@ -659,46 +1016,67 @@
     card.addEventListener('click', () => { location.href = '/bestelling/' + o.id; });
     return card;
   }
+  window.buildOrderCard = buildOrderCard;
+
   function sortStockFirst(arr) {
+    // Voorraad-orders eerst; daarbinnen meest-actueel bovenaan (recent geplaatst
+    // = eerst zichtbaar). Fallback op created_at, dan uiterlijke bezorgdatum.
     return arr.slice().sort((a, b) => {
       const aStock = (a.delivery_mode === 'stock') ? 0 : 1;
       const bStock = (b.delivery_mode === 'stock') ? 0 : 1;
       if (aStock !== bStock) return aStock - bStock;
-      return String(a.uiterlijke_bezorgdatum || a.delivery_date || '')
-        .localeCompare(String(b.uiterlijke_bezorgdatum || b.delivery_date || ''));
+      const aKey = String(a.created_at || a.uiterlijke_bezorgdatum || a.delivery_date || '');
+      const bKey = String(b.created_at || b.uiterlijke_bezorgdatum || b.delivery_date || '');
+      return bKey.localeCompare(aKey);
     });
   }
   function renderOrders() {
-    const wrapNew   = $('#orders-list-new');
-    const wrapOther = $('#orders-list-other');
-    const secNew    = $('#orders-section-new');
-    const secOther  = $('#orders-section-other');
+    const wrapNew       = $('#orders-list-new');
+    const wrapConfirmed = $('#orders-list-confirmed');
+    const wrapDelivered = $('#orders-list-delivered');
+    const secNew        = $('#orders-section-new');
+    const secConfirmed  = $('#orders-section-confirmed');
+    const secDelivered  = $('#orders-section-delivered');
     wrapNew.innerHTML = '';
-    wrapOther.innerHTML = '';
+    wrapConfirmed.innerHTML = '';
+    wrapDelivered.innerHTML = '';
     const f = $('#filter-select').value;
     let list = STATE.orders.slice();
     if (f === 'stock')      list = list.filter(o => o.delivery_mode === 'stock');
     else if (f === 'not_stock') list = list.filter(o => o.delivery_mode !== 'stock');
-    else if (f === 'delivered') list = list.filter(o => ['delivered','neighbors'].includes(o.order_status));
+    else if (f === 'delivered') list = list.filter(o => ['delivered','neighbors','picked_up'].includes(o.order_status));
     else if (f === 'todo')      list = list.filter(o => o.order_status === 'todo');
-    const newOrders   = sortStockFirst(list.filter(o => (o.order_status || 'todo') === 'todo'));
-    const otherOrders = sortStockFirst(list.filter(o => (o.order_status || 'todo') !== 'todo'));
-    // New section: always visible — show empty state if needed
-    secNew.hidden = false;
+    // Group by status buckets — Nieuw / Bevestigd (in-progress) / Bezorgd (done).
+    const DELIVERED_STATUSES = new Set(['delivered', 'neighbors', 'picked_up']);
+    const newOrders       = sortStockFirst(list.filter(o => (o.order_status || 'todo') === 'todo'));
+    const deliveredOrders = sortStockFirst(list.filter(o => DELIVERED_STATUSES.has(o.order_status)));
+    const confirmedOrders = sortStockFirst(list.filter(o => {
+      const s = o.order_status || 'todo';
+      return s !== 'todo' && !DELIVERED_STATUSES.has(s);
+    }));
+    // New section: alleen tonen wanneer er nieuwe bestellingen zijn
     if (newOrders.length === 0) {
-      wrapNew.innerHTML = '<div class="empty">Geen nieuwe bestellingen.</div>';
+      secNew.hidden = true;
       $('#batch-confirm-cta').hidden = true;
     } else {
+      secNew.hidden = false;
       newOrders.forEach(o => wrapNew.appendChild(buildOrderCard(o, { allowMsgBtn: false })));
       $('#batch-confirm-cta').hidden = false;
     }
     STATE.newOrders = newOrders;
-    // Other section: hidden entirely when empty
-    if (otherOrders.length === 0) {
-      secOther.hidden = true;
+    // Bevestigd section: in-progress orders (confirmed, retry, pickup_*, etc.)
+    if (confirmedOrders.length === 0) {
+      secConfirmed.hidden = true;
     } else {
-      secOther.hidden = false;
-      otherOrders.forEach(o => wrapOther.appendChild(buildOrderCard(o)));
+      secConfirmed.hidden = false;
+      confirmedOrders.forEach(o => wrapConfirmed.appendChild(buildOrderCard(o)));
+    }
+    // Bezorgd section: delivered / neighbors / picked_up
+    if (deliveredOrders.length === 0) {
+      secDelivered.hidden = true;
+    } else {
+      secDelivered.hidden = false;
+      deliveredOrders.forEach(o => wrapDelivered.appendChild(buildOrderCard(o)));
     }
   }
 
@@ -790,9 +1168,16 @@
         </div>
         <div class="addr">${c.adres || ''}${c.plaats ? ' — ' + c.plaats : ''}</div>
         <div class="tags">${tags.join('')}</div>
+        <button class="klant-free-btn" type="button" data-klant-key="${c.key}" data-klant-name="${(c.voornaam || 'klant').replace(/"/g,'&quot;')}">+ Gratis bestelling toevoegen</button>
       `;
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.klant-free-btn')) return;
         location.href = '/klant/' + encodeURIComponent(c.key);
+      });
+      const freeBtn = card.querySelector('.klant-free-btn');
+      if (freeBtn) freeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openFreeOrderDrawer(c.key, c.voornaam || 'klant');
       });
       wrap.appendChild(card);
     });
@@ -836,6 +1221,7 @@
       });
       $('#login-view').hidden = true; $('#main-view').hidden = false;
       document.body.classList.remove('on-login');
+      initTopbarButtons();
       STATE.orders = res.data.orders || [];
       (async () => {
         const cfg = await api('voorraad-list');
@@ -1034,6 +1420,7 @@
   if (STATE.password) {
     $('#login-view').hidden = true;
     $('#main-view').hidden = false;
+    initTopbarButtons();
     (async () => {
       // Fetch orders + voorraad in parallel — they're independent and were ~doubling the cold-load time.
       const [res, cfg] = await Promise.all([
@@ -1051,9 +1438,26 @@
     })();
   }
   syncTabFromHash();
+
+  // Notifications bell + Settings gear — hook up left of the hamburger menu
+  function initTopbarButtons(attempts) {
+    attempts = attempts || 0;
+    const btn = document.getElementById('menu-open');
+    if (btn && STATE.password && window.EllemelNotif && window.EllemelSettings) {
+      window.EllemelSettings.init({
+        password: STATE.password,
+        mountBefore: btn,
+        onLogout: () => { clearSession(); location.reload(); },
+      });
+      const gear = document.getElementById('settings-gear-btn');
+      window.EllemelNotif.init({ password: STATE.password, mountBefore: gear || btn });
+    } else if (STATE.password && attempts < 20) {
+      setTimeout(() => initTopbarButtons(attempts + 1), 100);
+    }
+  }
 })();
 </script>
-<a class="fab" id="fab-add" href="https://ellemelle.netlify.app/?start=admin" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
+<a class="fab" id="fab-add" href="https://ellemel.nl/?start=admin" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </a>
 
@@ -1223,6 +1627,678 @@
 })();
 </script>
 
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Multi-select + send-message drawer.
+// Long-press op een bestelling/klant kaart activeert select-mode. Daarna tappen
+// toggelt selectie. Een rode square knop met vliegtuigje verschijnt naast het
+// filter dropdown. Klikken opent een drawer met message-form en (optioneel) foto.
+// Versturen gaat per ontvanger via wa.me / mailto; elke succesvolle send wordt
+// gelogd op de bestelling of klant via /api/share-message-log.
+// ─────────────────────────────────────────────────────────────────────────────
+(function(){
+  const $   = sel => document.querySelector(sel);
+  const $$  = sel => document.querySelectorAll(sel);
+  const PRESS_MS = 450;
+  const STORAGE_KEY = 'ellemelle_admin_session_v1';
+
+  // Selected items per tab. We store full objects (not just ids) so we hebben telefoon
+  // beschikbaar bij verzenden zonder een extra round-trip te doen.
+  const STATE_SEL = {
+    orders:    new Map(),   // order.id → order
+    customers: new Map(),   // customer.key → customer
+  };
+  let mode = null;          // 'orders' | 'customers'  (welk type is geselecteerd)
+  let sendingQueue = [];    // recipient lijst tijdens verzenden
+  let sentSet = new Set();
+  let attachedPhotoDataUrl = null;
+
+  function getPassword() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      return (o && o.password) || null;
+    } catch { return null; }
+  }
+  async function api(ep, body) {
+    const r = await fetch('/.netlify/functions/' + ep, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ password: getPassword() }, body || {})),
+    });
+    const j = await r.json().catch(() => ({}));
+    return { ok: r.ok, data: j };
+  }
+
+  // ── Long-press → multi-select ───────────────────────────────────────────────
+  function isSelectMode() {
+    return (STATE_SEL.orders.size + STATE_SEL.customers.size) > 0;
+  }
+  function exitSelectMode() {
+    STATE_SEL.orders.clear();
+    STATE_SEL.customers.clear();
+    mode = null;
+    $$('.order-card.selected, .klant-card.selected').forEach(c => c.classList.remove('selected'));
+    updateButtonsVisibility();
+  }
+  function toggleSelect(type, obj, card) {
+    const map = STATE_SEL[type];
+    const idKey = (type === 'orders') ? obj.id : obj.key;
+    if (map.has(idKey)) {
+      map.delete(idKey);
+      card.classList.remove('selected');
+    } else {
+      map.set(idKey, obj);
+      card.classList.add('selected');
+    }
+    if (map.size === 0 && mode === type) mode = null;
+    updateButtonsVisibility();
+  }
+  function updateButtonsVisibility() {
+    const ob = $('#send-msg-orders-btn');
+    const kb = $('#send-msg-klanten-btn');
+    if (ob) ob.hidden = STATE_SEL.orders.size === 0;
+    if (kb) kb.hidden = STATE_SEL.customers.size === 0;
+  }
+
+  // Decorate one card with long-press + tap-toggle handlers. Per-card pattern (zelfde als voorraad).
+  function decorateCard(card, type, obj) {
+    if (!card || card.__decorated) return;
+    card.__decorated = true;
+    let timer = null, longPressed = false;
+    let startX = 0, startY = 0;
+    const start = (e) => {
+      longPressed = false;
+      // Bewaar start-positie zodat we kleine vinger-bewegingen tolereren (~12px).
+      const t = (e.touches && e.touches[0]) || e;
+      startX = t.clientX || 0;
+      startY = t.clientY || 0;
+      timer = setTimeout(() => {
+        longPressed = true;
+        if (navigator.vibrate) try { navigator.vibrate(15); } catch {}
+        toggleSelect(type, obj, card);
+      }, PRESS_MS);
+    };
+    const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    const checkMove = (e) => {
+      if (!timer) return;
+      const t = (e.touches && e.touches[0]) || e;
+      const dx = (t.clientX || 0) - startX;
+      const dy = (t.clientY || 0) - startY;
+      // Alleen cancelen bij ECHTE swipe/scroll — niet bij kleine finger-trembling.
+      if (Math.hypot(dx, dy) > 12) cancel();
+    };
+    card.addEventListener('touchstart',  start,    { passive: true });
+    card.addEventListener('touchend',    cancel,   { passive: true });
+    card.addEventListener('touchcancel', cancel,   { passive: true });
+    card.addEventListener('touchmove',   checkMove, { passive: true });
+    card.addEventListener('mousedown',   start);
+    card.addEventListener('mouseup',     cancel);
+    card.addEventListener('mouseleave',  cancel);
+    // Onderdruk synthetische click na long-press, of behandel klik als toggle als in select-mode.
+    card.addEventListener('click', (e) => {
+      if (longPressed) { e.preventDefault(); e.stopImmediatePropagation(); longPressed = false; return; }
+      if (isSelectMode()) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        toggleSelect(type, obj, card);
+      }
+    }, true);
+  }
+
+  // Watch containers for new cards. Bestaande renderOrders/renderKlanten kunnen op elk moment
+  // herrenderen — we attachen handlers zodra er een nieuwe order-card of klant-card verschijnt.
+  function bindContainerObserver(containerSel, type, getObjFromCard, cardSel) {
+    const container = document.querySelector(containerSel);
+    if (!container) return;
+    const decorateAll = () => {
+      container.querySelectorAll(cardSel).forEach(card => {
+        if (card.__decorated) return;
+        const obj = getObjFromCard(card);
+        if (obj) decorateCard(card, type, obj);
+      });
+    };
+    decorateAll();
+    const mo = new MutationObserver(decorateAll);
+    mo.observe(container, { childList: true, subtree: true });
+  }
+
+  function getOrderFromCard(card) {
+    if (!window.STATE || !STATE.orders) return null;
+    // Primair: lookup via data-order-id op de card (nieuwe pattern).
+    const oid = card && card.dataset && card.dataset.orderId;
+    if (oid) {
+      const hit = STATE.orders.find(o => String(o.id) === String(oid));
+      if (hit) return hit;
+    }
+    // Fallback voor kaarten zonder id (bv. batch-confirm-list): parse voornaam
+    // uit de titel. Ondersteunt zowel het nieuwe "{Naam} bestelde …" format als
+    // het oude "Bezorging {Naam}" / "Pickup {Naam}" format.
+    const name = (card.querySelector('.name') || {}).textContent || '';
+    let cleaned = name.replace(/^Bezorging |^Pickup /, '').trim();
+    const m = cleaned.match(/^(.+?)\s+bestelde\s+\d+\s+pot(?:ten)?$/i);
+    if (m) cleaned = m[1].trim();
+    return STATE.orders.slice().reverse().find(o => (o.voornaam || '').trim() === cleaned);
+  }
+  function getCustomerFromCard(card) {
+    const name = ((card.querySelector('.name') || {}).textContent || '').trim();
+    if (!window.STATE || !STATE.klanten) return null;
+    return STATE.klanten.find(c => (c.voornaam || '').trim() === name);
+  }
+
+  // ── Drawer: compose → send ──────────────────────────────────────────────────
+  function getRecipients() {
+    if (STATE_SEL.orders.size > 0) {
+      return Array.from(STATE_SEL.orders.values()).map(o => ({
+        type: 'order', id: o.id, name: o.voornaam || '(geen naam)',
+        telefoon: o.telefoon || '', kanaal: o.kanaal || 'whatsapp', email: o.email || '',
+      }));
+    }
+    return Array.from(STATE_SEL.customers.values()).map(c => ({
+      type: 'customer', id: c.key, name: c.voornaam || '(geen naam)',
+      telefoon: c.telefoon || '', kanaal: c.kanaal || 'whatsapp', email: c.email || '',
+    }));
+  }
+
+  function openBulkDrawer() {
+    // Open de drawer op de root pane (acties-menu). Pane-specifieke init gebeurt
+    // bij navigeren naar die pane.
+    const recipients = getRecipients();
+    const isOrders = STATE_SEL.orders.size > 0;
+    const noun = isOrders
+      ? (recipients.length === 1 ? 'bestelling' : 'bestellingen')
+      : (recipients.length === 1 ? 'klant'      : 'klanten');
+    const rootTitleEl = $('#bulk-root-title');
+    const rootSubEl = $('#bulk-root-sub');
+    if (rootTitleEl) rootTitleEl.textContent = `${recipients.length} ${noun} geselecteerd`;
+    if (rootSubEl) rootSubEl.textContent = 'Kies een actie voor de geselecteerde items.';
+    // Order-only acties verbergen voor klanten
+    const orderOnlyRows = document.querySelectorAll('.bulk-action-row[data-action="bezorgdatum"], .bulk-action-row[data-action="status"]');
+    orderOnlyRows.forEach(r => { r.hidden = !isOrders; });
+    setBulkPane('root');
+    $('#send-msg-backdrop').classList.add('open');
+    $('#send-msg-drawer').classList.add('open');
+  }
+  function closeSendDrawer() {
+    $('#send-msg-backdrop').classList.remove('open');
+    $('#send-msg-drawer').classList.remove('open');
+    // Reset selection + tekst zodat volgende keer schoon begint.
+    exitSelectMode();
+    $('#send-msg-text').value = '';
+    const tplSel = document.getElementById('msg-template'); if (tplSel) tplSel.value = '';
+    const tplHint = document.getElementById('msg-template-hint'); if (tplHint) tplHint.hidden = true;
+    // Reset pane terug naar root voor de volgende keer
+    setBulkPane('root');
+    const bzStatus = $('#bezorgdatum-status'); if (bzStatus) bzStatus.hidden = true;
+  }
+  // Pane navigatie binnen bulk-drawer
+  function setBulkPane(name) {
+    const panes = document.getElementById('bulk-panes');
+    if (panes) panes.dataset.pane = name;
+  }
+  // ── Message templates ──────────────────────────────────────────────────────
+  // Templates gebruiken {{voornaam}} + {{singular|plural}} markers. Verzendlogica in
+  // sendToOne() vervangt ze per ontvanger op basis van isPluralName().
+  const MSG_TEMPLATES = [
+    {
+      id: 'bevestiging-bestelling',
+      name: 'Bevestiging bestelling',
+      body:
+        'Leuk {{voornaam}}, we hebben je bestelling ontvangen! ' +
+        'Goed nieuws: {{jouw pot is|jullie potten zijn}} al op voorraad, ' +
+        "we komen {{'m|ze}} zaterdag bezorgen.\n\n" +
+        'Helemaal zin in!\nLiefs, Ellis en Melle',
+    },
+    {
+      id: 'game-voltooid',
+      name: 'Game voltooid',
+      body:
+        'Missie voltooid! Ging de speurtocht soepel? 👏😄\n\n' +
+        '{{voornaam}} {{heeft|hebben}} een crew bandje verdiend! Ellis probeert het bandje vanavond even langs te brengen, leuk!\n\n' +
+        'Michiel',
+    },
+  ];
+  function isPluralName(name) {
+    if (!name) return false;
+    const n = String(name).toLowerCase();
+    return /\s+en\s+/.test(n) || /\s*&\s*/.test(n) || /,/.test(n) || /\s*\+\s*/.test(n);
+  }
+  function personalizeMessage(text, name) {
+    if (!text) return '';
+    const plural = isPluralName(name);
+    const cleanName = String(name || '').trim();
+    return text
+      .replace(/\{\{voornaam\}\}/g, cleanName)
+      .replace(/\{\{([^{}|]+)\|([^{}|]+)\}\}/g, (_, sing, plu) => plural ? plu : sing);
+  }
+  function fillTemplateDropdown() {
+    const sel = document.getElementById('msg-template');
+    if (!sel) return;
+    // Reset (behoud eerste "Kies template"-optie)
+    while (sel.options.length > 1) sel.remove(1);
+    MSG_TEMPLATES.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id; opt.textContent = t.name;
+      sel.appendChild(opt);
+    });
+    sel.value = '';
+  }
+  function updateTemplateHint() {
+    const hint = document.getElementById('msg-template-hint');
+    if (!hint) return;
+    const txt = ($('#send-msg-text') && $('#send-msg-text').value) || '';
+    hint.hidden = !/\{\{voornaam\}\}|\{\{[^{}|]+\|[^{}|]+\}\}/.test(txt);
+  }
+  function applyTemplate(id) {
+    const t = MSG_TEMPLATES.find(x => x.id === id);
+    if (!t) return;
+    const ta = document.getElementById('send-msg-text');
+    if (!ta) return;
+    const current = ta.value.trim();
+    if (current) {
+      const ok = window.confirm('Er staat al een bericht. Wil je dit vervangen met het gekozen template?');
+      if (!ok) {
+        // Zet dropdown terug op "Kies template"
+        const sel = document.getElementById('msg-template'); if (sel) sel.value = '';
+        return;
+      }
+    }
+    ta.value = t.body;
+    updateTemplateHint();
+  }
+  function initBerichtPane() {
+    const recipients = getRecipients();
+    const titleEl = $('#send-msg-title');
+    const subEl = $('#send-msg-sub');
+    const isOrders = STATE_SEL.orders.size > 0;
+    const noun = isOrders
+      ? (recipients.length === 1 ? 'bestelling' : 'bestellingen')
+      : (recipients.length === 1 ? 'klant'      : 'klanten');
+    titleEl.textContent = `Stuur een berichtje naar ${recipients.length} ${noun}`;
+    subEl.textContent = 'Type je bericht en tap een voor een op de berichtknop bij elke ontvanger.';
+    $('#send-msg-done-tip').hidden = true;
+    sentSet = new Set();
+    sendingQueue = recipients;
+    fillTemplateDropdown();
+    updateTemplateHint();
+    renderRecipientList();
+  }
+  function initBezorgdatumPane() {
+    const recipients = getRecipients();
+    const n = recipients.length;
+    const cntEl = $('#bezorgdatum-count'); if (cntEl) cntEl.textContent = String(n);
+    const plEl  = $('#bezorgdatum-plural'); if (plEl) plEl.textContent = (n === 1 ? '' : 'en');
+    const inp = $('#bezorgdatum-input'); if (inp) inp.value = '';
+    const wrap = $('#bezorgdatum-wrap'); if (wrap) wrap.classList.remove('has-value');
+    const st = $('#bezorgdatum-status'); if (st) st.hidden = true;
+  }
+  // Status pane — opties + apply
+  const BULK_STATUS_OPTS = [
+    { val: 'todo',                  label: 'Nieuw' },
+    { val: 'confirmed',             label: 'Bevestigd' },
+    { val: 'delivered',             label: 'Bezorgd' },
+    { val: 'neighbors',             label: 'Buren bezorgd' },
+    { val: 'retry',                 label: 'Nieuwe bezorgpoging' },
+    { val: 'pickup_requested',      label: 'Lege pot ophalen' },
+    { val: 'pickup_self_requested', label: 'Verzoek zelf ophalen' },
+    { val: 'picked_up',             label: 'Opgehaald' },
+  ];
+  let __bulkStatusSelected = null;
+  function initStatusPane() {
+    const recipients = getRecipients().filter(r => r.type === 'order');
+    const n = recipients.length;
+    const cntEl = $('#status-count'); if (cntEl) cntEl.textContent = String(n);
+    const plEl  = $('#status-plural'); if (plEl) plEl.textContent = (n === 1 ? '' : 'en');
+    __bulkStatusSelected = null;
+    const wrap = $('#bulk-status-options');
+    if (wrap) {
+      wrap.innerHTML = '';
+      BULK_STATUS_OPTS.forEach(o => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.textContent = o.label; b.dataset.val = o.val;
+        b.addEventListener('click', () => {
+          wrap.querySelectorAll('button').forEach(x => x.classList.remove('sel'));
+          b.classList.add('sel');
+          __bulkStatusSelected = o.val;
+          const apply = $('#status-apply'); if (apply) apply.disabled = false;
+        });
+        wrap.appendChild(b);
+      });
+    }
+    const apply = $('#status-apply'); if (apply) apply.disabled = true;
+    const tip = $('#status-applied-tip'); if (tip) tip.hidden = true;
+  }
+  async function applyStatusBulk() {
+    if (!__bulkStatusSelected) return;
+    const recipients = getRecipients();
+    const orderIds = recipients.filter(r => r.type === 'order').map(r => r.id);
+    if (orderIds.length === 0) { alert('Geen bestellingen geselecteerd.'); return; }
+    const btn = $('#status-apply');
+    if (btn) { btn.disabled = true; btn.textContent = 'Bezig…'; }
+    let ok = 0, fail = 0;
+    for (const id of orderIds) {
+      const res = await api('bezorger-set-status', { order_id: id, status: __bulkStatusSelected });
+      if (res.ok && res.data && res.data.ok) ok++; else fail++;
+    }
+    const tip = $('#status-applied-tip');
+    if (tip) {
+      tip.hidden = false;
+      tip.style.color = fail === 0 ? '#1c7d3f' : 'var(--red)';
+      tip.textContent = fail === 0
+        ? `✓ ${ok} bestelling${ok === 1 ? '' : 'en'} bijgewerkt`
+        : `Bijgewerkt: ${ok} · mislukt: ${fail}`;
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Toepassen op <span id="status-count">' + orderIds.length + '</span> bestelling<span id="status-plural">' + (orderIds.length === 1 ? '' : 'en') + '</span>'; }
+    if (fail === 0) {
+      setTimeout(() => { closeSendDrawer(); if (typeof window.loadOrders === 'function') window.loadOrders(); else location.reload(); }, 900);
+    }
+  }
+  // --- Plan bezorging (nieuwe bezorging inplannen met datum + naam) ---
+  // ISO week nummer (Dutch/Europe convention: week 1 = eerste week met donderdag)
+  function isoWeekNr(ymd) {
+    const [y, m, d] = ymd.split('-').map(n => parseInt(n, 10));
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    const dayNr = (dt.getUTCDay() + 6) % 7; // Ma=0
+    dt.setUTCDate(dt.getUTCDate() - dayNr + 3); // Verplaats naar donderdag van deze week
+    const jan4 = new Date(Date.UTC(dt.getUTCFullYear(), 0, 4));
+    const janDay = (jan4.getUTCDay() + 6) % 7;
+    jan4.setUTCDate(jan4.getUTCDate() - janDay + 3);
+    return 1 + Math.round((dt - jan4) / (7 * 86400000));
+  }
+  function autoWeekName(ymd) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return '';
+    return 'Week ' + isoWeekNr(ymd);
+  }
+  function initPlanBezorgingPane() {
+    const n = getRecipients().filter(r => r.type === 'order').length;
+    const cntEl = $('#plan-bezorging-count'); if (cntEl) cntEl.textContent = String(n);
+    const plu = $('#plan-bezorging-plural'); if (plu) plu.textContent = n === 1 ? '' : 'en';
+    const st = $('#plan-bezorging-status'); if (st) st.hidden = true;
+    // Reset date + name if user re-opens pane
+    const dateInp = $('#plan-bezorging-date');
+    const nameInp = $('#plan-bezorging-name');
+    if (dateInp) dateInp.value = '';
+    if (nameInp) nameInp.value = '';
+    const w = $('#plan-bezorging-date-wrap');
+    if (w) w.classList.remove('has-value');
+  }
+  async function applyPlanBezorging() {
+    const date = ($('#plan-bezorging-date').value || '').trim();
+    let name = ($('#plan-bezorging-name').value || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { alert('Kies eerst een datum.'); return; }
+    if (!name) name = autoWeekName(date);
+    const recipients = getRecipients();
+    const orderIds = recipients.filter(r => r.type === 'order').map(r => r.id);
+    if (orderIds.length === 0) { alert('Geen bestellingen geselecteerd.'); return; }
+    const btn = $('#plan-bezorging-apply');
+    if (btn) { btn.disabled = true; btn.textContent = 'Bezig…'; }
+    let ok = 0, fail = 0;
+    // Zet delivery_date_override + custom label op elk order — de bezorger dropdown
+    // groepeert op (week, label), dus deze bestellingen krijgen hun eigen entry.
+    const isDefaultName = name === autoWeekName(date);
+    for (const id of orderIds) {
+      const payload = { order_id: id, delivery_date: date };
+      // Alleen een custom label meesturen als de user 'm expliciet heeft aangepast — bij
+      // default "Week X" willen we bestaande orders van diezelfde week niet splitsen.
+      if (!isDefaultName) payload.custom_delivery_label = name;
+      const res = await api('bestellingen-update-delivery-date', payload);
+      if (res.ok && res.data && res.data.ok) ok++; else fail++;
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = 'Opslaan (<span id="plan-bezorging-count">' + orderIds.length + '</span> bestelling<span id="plan-bezorging-plural">' + (orderIds.length === 1 ? '' : 'en') + '</span>)';
+    }
+    // Bevestiging als bottom toast (bestaande showToast).
+    if (fail === 0) {
+      showToast('✓ Bezorging \'' + name + '\' aangemaakt met ' + ok + ' bestelling' + (ok === 1 ? '' : 'en'), 'success');
+      setTimeout(() => { closeSendDrawer(); if (typeof window.loadOrders === 'function') window.loadOrders(); else location.reload(); }, 900);
+    } else {
+      const st = $('#plan-bezorging-status');
+      if (st) { st.hidden = false; st.style.color = 'var(--red)'; st.textContent = 'Opgeslagen: ' + ok + ' · mislukt: ' + fail; }
+    }
+  }
+
+  async function applyBezorgdatumBulk() {
+    const date = ($('#bezorgdatum-input').value || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      alert('Kies eerst een datum.');
+      return;
+    }
+    const recipients = getRecipients();
+    const orderIds = recipients.filter(r => r.type === 'order').map(r => r.id);
+    if (orderIds.length === 0) {
+      alert('Geen bestellingen geselecteerd.');
+      return;
+    }
+    const btn = $('#bezorgdatum-apply');
+    if (btn) { btn.disabled = true; btn.textContent = 'Bezig…'; }
+    let ok = 0, fail = 0;
+    for (const id of orderIds) {
+      const res = await api('bestellingen-update-delivery-date', { order_id: id, uiterlijke_bezorgdatum: date });
+      if (res.ok && res.data && res.data.ok) ok++; else fail++;
+    }
+    const st = $('#bezorgdatum-status');
+    if (st) {
+      st.hidden = false;
+      st.style.color = fail === 0 ? '#1c7d3f' : 'var(--red)';
+      st.textContent = fail === 0
+        ? `✓ ${ok} bestelling${ok === 1 ? '' : 'en'} bijgewerkt`
+        : `Bijgewerkt: ${ok} · mislukt: ${fail}`;
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Toepassen op <span id="bezorgdatum-count">' + orderIds.length + '</span> bestelling<span id="bezorgdatum-plural">' + (orderIds.length === 1 ? '' : 'en') + '</span>'; }
+    // Refresh data + sluit drawer na 800ms zodat user kan zien dat het werkte
+    if (fail === 0) {
+      setTimeout(() => { closeSendDrawer(); if (typeof window.loadOrders === 'function') window.loadOrders(); else location.reload(); }, 900);
+    }
+  }
+
+  // Bouw een recipient-kaart die er IDENTIEK uitziet als op /bestellingen (titels, badges, deadline)
+  // — alleen de standaard navigatie is uit en we forceren de rode msg-btn (ook voor non-todo statussen).
+  const ICON_CHAT  = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+  const ICON_CHECK = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+  function buildRecipientCard(r) {
+    let card;
+    if (r.type === 'order' && typeof window.buildOrderCard === 'function') {
+      // Pak het oorspronkelijke order-object uit STATE zodat alle tags/badges kloppen.
+      const o = (window.STATE && Array.isArray(STATE.orders))
+        ? STATE.orders.find(x => x.id === r.id) : null;
+      if (o) {
+        card = window.buildOrderCard(o, { allowMsgBtn: true });
+        card.style.cursor = 'default';
+        // Onderdruk de body-click navigatie naar /bestelling/{id}
+        card.addEventListener('click', (e) => {
+          if (!e.target.closest('.msg-btn')) {
+            e.preventDefault(); e.stopImmediatePropagation();
+          }
+        }, true);
+        // Garandeer een msg-btn (buildOrderCard toont 'm alleen bij status='todo'); voeg toe indien missing
+        let msgBtn = card.querySelector('.msg-btn');
+        if (!msgBtn) {
+          msgBtn = document.createElement('button');
+          msgBtn.type = 'button';
+          msgBtn.className = 'msg-btn';
+          msgBtn.setAttribute('aria-label', 'Stuur bericht');
+          msgBtn.innerHTML = ICON_CHAT;
+          card.appendChild(msgBtn);
+        } else {
+          // Bestaande handler verwijderen door clonen
+          const fresh = msgBtn.cloneNode(true);
+          msgBtn.replaceWith(fresh);
+          msgBtn = fresh;
+        }
+        if (sentSet.has(r.id)) {
+          msgBtn.style.background = '#1c7d3f';
+          msgBtn.innerHTML = ICON_CHECK;
+        }
+        msgBtn.addEventListener('click', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          sendToOne(r, card);
+        });
+        return card;
+      }
+    }
+
+    // Klant of fallback — bouw kaart die overeenkomt met renderKlanten + msg-btn rechts.
+    const c = (window.STATE && Array.isArray(STATE.klanten))
+      ? STATE.klanten.find(x => x.key === r.id) : null;
+    card = document.createElement('div');
+    card.className = 'order-card'; // zelfde flex-layout (info-zone + msg-btn)
+    card.style.cursor = 'default';
+    if (c) {
+      const tags = [];
+      if (c.active_orders > 0) tags.push('<span class="klant-tag active">Actief</span>');
+      else tags.push('<span class="klant-tag inactive">Inactief</span>');
+      if (c.is_top_10_customer) tags.push('<span class="klant-tag top">Top klant</span>');
+      if (c.pots_at_home > 0) tags.push('<span class="klant-tag pot-home">' + c.pots_at_home + ' pot in huis</span>');
+      const isSent = sentSet.has(r.id);
+      card.innerHTML = `
+        <div class="info">
+          <div class="name">${c.voornaam || '(geen naam)'}</div>
+          <div class="deadline">${c.adres || ''}${c.plaats ? ' — ' + c.plaats : ''}</div>
+          <div class="tags-row">${tags.join('')}</div>
+        </div>
+        <button type="button" class="msg-btn" aria-label="Stuur bericht"${isSent ? ' style="background:#1c7d3f;"' : ''}>${isSent ? ICON_CHECK : ICON_CHAT}</button>
+      `;
+    } else {
+      const isSent = sentSet.has(r.id);
+      card.innerHTML = `
+        <div class="info"><div class="name">${r.name}</div></div>
+        <button type="button" class="msg-btn" aria-label="Stuur bericht"${isSent ? ' style="background:#1c7d3f;"' : ''}>${isSent ? ICON_CHECK : ICON_CHAT}</button>
+      `;
+    }
+    const btn = card.querySelector('.msg-btn');
+    btn.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      sendToOne(r, card);
+    });
+    return card;
+  }
+
+  function renderRecipientList() {
+    const wrap = $('#send-msg-list');
+    wrap.innerHTML = '';
+    sendingQueue.forEach(r => {
+      wrap.appendChild(buildRecipientCard(r));
+    });
+    if (sentSet.size === sendingQueue.length && sendingQueue.length > 0) {
+      $('#send-msg-done-tip').hidden = false;
+    }
+  }
+
+  async function sendToOne(r, cardEl) {
+    const raw = $('#send-msg-text').value.trim();
+    if (!raw) { alert('Type eerst een bericht.'); return; }
+    // Vervang {{voornaam}} + {{singular|plural}} markers voor deze specifieke ontvanger.
+    const text = personalizeMessage(raw, r.name);
+    // Open kanaal (WhatsApp of e-mail) met pre-filled bericht.
+    if (r.kanaal === 'email' && r.email) {
+      const subj = encodeURIComponent('Berichtje van Ellis en Melle');
+      window.open(`mailto:${encodeURIComponent(r.email)}?subject=${subj}&body=${encodeURIComponent(text)}`, '_blank');
+    } else {
+      const num = (r.telefoon || '').replace(/[^0-9+]/g, '');
+      if (!num) { alert(`${r.name} heeft geen geldig telefoonnummer.`); return; }
+      const normalized = num.startsWith('+')
+        ? num.slice(1)
+        : (num.startsWith('06') ? '31' + num.slice(1) : num);
+      window.open(`https://wa.me/${normalized}?text=${encodeURIComponent(text)}`, '_blank');
+    }
+    try {
+      await api('share-message-log', {
+        target_type: r.type === 'order' ? 'order' : 'customer',
+        target_id: r.id,
+        recipient_name: r.name,
+        message: text,
+        has_photo: false,
+      });
+    } catch {}
+    sentSet.add(r.id);
+    // Re-render the single card → groen + check icon
+    if (cardEl && cardEl.parentNode) {
+      const fresh = buildRecipientCard(r);
+      cardEl.parentNode.replaceChild(fresh, cardEl);
+    }
+    if (sentSet.size === sendingQueue.length) {
+      $('#send-msg-done-tip').hidden = false;
+    }
+  }
+
+  // ── Bindings ────────────────────────────────────────────────────────────────
+  function bindAll() {
+    bindContainerObserver('#orders-list-new',       'orders',    getOrderFromCard, '.order-card');
+    bindContainerObserver('#orders-list-confirmed', 'orders',    getOrderFromCard, '.order-card');
+    bindContainerObserver('#orders-list-delivered', 'orders',    getOrderFromCard, '.order-card');
+    bindContainerObserver('#klanten-list',          'customers', getCustomerFromCard, '.klant-card');
+
+    // Buttons
+    const ob = $('#send-msg-orders-btn');
+    const kb = $('#send-msg-klanten-btn');
+    if (ob) ob.addEventListener('click', openBulkDrawer);
+    if (kb) kb.addEventListener('click', openBulkDrawer);
+
+    // Drawer events
+    $('#send-msg-backdrop').addEventListener('click', closeSendDrawer);
+    // Bulk-actions navigatie (root → bezorgdatum / bericht en terug)
+    document.querySelectorAll('.bulk-action-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const action = row.dataset.action;
+        if (action === 'bezorgdatum')         initBezorgdatumPane();
+        else if (action === 'status')          initStatusPane();
+        else if (action === 'bericht')         initBerichtPane();
+        else if (action === 'plan-bezorging')  initPlanBezorgingPane();
+        setBulkPane(action);
+      });
+    });
+    document.querySelectorAll('.bulk-back').forEach(b => {
+      b.addEventListener('click', () => setBulkPane(b.dataset.back || 'root'));
+    });
+    const bzApply = $('#bezorgdatum-apply');
+    if (bzApply) bzApply.addEventListener('click', applyBezorgdatumBulk);
+    const bzInput = $('#bezorgdatum-input');
+    const bzWrap = $('#bezorgdatum-wrap');
+    if (bzInput && bzWrap) {
+      const syncPlaceholder = () => bzWrap.classList.toggle('has-value', !!bzInput.value);
+      bzInput.addEventListener('input', syncPlaceholder);
+      bzInput.addEventListener('change', syncPlaceholder);
+    }
+    const pbApply = $('#plan-bezorging-apply');
+    if (pbApply) pbApply.addEventListener('click', applyPlanBezorging);
+    const pbDate = $('#plan-bezorging-date');
+    const pbName = $('#plan-bezorging-name');
+    const pbWrap = $('#plan-bezorging-date-wrap');
+    if (pbDate && pbWrap) {
+      const syncPbPlaceholder = () => pbWrap.classList.toggle('has-value', !!pbDate.value);
+      pbDate.addEventListener('input', syncPbPlaceholder);
+      pbDate.addEventListener('change', syncPbPlaceholder);
+      // Auto-fill naam met "Week X" op basis van gekozen datum — alleen als user
+      // het naam-veld nog niet zelf heeft aangepast.
+      let __nameUserEdited = false;
+      if (pbName) pbName.addEventListener('input', () => { __nameUserEdited = true; });
+      const applyAutoName = () => {
+        if (__nameUserEdited || !pbName) return;
+        pbName.value = autoWeekName(pbDate.value || '');
+      };
+      pbDate.addEventListener('change', applyAutoName);
+      pbDate.addEventListener('input',  applyAutoName);
+    }
+    const stApply = $('#status-apply');
+    if (stApply) stApply.addEventListener('click', applyStatusBulk);
+    const tplSel = document.getElementById('msg-template');
+    if (tplSel) tplSel.addEventListener('change', (e) => {
+      const id = e.target.value;
+      if (!id) return;
+      applyTemplate(id);
+    });
+    const msgTa = document.getElementById('send-msg-text');
+    if (msgTa) msgTa.addEventListener('input', updateTemplateHint);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindAll);
+  } else {
+    bindAll();
+  }
+})();
+</script>
+
 <button class="fab fab-scan" id="fab-scan" type="button" aria-label="Scan een POT-QR" style="bottom: calc(94px + env(safe-area-inset-bottom));">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
     <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -1235,8 +2311,125 @@
     <line x1="21" y1="17" x2="21" y2="21"/>
   </svg>
 </button>
-<script type="module" src="/assets/scan-fab.js?v=14"></script>
+<script type="module" src="/assets/scan-fab.js?v=19"></script>
 
-<script src="/assets/pull-to-refresh.js" defer></script>
+<script src="/assets/pull-to-refresh.js" defer>
+</script>
+<!-- Free order drawer (per klant) -->
+<div class="free-drawer-backdrop" id="free-drawer-backdrop"></div>
+<div class="free-drawer" id="free-drawer" role="dialog" aria-modal="true">
+  <h3 id="free-drawer-title">Gratis bestelling</h3>
+  <p class="sub" id="free-drawer-sub">Voor <span id="free-klant-name">klant</span></p>
+
+  <div class="label">Aantal potten</div>
+  <div class="chips" id="free-aantal-chips">
+    <button type="button" class="chip selected" data-aantal="1">1</button>
+    <button type="button" class="chip" data-aantal="2">2</button>
+    <button type="button" class="chip" data-aantal="3">3</button>
+    <button type="button" class="chip" data-aantal="4">4</button>
+    <button type="button" class="chip" data-aantal="5">5</button>
+  </div>
+
+  <div class="label">Leveringsdatum <span style="text-transform:none;color:#999;font-weight:400;">(optioneel — leeg = eerstvolgende ronde)</span></div>
+  <input type="date" id="free-delivery-date">
+
+  <div class="label">Reden (verplicht)</div>
+  <select id="free-reden">
+    <option value="">— kies een reden —</option>
+    <option value="Batch defect">Batch defect</option>
+    <option value="Klachtcompensatie">Klachtcompensatie</option>
+    <option value="Cadeau">Cadeau</option>
+    <option value="Testronde">Testronde</option>
+    <option value="Anders">Anders (vul in)</option>
+  </select>
+  <textarea id="free-reden-note" placeholder="Extra toelichting (optioneel)" style="margin-top:8px;"></textarea>
+
+  <div class="err" id="free-err"></div>
+  <div class="actions">
+    <button type="button" class="btn-primary" id="free-submit">Bevestig gratis bestelling</button>
+    <button type="button" class="btn-ghost" id="free-cancel">Annuleer</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  let currentKlantKey = null;
+  let currentKlantName = null;
+
+  window.openFreeOrderDrawer = function(klantKey, klantName) {
+    currentKlantKey = klantKey;
+    currentKlantName = klantName;
+    document.getElementById('free-klant-name').textContent = klantName || 'klant';
+    document.querySelectorAll('#free-aantal-chips .chip').forEach(c => c.classList.toggle('selected', c.dataset.aantal === '1'));
+    document.getElementById('free-delivery-date').value = '';
+    document.getElementById('free-reden').value = '';
+    document.getElementById('free-reden-note').value = '';
+    document.getElementById('free-err').classList.remove('show');
+    document.getElementById('free-submit').disabled = false;
+    document.getElementById('free-submit').textContent = 'Bevestig gratis bestelling';
+    document.getElementById('free-drawer-backdrop').classList.add('open');
+    document.getElementById('free-drawer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  function closeFreeDrawer() {
+    document.getElementById('free-drawer-backdrop').classList.remove('open');
+    document.getElementById('free-drawer').classList.remove('open');
+    document.body.style.overflow = '';
+    currentKlantKey = null;
+    currentKlantName = null;
+  }
+
+  document.getElementById('free-drawer-backdrop').addEventListener('click', closeFreeDrawer);
+  document.getElementById('free-cancel').addEventListener('click', closeFreeDrawer);
+
+  document.querySelectorAll('#free-aantal-chips .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#free-aantal-chips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    });
+  });
+
+  document.getElementById('free-submit').addEventListener('click', async () => {
+    const aantalChip = document.querySelector('#free-aantal-chips .chip.selected');
+    const aantal = aantalChip ? parseInt(aantalChip.dataset.aantal, 10) : 1;
+    const deliveryDate = document.getElementById('free-delivery-date').value.trim();
+    const reden = document.getElementById('free-reden').value.trim();
+    const redenNote = document.getElementById('free-reden-note').value.trim();
+    const err = document.getElementById('free-err');
+    err.classList.remove('show');
+    if (!reden) { err.textContent = 'Kies een reden — verplicht voor traceability.'; err.classList.add('show'); return; }
+    if (!currentKlantKey) { err.textContent = 'Klant niet gevonden. Sluit en open opnieuw.'; err.classList.add('show'); return; }
+    const btn = document.getElementById('free-submit');
+    btn.disabled = true; btn.textContent = 'Bezig…';
+    try {
+      const res = await fetch('/.netlify/functions/admin-add-free-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: STATE.password,
+          klant_key: currentKlantKey,
+          aantal, delivery_date: deliveryDate,
+          reden, reden_note: redenNote,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || ('HTTP ' + res.status));
+      const naam = data.klant && data.klant.voornaam || currentKlantName || 'klant';
+      if (typeof showToast === 'function') showToast(`Gratis bestelling voor ${naam} aangemaakt. Verschijnt in Nieuw.`, 'success');
+      closeFreeDrawer();
+      try { sessionStorage.removeItem('cache_bestellingen-list'); } catch {}
+      try { sessionStorage.removeItem('cache_klanten-list'); } catch {}
+      if (typeof loadOrders === 'function') try { loadOrders(); } catch {}
+      if (typeof loadKlanten === 'function') try { loadKlanten(); } catch {}
+    } catch (e) {
+      btn.disabled = false; btn.textContent = 'Bevestig gratis bestelling';
+      err.textContent = 'Kon niet aanmaken: ' + (e.message || e);
+      err.classList.add('show');
+    }
+  });
+})();
+</script>
+
 </body>
 </html>

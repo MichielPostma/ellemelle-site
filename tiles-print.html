@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ellemel — QR-codes printen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f5f1ea;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    color: #1A1A1A;
+    padding: 20px;
+  }
+  .toolbar {
+    max-width: 210mm; margin: 0 auto 18px; display: flex; gap: 12px; align-items: center;
+    background: white; padding: 14px 18px; border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  .toolbar h1 { font-size: 18px; color: #D9301E; flex: 1; }
+  .toolbar button, .toolbar a {
+    background: #D9301E; color: white; border: none;
+    padding: 10px 18px; border-radius: 10px;
+    font: 700 14px 'DM Sans', sans-serif; cursor: pointer; text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toolbar button:hover, .toolbar a:hover { background: #b22413; }
+  .sheet {
+    background: white; width: 210mm; min-height: 297mm;
+    margin: 0 auto; padding: 12mm;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 4mm; align-content: start;
+  }
+  .tile {
+    border: 1px dashed #ccc; border-radius: 6px;
+    padding: 4mm 3mm; display: flex; flex-direction: column; align-items: center;
+    gap: 4mm; background: white;
+    page-break-inside: avoid; break-inside: avoid;
+  }
+  .tile .qr { width: 36mm; height: 36mm; display: flex; align-items: center; justify-content: center; }
+  .tile .qr canvas, .tile .qr img { width: 100% !important; height: 100% !important; }
+  .tile .label {
+    font-weight: 700; font-size: 13pt; letter-spacing: 1px; color: #1A1A1A;
+  }
+  .tile .url {
+    font-size: 8pt; color: #888; word-break: break-all; text-align: center;
+  }
+  .brand {
+    grid-column: 1 / -1; text-align: center;
+    font-size: 11pt; color: #888; margin-top: 2mm;
+    padding-top: 4mm; border-top: 1px solid #eee;
+  }
+  @media print {
+    body { background: white; padding: 0; }
+    .toolbar { display: none; }
+    .sheet {
+      box-shadow: none; width: auto; padding: 8mm;
+      min-height: auto;
+    }
+    @page { size: A4; margin: 8mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>Ellemel — 20 fysieke QR-codes (T01–T20)</h1>
+  <button type="button" onclick="window.print()">🖨️ Print of opslaan als PDF</button>
+</div>
+
+<div class="sheet" id="sheet">
+  <!-- Tiles worden hier gerenderd -->
+  <div class="brand">Ellemel · Plak per QR-code op een Ellemel-bordje op een straatlocatie. Codes leiden naar <strong>ellemel.nl/t/T01</strong> t/m <strong>/T20</strong>.</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<script>
+  const BASE = 'https://ellemel.nl/t/';
+  const TOTAL = 20;
+  const sheet = document.getElementById('sheet');
+  const brand = sheet.querySelector('.brand');
+
+  for (let i = 1; i <= TOTAL; i++) {
+    const id = 'T' + String(i).padStart(2, '0');
+    const url = BASE + id;
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.innerHTML = `
+      <div class="qr" id="qr-${id}"></div>
+      <div class="label">${id}</div>
+      <div class="url">ellemel.nl/t/${id}</div>
+    `;
+    sheet.insertBefore(tile, brand);
+    /* eslint-disable no-undef */
+    new QRCode(document.getElementById('qr-' + id), {
+      text: url,
+      width: 240,
+      height: 240,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+</script>
+
+</body>
+</html>

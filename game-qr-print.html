@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ellemel — Operatie Verloren Noten · QR-codes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f5f1ea;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    color: #1A1A1A;
+    padding: 20px;
+  }
+  .toolbar {
+    max-width: 210mm; margin: 0 auto 18px; display: flex; gap: 12px; align-items: center;
+    background: white; padding: 14px 18px; border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  .toolbar h1 { font-size: 18px; color: #D9301E; flex: 1; }
+  .toolbar button {
+    background: #D9301E; color: white; border: none;
+    padding: 10px 18px; border-radius: 10px;
+    font: 700 14px 'DM Sans', sans-serif; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toolbar button:hover { background: #b22413; }
+  .sheet {
+    background: white; width: 210mm; min-height: 297mm;
+    margin: 0 auto; padding: 14mm;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .sheet h2 {
+    font-size: 20pt; color: #D9301E; margin-bottom: 4mm;
+  }
+  .sheet .lead {
+    font-size: 11pt; color: #555; margin-bottom: 10mm; line-height: 1.5;
+  }
+  .grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 8mm;
+  }
+  .tile {
+    border: 1px dashed #999; border-radius: 8px;
+    padding: 6mm 5mm 5mm; display: flex; flex-direction: column; align-items: center;
+    gap: 4mm; background: white;
+    page-break-inside: avoid; break-inside: avoid;
+  }
+  .tile .check-label {
+    background: #D9301E; color: white;
+    font-weight: 700; font-size: 11pt;
+    padding: 4px 12px; border-radius: 999px;
+    letter-spacing: 0.5px;
+  }
+  .tile .qr { width: 60mm; height: 60mm; display: flex; align-items: center; justify-content: center; }
+  .tile .qr canvas, .tile .qr img { width: 100% !important; height: 100% !important; }
+  .tile .place {
+    font-weight: 700; font-size: 13pt; color: #1A1A1A; text-align: center;
+    line-height: 1.3;
+  }
+  .tile .code {
+    font-size: 9pt; color: #888; font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+  }
+  .brand {
+    text-align: center;
+    font-size: 10pt; color: #888; margin-top: 10mm;
+    padding-top: 6mm; border-top: 1px solid #eee;
+  }
+  @media print {
+    body { background: white; padding: 0; }
+    .toolbar { display: none; }
+    .sheet { box-shadow: none; width: auto; padding: 10mm; min-height: auto; }
+    @page { size: A4; margin: 10mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>Ellemel — Operatie Verloren Noten · QR-codes</h1>
+  <button type="button" onclick="window.print()">🖨️ Print of opslaan als PDF</button>
+</div>
+
+<div class="sheet">
+  <h2>Operatie Verloren Noten — 4 check-in QR-codes</h2>
+  <div class="lead">
+    Plak elke QR-code op de bijbehorende plek in de Potgietersbuurt. Crew-leden scannen ze in de Ellemel game app om in te checken bij Michiel.
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="brand">Ellemel · Operatie Verloren Noten · Tokens: ELLEMEL-Q1-A t/m -D</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<script>
+  const tiles = [
+    { code: 'ELLEMEL-Q1-A', checkin: 'Check-in #1', place: 'Het speeltuintje' },
+    { code: 'ELLEMEL-Q1-B', checkin: 'Check-in #2', place: 'De bakker' },
+    { code: 'ELLEMEL-Q1-C', checkin: 'Check-in #3', place: 'Het pleintje' },
+    { code: 'ELLEMEL-Q1-D', checkin: 'Check-in #4', place: 'De grote boom' },
+  ];
+
+  const grid = document.getElementById('grid');
+  tiles.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'tile';
+    div.innerHTML = `
+      <div class="check-label">${t.checkin}</div>
+      <div class="qr" id="qr-${i}"></div>
+      <div class="place">${t.place}</div>
+      <div class="code">${t.code}</div>
+    `;
+    grid.appendChild(div);
+    /* eslint-disable no-undef */
+    new QRCode(document.getElementById('qr-' + i), {
+      text: t.code,
+      width: 280,
+      height: 280,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H,
+    });
+  });
+</script>
+
+</body>
+</html>

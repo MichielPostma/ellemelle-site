@@ -1,4 +1,4 @@
-// ELLEMELLE admin service worker — Web Push
+// Ellemel admin service worker — Web Push
 const SW_VERSION = '1';
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -8,8 +8,8 @@ self.addEventListener('activate', (event) => {
 });
 self.addEventListener('push', (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: 'ELLEMELLE', body: event.data ? event.data.text() : '' }; }
-  const title = data.title || 'ELLEMELLE';
+  try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: 'Ellemel', body: event.data ? event.data.text() : '' }; }
+  const title = data.title || 'Ellemel';
   const options = {
     body: data.body || '',
     icon: data.icon || '/assets/icons/icon-192.png',

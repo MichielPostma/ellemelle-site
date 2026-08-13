@@ -80,10 +80,10 @@ exports.handler = async (event) => {
 
   // Reorder flows still charge statiegeld for the NEW pot. The old pot's deposit is refunded
   // separately when the bezorger physically takes the empty pot back. So both new + reorder
-  // orders carry the standard product + €1/pot deposit pricing.
+  // orders carry the standard product + €3/pot deposit pricing.
   const productCents  = aantal * 500;
-  const depositCents  = aantal * 100;
-  const discountCents = credit * 100;
+  const depositCents  = aantal * 300;
+  const discountCents = credit * 300;
   const totalCents    = Math.max(50, productCents + depositCents - discountCents); // Stripe min: 50 cents
 
   const voornaam = String(body.voornaam || '').trim() || 'klant';

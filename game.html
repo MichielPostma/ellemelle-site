@@ -1,0 +1,2212 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#D9301E">
+<title>Ellemel speurtocht</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #D9301E;
+    --red-dark: #8B1A0E;
+    --cream: #fde7dc;
+    --black: #1A1A1A;
+    --white: #FFFFFF;
+    --green: #1f9d55;
+    --shadow-card: 0 2px 10px rgba(139,26,14,0.08);
+    --shadow-cta: 0 6px 18px rgba(217,48,30,0.28);
+    --radius-md: 14px;
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream); color: var(--black);
+    font-family: 'DM Sans', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 16px; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body { min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+  /* Full-bleed header image, geen padding aan boven/links/rechts */
+  #game-header { width: 100%; max-width: 480px; margin: 0 auto; display: block; position: relative; }
+  #game-header[hidden] { display: none; }
+  body.win-visible #game-header { display: none !important; }
+  body.win-visible .back-bar { padding-bottom: 0; }
+  body.win-visible #app { padding-top: 8px; }
+  #game-header img { width: 100%; height: auto; display: block; }
+  #game-header .header-handle {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 42px; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.75);
+    z-index: 2; pointer-events: none;
+  }
+  /* Terug-link bovenaan de pagina — zelfde stijl als elders (bestelling/klant) */
+  .back-bar {
+    max-width: 480px; margin: 0 auto;
+    padding: calc(env(safe-area-inset-top, 0px) + 16px) 20px 6px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .back-link {
+    background: transparent; border: none;
+    padding: 6px 0;
+    color: var(--black);
+    font-family: inherit; font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .back-link:hover { color: var(--red); }
+
+  /* Admin-only topbar controls (hamburger) — currently hidden on the game page */
+  .admin-topbar-actions { display: none !important; }
+  .menu-btn {
+    width: 44px; height: 44px; border: none; background: transparent;
+    cursor: pointer; padding: 10px; color: var(--black);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-btn svg { width: 24px; height: 24px; }
+  .menu-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 110;
+  }
+  .menu-backdrop.open { opacity: 1; pointer-events: auto; }
+  .menu-panel {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--white); border-radius: 18px 18px 0 0;
+    padding: 14px 20px calc(28px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    z-index: 120; max-height: 86dvh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
+  }
+  .menu-panel.open { transform: translateY(0); }
+  .menu-panel .drawer-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.18); margin: 0 auto 18px;
+  }
+  .menu-panel a, .menu-panel > button {
+    display: block; width: 100%; padding: 14px 16px;
+    background: transparent; border: none; cursor: pointer;
+    text-align: left; font: 700 17px 'DM Sans', system-ui, sans-serif; color: var(--black);
+    text-decoration: none; border-radius: var(--radius-md);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-panel a:hover { background: rgba(217,48,30,0.06); }
+  #app { max-width: 480px; margin: 0 auto; padding: 20px 20px 60px; position: relative; }
+
+  h1 { color: var(--black); font-size: 22px; line-height: 1.2; margin-bottom: 6px; letter-spacing: -0.1px; font-weight: 700; }
+  .lead { color: #444; font-size: 15px; line-height: 1.5; margin-bottom: 14px; }
+
+  .progress { color: #888; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px; }
+  .missions-progress {
+    width: 100%; height: 8px;
+    background: rgba(0,0,0,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .missions-progress .fill {
+    height: 100%;
+    background: var(--red);
+    border-radius: 4px;
+    transition: width 450ms ease;
+  }
+
+  /* Veelgestelde vragen accordion — geen witte blokken, direct op de cream */
+  .faq-section { margin: 6px 0 26px; }
+  .faq-section .faq-label {
+    font-size: 12px; color: #666; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .faq-item {
+    background: transparent; border: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    box-shadow: none; overflow: hidden;
+  }
+  .faq-item:last-child { border-bottom: 0; padding-bottom: 10px; }
+  .faq-q {
+    width: 100%; background: transparent; border: 0; cursor: pointer;
+    padding: 14px 0; display: flex; align-items: center; gap: 10px;
+    text-align: left; font-family: inherit;
+    font-size: 17px; font-weight: 700; color: var(--black);
+    line-height: 1.25;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .faq-q .chevron {
+    width: 18px; height: 18px; color: #888; margin-left: auto;
+    transition: transform 220ms; flex-shrink: 0;
+  }
+  .faq-item.open .faq-q .chevron { transform: rotate(180deg); }
+  .faq-a {
+    max-height: 0; overflow: hidden;
+    padding: 0;
+    transition: max-height 280ms ease, padding 280ms ease;
+  }
+  .faq-item.open .faq-a { padding: 0 0 16px; max-height: 900px; }
+  .faq-a p { font-size: 15px; color: #444; line-height: 1.5; }
+  .faq-image {
+    margin-top: 12px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f5f1ea;
+  }
+  .faq-image img {
+    width: 100%; display: block;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+  .faq-wa-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 52px;
+    margin-top: 14px;
+    padding: 8px 18px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font: 700 16px 'DM Sans', system-ui, sans-serif;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, transform 0.08s;
+  }
+  .faq-wa-btn:hover { background: #fdecea; }
+  .faq-wa-btn:active { transform: scale(0.98); }
+  .faq-wa-btn svg { width: 18px; height: 18px; }
+
+  .mission-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md);
+    margin-bottom: 14px; box-shadow: var(--shadow-card);
+    position: relative; overflow: hidden;
+  }
+  .mission-card.current.open { border: 2px solid var(--red); }
+  .mission-card .mission-card-content { transition: opacity 200ms; }
+  .mission-card.locked .mission-card-content { opacity: 0.6; }
+  .mission-card.completed-state .mission-card-content { opacity: 0.55; }
+  .mission-card.completed-state .head { cursor: pointer; }
+  /* Kleine header afbeelding boven de operatie titel */
+  /* Header wrapper zodat we de lock-overlay erop kunnen plaatsen */
+  .mission-card .mission-header-wrap {
+    position: relative; overflow: hidden;
+  }
+  .mission-card .mission-header-img {
+    width: 100%; aspect-ratio: 7/2;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+  }
+  /* Witte cirkel met rood lock icoon op gelockte operaties */
+  .mission-card .mission-lock-overlay {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px; height: 56px;
+    background: var(--red);
+    border-radius: 50%;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--white);
+    z-index: 2; pointer-events: none;
+  }
+  .mission-card .mission-lock-overlay svg { width: 26px; height: 26px; display: block; }
+  /* Groene cirkel met wit vinkje op afgeronde operaties */
+  .mission-card .mission-check-overlay {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px; height: 56px;
+    background: #1f9d55;
+    border-radius: 50%;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--white);
+    z-index: 2; pointer-events: none;
+  }
+  .mission-card .mission-check-overlay svg { width: 28px; height: 28px; display: block; }
+  .mission-card .head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 18px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+  .mission-card .head-info { flex: 1; min-width: 0; }
+  .mission-card .mission-tag {
+    display: inline-block;
+    background: rgba(0,0,0,0.06); color: #666;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px;
+  }
+  .mission-card.locked .mission-tag { color: #999; background: rgba(0,0,0,0.04); }
+  .mission-card .tag-row {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+    margin-top: 6px;
+  }
+  .mission-card .tag-row .badge { margin-top: 0; }
+  .mission-card.locked .head { cursor: default; }
+  .mission-card .badge {
+    display: inline-block; padding: 4px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  }
+  .mission-card .badge.unlocked { background: rgba(240,173,0,0.18); color: #a06c00; }
+  .mission-card .badge.find-qr { background: rgba(167,139,250,0.18); color: #8b6fb8; }
+  .mission-card .badge.completed { background: rgba(31,157,85,0.14); color: #1c7d3f; }
+  .mission-card .badge.locked { background: rgba(0,0,0,0.06); color: #888; }
+  .mission-card h2 {
+    font-size: 17px; font-weight: 700; color: var(--black);
+    line-height: 1.25;
+    word-break: break-word; overflow-wrap: anywhere;
+  }
+  .mission-card .badge { white-space: nowrap; display: inline-block; margin-top: 6px; }
+  .mission-card .chevron {
+    width: 22px; height: 22px; color: var(--red); transition: transform 200ms;
+    flex-shrink: 0;
+  }
+  .mission-card.open .chevron { transform: rotate(180deg); }
+  .mission-card .lock-icon {
+    width: 22px; height: 22px; color: var(--red); flex-shrink: 0;
+  }
+  .mission-card .body {
+    padding: 0 18px 18px;
+    display: none;
+  }
+  .mission-card.open .body { display: block; }
+  .mission-card .body p { font-size: 15px; color: #444; line-height: 1.5; margin-bottom: 14px; }
+  .mission-card .body .body-subheading {
+    font-size: 17px; font-weight: 700; color: var(--black);
+    line-height: 1.25; margin-bottom: 6px; margin-top: 6px;
+  }
+  .mission-card .body .body-extra { color: #555; }
+  /* Visuele afbeelding binnen een operatie blok (tijdelijk de header image, wordt later vervangen) */
+  .mission-inline-image {
+    width: 100%; display: block;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 6px 0 8px;
+    background: #f4eadc;
+    border: 1px solid rgba(0,0,0,0.08);
+    aspect-ratio: 5/3;
+  }
+  .mission-inline-image img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center 49%;
+    display: block;
+  }
+  .find-qr-subheading {
+    font-size: 17px; font-weight: 700; color: var(--black);
+    line-height: 1.25;
+    margin: 10px 0 4px;
+  }
+  .find-qr-caption {
+    font-size: 14px; color: #555; line-height: 1.4;
+    margin: 0 0 4px;
+  }
+  .find-qr-tip {
+    font-size: 14px; color: #555; line-height: 1.4;
+    margin: 4px 0 12px;
+  }
+  /* Uitleg-blok onder de audio player na een geslaagde scan */
+  .audio-instruction { margin: 14px 0 12px; }
+  .audio-instruction .instruction-title {
+    font-size: 17px; font-weight: 700; color: var(--black); line-height: 1.3;
+    margin-bottom: 6px;
+  }
+  .audio-instruction .instruction-body {
+    font-size: 14px; color: #666; line-height: 1.5;
+  }
+
+  /* Maps embed met zoekrechthoek */
+  .maps-wrap {
+    position: relative;
+    width: 100%; aspect-ratio: 16/10;
+    border-radius: 12px; overflow: hidden;
+    background: #eee; margin-bottom: 18px;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .maps-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .maps-wrap .search-area {
+    position: absolute; left: 30%; right: 30%; top: 30%; bottom: 30%;
+    border: 3px dashed var(--red);
+    background: rgba(217,48,30,0.08);
+    pointer-events: none; border-radius: 6px;
+  }
+  .open-maps-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 48px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font: 700 15px 'DM Sans', system-ui, sans-serif;
+    cursor: pointer; text-decoration: none;
+    margin-bottom: 12px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .open-maps-btn svg { width: 16px; height: 16px; }
+
+  /* Audio player — grote ronde play knop + animated sound wave + walkie talkie rechts */
+  .audio-player {
+    position: relative;
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 90px 12px 12px;  /* extra padding-right voor de walkie */
+    background: var(--white);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 14px;
+    /* Top extension toelaten zodat antenne boven uit het blok mag steken,
+       maar bodem strak op de blok-rand klippen. */
+    clip-path: inset(-40px 0 0 0);
+  }
+  .audio-player::after {
+    content: '';
+    position: absolute;
+    right: 6px;
+    bottom: -38px;             /* originele plaatsing — bodem walkie loopt onder de blok-rand */
+    width: 68px; height: 144px;  /* 10% kleiner dan origineel (76×160) */
+    background-image: url('/Images/walkie-talkie.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: top center;
+    pointer-events: none;
+  }
+  .audio-player .play-btn {
+    width: 56px; height: 56px; flex-shrink: 0;
+    background: var(--red); color: white;
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: var(--shadow-cta);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .audio-player .play-btn:active { transform: scale(0.95); }
+  .audio-player .play-btn svg { width: 24px; height: 24px; display: block; }
+  .audio-player .play-btn .pause { display: none; }
+  .audio-player.playing .play-btn .play { display: none; }
+  .audio-player.playing .play-btn .pause { display: block; }
+  .audio-player .info { flex: 1; min-width: 0; }
+  .audio-player .label { font-size: 17px; line-height: 1.25; font-weight: 700; color: var(--black); margin-bottom: 6px; letter-spacing: 0.2px; }
+  .audio-player .wave {
+    display: flex; align-items: center; gap: 3px;
+    height: 26px;
+  }
+  .audio-player .wave span {
+    display: block; width: 3px; height: 8px;
+    background: var(--red);
+    border-radius: 2px;
+    transition: height 180ms;
+  }
+  .audio-player:not(.playing) .wave span:nth-child(2n) { height: 12px; }
+  .audio-player:not(.playing) .wave span:nth-child(3n) { height: 6px; }
+  /* Audio player binnen een operatie blok: geen extra marge onder, card-body padding regelt de spacing */
+  .mission-card .body .audio-player { margin-bottom: 0; }
+  .audio-player.playing .wave span {
+    animation: ellemel-wave 0.95s ease-in-out infinite;
+  }
+  .audio-player.playing .wave span:nth-child(1)  { animation-delay: 0.00s; }
+  .audio-player.playing .wave span:nth-child(2)  { animation-delay: 0.08s; }
+  .audio-player.playing .wave span:nth-child(3)  { animation-delay: 0.18s; }
+  .audio-player.playing .wave span:nth-child(4)  { animation-delay: 0.26s; }
+  .audio-player.playing .wave span:nth-child(5)  { animation-delay: 0.36s; }
+  .audio-player.playing .wave span:nth-child(6)  { animation-delay: 0.44s; }
+  .audio-player.playing .wave span:nth-child(7)  { animation-delay: 0.36s; }
+  .audio-player.playing .wave span:nth-child(8)  { animation-delay: 0.26s; }
+  .audio-player.playing .wave span:nth-child(9)  { animation-delay: 0.18s; }
+  .audio-player.playing .wave span:nth-child(10) { animation-delay: 0.08s; }
+  .audio-player.playing .wave span:nth-child(11) { animation-delay: 0.00s; }
+  .audio-player.playing .wave span:nth-child(12) { animation-delay: 0.08s; }
+  .audio-player.playing .wave span:nth-child(13) { animation-delay: 0.18s; }
+  .audio-player.playing .wave span:nth-child(14) { animation-delay: 0.26s; }
+  @keyframes ellemel-wave {
+    0%, 100% { height: 6px; }
+    50% { height: 24px; }
+  }
+
+  /* Scan rij: rode outline scan knop + vierkante help knop ernaast */
+  .scan-row { display: flex; gap: 8px; margin-top: 4px; }
+  .scan-btn {
+    flex: 1; min-height: 56px;
+    background: var(--red); color: var(--white);
+    border: none; border-radius: var(--radius-md);
+    font: 700 16px 'DM Sans', system-ui, sans-serif;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: var(--shadow-cta);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .scan-btn:active { transform: scale(0.98); }
+  .scan-btn svg { width: 20px; height: 20px; }
+  /* Herstart operatie — rode outline knop onderaan een voltooide operatie */
+  .restart-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 56px; margin-top: 14px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font: 700 16px 'DM Sans', system-ui, sans-serif;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .restart-btn:active { transform: scale(0.98); }
+  .restart-btn svg { width: 16px; height: 16px; }
+  /* Start jouw operatie — outline knop direct onder Google Maps embed */
+  .start-mission-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 52px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    font: 700 16px 'DM Sans', system-ui, sans-serif;
+    cursor: pointer; text-decoration: none;
+    margin-bottom: 12px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .start-mission-btn:active { transform: scale(0.98); }
+  .start-mission-btn svg { width: 18px; height: 18px; }
+  .help-btn {
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font: 700 22px 'DM Sans', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .help-btn:active { transform: scale(0.96); }
+
+  /* Admin code entry per operatie (alleen admin) */
+  .admin-code-block {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px dashed rgba(217,48,30,0.35);
+  }
+  .admin-code-label {
+    font-size: 11px; font-weight: 700; color: var(--red);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .admin-code-row { display: flex; gap: 8px; }
+  .admin-code-input {
+    flex: 1; min-width: 0; min-height: 44px;
+    padding: 8px 12px;
+    font: 600 13px 'DM Sans', system-ui, sans-serif;
+    border: 2px solid rgba(217,48,30,0.35); border-radius: 10px;
+    background: white; color: var(--black);
+  }
+  .admin-code-input:focus { outline: none; border-color: var(--red); }
+  .admin-code-submit {
+    background: var(--red); color: white; border: 0;
+    border-radius: 10px; padding: 0 16px;
+    font: 700 13px 'DM Sans', sans-serif; cursor: pointer; min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .code-input {
+    width: 100%; min-height: 56px;
+    padding: 16px 18px; font-size: 22px; font-family: inherit; font-weight: 700;
+    background: var(--white); border: 2px solid transparent;
+    border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+    color: var(--black); text-align: center; letter-spacing: 6px; text-transform: uppercase;
+  }
+  .code-input:focus { outline: none; border-color: var(--red); }
+  /* DigiD-stijl 4-vakjes code input — each box masks naar bolletje */
+  .code-boxes {
+    display: flex; gap: 10px; justify-content: center;
+    margin: 8px 0 14px;
+  }
+  .code-box {
+    width: 56px; height: 64px;
+    background: var(--white);
+    border: 2px solid rgba(0,0,0,0.10);
+    border-radius: 12px;
+    text-align: center;
+    font: 700 28px 'DM Sans', system-ui, sans-serif;
+    color: var(--black);
+    box-shadow: var(--shadow-card);
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    padding: 0;
+    caret-color: var(--red);
+  }
+  .code-box:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(217,48,30,0.10), var(--shadow-card);
+  }
+  .code-box.filled { background: rgba(217,48,30,0.04); border-color: rgba(217,48,30,0.35); }
+  .submit-btn {
+    width: 100%; min-height: 60px; margin-top: 12px;
+    background: var(--red); color: var(--white); border: none;
+    border-radius: var(--radius-md); font: 700 18px 'DM Sans', system-ui, sans-serif;
+    cursor: pointer; box-shadow: var(--shadow-cta);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .submit-btn:disabled { background: #d4cfc4; box-shadow: none; }
+
+  .error-msg { color: var(--red); font-size: 14px; margin-top: 8px; font-weight: 600; min-height: 18px; }
+
+  /* QR Scanner overlay */
+  #scanner-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 100;
+    display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px;
+  }
+  #scanner-overlay.open { display: flex; }
+  #scanner-frame {
+    position: relative; width: 100%; max-width: 420px; aspect-ratio: 1/1;
+    background: #000; border-radius: 14px; overflow: hidden;
+  }
+  #scanner-video { width: 100%; height: 100%; display: block; object-fit: cover; }
+  #scanner-overlay .hint { color: white; margin-top: 16px; font-weight: 600; }
+  #scanner-overlay .cancel {
+    margin-top: 18px; background: transparent; color: white;
+    border: 2px solid rgba(255,255,255,0.4); padding: 12px 28px; border-radius: 14px;
+    font: 700 15px 'DM Sans', system-ui, sans-serif; cursor: pointer;
+  }
+
+  /* Win screen */
+  #win-screen { display: none; }
+  #win-screen.show { display: block; }
+  .win-hero {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .win-hero-image {
+    aspect-ratio: 16 / 9;
+    background: #f5f1ea center/cover no-repeat;
+    display: block;
+    overflow: hidden;
+  }
+  .win-hero-body {
+    padding: 22px 20px 24px;
+    text-align: center;
+  }
+  .win-hero-body h1 {
+    font-size: 26px; line-height: 1.2; margin-bottom: 8px; color: var(--black);
+  }
+  .win-hero-body p {
+    font-size: 15px; color: #666; line-height: 1.5;
+  }
+  .win-prize-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .win-prize-card-img {
+    width: 100%; aspect-ratio: 4 / 3;
+    background: #f5f1ea center/cover no-repeat;
+    display: block;
+  }
+  .win-prize-card-body {
+    padding: 20px 22px;
+  }
+  .win-prize-tag {
+    display: inline-block;
+    background: #d8f1e2; color: #166c3a;
+    font: 700 11px 'DM Sans', system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    padding: 4px 10px; border-radius: 999px;
+    margin-bottom: 10px;
+  }
+  .win-prize-card h2 {
+    font-size: 18px; font-weight: 700; color: var(--black);
+    line-height: 1.3; margin-bottom: 6px;
+  }
+  .win-prize-card p {
+    font-size: 14px; color: #666; line-height: 1.5;
+  }
+  /* Product (chocopasta pot) — geen card, gewoon op de cream achtergrond */
+  .win-product-image {
+    width: 100%; aspect-ratio: 4 / 3;
+    background: transparent center/contain no-repeat;
+    margin: 8px 0 18px;
+    display: block;
+  }
+  .win-actions {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .win-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 52px; padding: 8px 18px;
+    border-radius: var(--radius-md);
+    font-family: inherit; font-size: 16px; font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    appearance: none; -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s, background 0.15s, border-color 0.15s;
+    text-decoration: none;
+  }
+  .win-btn:active { transform: scale(0.98); }
+  .win-btn svg { width: 18px; height: 18px; }
+  .win-btn-primary {
+    background: var(--red); color: var(--white);
+    border: none;
+    box-shadow: var(--shadow-cta);
+  }
+  .win-btn-primary:hover { background: var(--red-dark); }
+  .win-btn-outline {
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red);
+  }
+  .win-btn-outline:hover { background: #fdecea; }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 200; }
+
+  .empty-state {
+    background: var(--white); border-radius: var(--radius-md); padding: 28px 20px;
+    text-align: center; color: #666; font-size: 15px;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Audio player als bottom drawer met ruimte bovenaan + afgeronde top hoeken */
+  #fullscreen-backdrop {
+    position: fixed; inset: 0; z-index: 290;
+    background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none;
+    transition: opacity 220ms;
+  }
+  #fullscreen-backdrop.open { opacity: 1; pointer-events: auto; }
+  #fullscreen-player {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 300;
+    height: 92dvh; max-height: 92dvh;
+    background: var(--cream);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
+    overflow: hidden;
+    transform: translateY(100%); transition: transform 260ms ease;
+    display: flex; flex-direction: column;
+  }
+  #fullscreen-player.open { transform: translateY(0); }
+  .fp-drawer-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.18);
+    margin: calc(8px + env(safe-area-inset-top)) auto 6px;
+    flex-shrink: 0; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Vergroot het tap-doelgebied rond de handle zonder padding toe te voegen */
+  .fp-drawer-handle-hit {
+    width: 100%; padding: 8px 0; display: flex; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .fp-audio-area {
+    flex: 1; display: flex; flex-direction: column;
+    min-height: 0; overflow: hidden; position: relative;
+  }
+  .fp-topbar {
+    display: flex; align-items: center; padding: 12px 14px; gap: 8px;
+  }
+  .fp-back {
+    width: 44px; height: 44px; border: 0; background: transparent;
+    cursor: pointer; color: var(--red);
+    display: inline-flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent; border-radius: 8px;
+  }
+  .fp-back:active { background: rgba(0,0,0,0.06); }
+  .fp-back svg { width: 26px; height: 26px; display: block; }
+  .fp-title { flex: 1; text-align: center; }
+  .fp-title-main { font-weight: 700; color: var(--black); font-size: 15px; line-height: 1.2; }
+  .fp-title-sub { font-size: 12px; color: #888; font-weight: 500; margin-top: 2px; }
+  .fp-spacer { width: 44px; }
+  .fp-lyrics {
+    flex: 1; overflow-y: auto; min-height: 0;
+    padding: 24px 26px 24px;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+  }
+  .fp-lyrics p {
+    font-size: 22px; line-height: 1.4; font-weight: 700;
+    color: rgba(26,26,26,0.32); margin-bottom: 22px;
+    transition: color 300ms;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+  .fp-lyrics p.past   { color: rgba(26,26,26,0.18); }
+  .fp-lyrics p.active { color: var(--red); }
+  .fp-controls {
+    position: relative;
+    padding: 14px 22px 22px;
+    display: flex; align-items: center; justify-content: flex-end;
+    flex-shrink: 0;
+    background: var(--cream);
+  }
+  /* Sticky fade-out boven de play knop zodat de lyrics zacht uitfaden bij scroll */
+  .fp-controls::before {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 100%;
+    height: 30px;
+    background: linear-gradient(to top, var(--cream), rgba(253,231,220,0));
+    pointer-events: none;
+  }
+  /* Sound wave achter de grote play knop — RAF-driven (geen simpele animation),
+     met heldere rode bars en een container die van links naar rechts opvult naarmate de audio vordert. */
+  .fp-wave {
+    --fp-progress: 0%;
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; align-items: center; gap: 6px;
+    height: 90px; width: 260px;
+    padding: 0 10px;
+    pointer-events: none;
+    border-radius: 14px;
+    background:
+      linear-gradient(to right,
+        rgba(255, 47, 23, 0.18) 0%,
+        rgba(255, 47, 23, 0.18) var(--fp-progress),
+        rgba(255, 47, 23, 0.04) var(--fp-progress),
+        rgba(255, 47, 23, 0.04) 100%
+      );
+    transition: background 200ms linear;
+  }
+  .fp-wave span {
+    position: relative; z-index: 1;
+    display: block; width: 5px; height: 12px;
+    background: #FF2D17;
+    opacity: 0.6;
+    border-radius: 3px;
+    transition: height 60ms ease-out, opacity 200ms;
+  }
+  .fp-wave.playing span { opacity: 1; }
+  .fp-play-btn {
+    position: relative; z-index: 2;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--red); color: white; border: 0;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: var(--shadow-cta);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fp-play-btn:active { transform: scale(0.95); }
+  .fp-play-btn svg { width: 24px; height: 24px; display: block; }
+  .fp-play-btn .pause { display: none; }
+  .fp-play-btn.playing .play { display: none; }
+  .fp-play-btn.playing .pause { display: block; }
+
+  /* Wit afgerond antwoord-kader onderaan de pop-up — drijft binnen de cream met subtiele shade */
+  .fp-answer-card {
+    background: white;
+    margin: 0 16px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 20px;
+    padding: 22px 20px 20px;
+    box-shadow: var(--shadow-card);
+    flex-shrink: 0;
+    display: none;
+    text-align: center;
+  }
+  #fullscreen-player.has-answer .fp-answer-card { display: block; }
+  .fp-answer-card .instruction-title {
+    font-size: 22px; font-weight: 700; color: var(--black); line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .fp-answer-card .instruction-sub {
+    font-size: 14px; color: #888; line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .fp-answer-card .code-boxes { margin: 0 0 16px; justify-content: center; }
+  /* Multiple-choice antwoord knoppen */
+  .fp-options { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+  .fp-option {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; min-height: 56px;
+    padding: 10px 14px;
+    background: var(--white); color: var(--black);
+    border: 2px solid rgba(0,0,0,0.10); border-radius: 14px;
+    font: 600 16px 'DM Sans', system-ui, sans-serif;
+    cursor: pointer; text-align: left;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 200ms, background 200ms, transform 80ms;
+  }
+  .fp-option:active { transform: scale(0.99); }
+  .fp-option:disabled { cursor: default; opacity: 0.7; }
+  .fp-option .letter {
+    flex-shrink: 0; width: 32px; height: 32px;
+    background: rgba(217,48,30,0.10); color: var(--red);
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font: 700 14px 'DM Sans', system-ui, sans-serif;
+  }
+  .fp-option.wrong {
+    border-color: var(--red); background: rgba(217,48,30,0.04);
+    animation: fp-shake 320ms;
+  }
+  .fp-option.correct {
+    border-color: #1f9d55; background: rgba(31,157,85,0.06);
+  }
+  .fp-option.correct .letter { background: rgba(31,157,85,0.12); color: #1c7d3f; }
+  @keyframes fp-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .fp-answer-card .fp-submit-btn {
+    width: 100%; min-height: 56px;
+    background: var(--red); color: var(--white);
+    border: none; border-radius: var(--radius-md);
+    font: 700 16px 'DM Sans', system-ui, sans-serif;
+    cursor: pointer; box-shadow: var(--shadow-cta);
+    -webkit-tap-highlight-color: transparent;
+    margin-top: 12px;
+  }
+  .fp-answer-card .fp-submit-btn:active { transform: scale(0.98); }
+  .fp-answer-card .fp-submit-btn:disabled { background: #d4cfc4; box-shadow: none; }
+
+  /* Naam-invoer puzzel: mix van zichtbare letters en in te vullen vakjes */
+  .fp-name-boxes {
+    display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
+    margin: 6px 0 0;
+  }
+  .fp-name-box {
+    width: 38px; height: 52px;
+    background: var(--white);
+    border: 2px solid rgba(0,0,0,0.10);
+    border-radius: 10px;
+    text-align: center;
+    font: 700 24px 'DM Sans', system-ui, sans-serif;
+    color: var(--black);
+    text-transform: uppercase;
+    padding: 0;
+    outline: none;
+  }
+  .fp-name-box.visible {
+    background: rgba(0,0,0,0.04);
+    border-color: rgba(0,0,0,0.08);
+    color: rgba(0,0,0,0.55);
+  }
+  .fp-name-box.empty:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(217,48,30,0.10);
+  }
+  .fp-name-box.filled {
+    background: rgba(217,48,30,0.06);
+    border-color: rgba(217,48,30,0.35);
+    color: var(--red);
+  }
+  .fp-name-box.wrong { animation: fp-shake 320ms; border-color: var(--red); }
+  .fp-answer-card .fp-error { color: var(--red); font-size: 14px; font-weight: 600; text-align: center; }
+  .fp-answer-card .fp-error:not(:empty) { margin-top: 10px; }
+</style>
+<script src="/assets/notifications.js" defer></script>
+</head>
+<body>
+<div class="back-bar">
+  <a class="back-link" id="back-to-pot" href="#" aria-label="Terug naar pot pagina">← Terug</a>
+  <div class="admin-topbar-actions">
+    <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</div>
+<!-- Hamburger bottom-drawer menu (admin only) -->
+<div class="menu-backdrop" id="menu-backdrop"></div>
+<div class="menu-panel" id="menu-panel">
+  <div class="drawer-handle"></div>
+  <a href="/koken">Koken</a>
+  <a href="/voorraad">Voorraad</a>
+  <a href="/bezorger">Bezorgen</a>
+  <a href="/bestellingen">Bestellingen</a>
+</div>
+<div id="game-header" hidden><img id="game-header-img" alt=""><div class="header-handle"></div></div>
+<main id="app">
+  <div id="loading" style="padding: 40px 0; text-align:center; color:#888;">Even kijken…</div>
+
+  <div id="content" hidden>
+    <div id="admin-banner" hidden style="background:var(--red); color:white; padding:10px 14px; border-radius: var(--radius-md); margin-bottom: 14px; font-size: 13px; font-weight: 600;">
+      🛠️ Admin-modus — alle operaties zijn geforceerd ontgrendeld voor testen.
+    </div>
+    <h1 id="game-name">Ellemel speurtocht</h1>
+    <div class="lead" id="game-lead">—</div>
+    <div id="intro-audio" class="audio-player" hidden style="margin-bottom: 16px;">
+      <button type="button" class="play-btn" aria-label="Luister welkomst">
+        <svg class="play" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+        <svg class="pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      </button>
+      <div class="info">
+        <div class="label">Luister, dit is er gebeurd</div>
+        <div class="wave"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <div class="faq-section">
+      <div class="faq-item open" data-faq="1">
+        <button type="button" class="faq-q">
+          Hoe werkt het?
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">
+          <p>Op vier plekken in de Potgietersbuurt zit een Ellemel QR-code verstopt. Bij elke stop scan je de QR-code met je telefoon.</p>
+          <div class="faq-image"><img src="/Images/howto-scan-qr.jpg?v=20260623a" alt="Speler scant een Ellemel QR-code op een bakstenen muur" style="object-position: center 40%;"></div>
+          <p style="margin-top: 12px;">Via een geluidsbericht krijg je dan een berichtje van Michiel met een nieuwe aanwijzing en een vraag. Samen vinden we de zak hazelnoten terug!</p>
+        </div>
+      </div>
+      <div class="faq-item" data-faq="2">
+        <button type="button" class="faq-q">
+          Hoe lang duurt de operatie?
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a"><p>Reken op ongeveer een uurtje wandelen door de Potgietersbuurt — alle vier de stops liggen lekker dicht bij elkaar. Tussendoor pauzeren mag, je voortgang blijft bewaard op deze pagina.</p></div>
+      </div>
+      <div class="faq-item" data-faq="3">
+        <button type="button" class="faq-q">
+          Wat krijg ik aan het einde?
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">
+          <p>Wanneer je de zak hazelnoten terug vindt ben je officieel onderdeel van de chocoladepasta crew!</p>
+          <div class="faq-image"><img src="/Images/reward-bandje.jpg?v=20260615a" alt="Ellemel Crew bandje om de pols"></div>
+          <p style="margin-top: 12px;">Je krijgt je crew bandje bij je volgende pot chocopasta (of haal je bandje op op de Busken Huëtstraat 11).</p>
+        </div>
+      </div>
+      <div class="faq-item" data-faq="4">
+        <button type="button" class="faq-q">
+          Wat als ik niet verder kom?
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">
+          <p>Geen zorgen — vraag je vader of moeder om hulp. Stuur ons gerust een WhatsApp-bericht, dan helpen we je verder en geven we je een extra hint.</p>
+          <a class="faq-wa-btn" href="https://wa.me/31641669615?text=Hoi%20Michiel%2C%20ik%20kom%20er%20niet%20uit%20bij%20Operatie%20Verloren%20Noten%20en%20heb%20een%20extra%20hint%20nodig" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.52 3.48A11.83 11.83 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.16 1.6 5.97L0 24l6.18-1.62A11.93 11.93 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52ZM12 21.82a9.83 9.83 0 0 1-5-1.36l-.36-.22-3.66.96.98-3.58-.24-.37A9.84 9.84 0 1 1 12 21.82Zm5.4-7.36c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.93 1.17-.17.2-.34.22-.64.07-.3-.15-1.26-.46-2.41-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.6.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.9-2.18-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.57-.01-.2 0-.52.07-.79.37-.27.3-1.03 1-1.03 2.44 0 1.44 1.05 2.83 1.2 3.03.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.62.7.22 1.34.19 1.85.12.56-.08 1.76-.72 2-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.34Z"/></svg>
+            <span>Hulp via WhatsApp</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress" id="progress-text">—</div>
+    <div class="missions-progress"><div class="fill" id="missions-progress-fill"></div></div>
+    <div id="missions-list"></div>
+
+    <!-- Admin: per stop qr_token + riddle_answer voor testen -->
+    <div id="admin-debug" hidden style="margin-top: 14px; padding: 16px 18px; background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius-md); box-shadow: var(--shadow-card);">
+      <div style="font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Admin — QR-codes & antwoorden</div>
+      <div id="admin-stop-table" style="font-size: 13px; line-height: 1.6;"></div>
+      <div id="admin-real-state" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(0,0,0,0.08); font-size: 12px; color: #666;"></div>
+    </div>
+  </div>
+
+  <div id="no-game" hidden>
+    <h1>Oeps — geen operatie op deze pot</h1>
+    <p class="lead">Op deze pot zit nog geen Crew-operatie. Misschien komt er een op een volgende pot — hou 'm in de gaten!</p>
+  </div>
+
+  <div id="win-screen">
+    <div class="win-hero">
+      <div class="win-hero-image" id="win-hero-image"></div>
+      <div class="win-hero-body">
+        <h1 id="win-title">Gelukt, de hazelnoten zijn weer terecht! 🎉</h1>
+        <p id="win-name">Dankzij jou kunnen Ellis en Melle weer chocopasta maken, en krijgen de kids hun bestelling op tijd. Goed gedaan, en welkom bij de chocopasta crew!</p>
+      </div>
+    </div>
+
+    <div class="win-prize-card">
+      <div class="win-prize-card-img" style="background-image: url('/Images/reward-bandje.jpg?v=20260615a');"></div>
+      <div class="win-prize-card-body">
+        <span class="win-prize-tag">Operatie geslaagd</span>
+        <h2 id="win-prize">Gefeliciteerd, je hebt een crew bandje verdiend</h2>
+        <p>Je krijgt je crew bandje van de bezorger bij je volgende bestelling. Of haal 'm op aan de Busken Huëtstraat 11.</p>
+      </div>
+    </div>
+
+    <div class="win-product-image" id="win-product-image"></div>
+
+    <div class="win-actions">
+      <button type="button" class="win-btn win-btn-primary" id="reorder-btn">
+        <span>Bestel een nieuwe pot Ellemel</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+      </button>
+      <button type="button" class="win-btn win-btn-outline" id="restart-all-btn">Herstart operatie</button>
+    </div>
+
+    <div class="faq-section" style="margin-top: 28px;">
+      <div class="faq-item">
+        <button type="button" class="faq-q">
+          Heeft elke pot chocopasta een operatie?
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a"><p>Op dit moment hebben we één operatie voor alle potten. Je start je operatie via de QR-code op je pot. Wanneer er een nieuwe operatie beschikbaar is, zie je het op je pot.</p></div>
+      </div>
+      <div class="faq-item">
+        <button type="button" class="faq-q">
+          Hoe vaak komen er nieuwe operaties?
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a"><p>We proberen regelmatig nieuwe operaties te publiceren — telkens in een andere buurt en met een eigen verhaal. Hou je pot-pagina en ellemel.nl in de gaten.</p></div>
+      </div>
+      <div class="faq-item">
+        <button type="button" class="faq-q">
+          Hoe krijg ik mijn crew bandje?
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a"><p>Je krijgt je crew bandje van de bezorger bij je volgende bestelling Ellemel chocopasta. Sneller? Haal 'm op aan de Busken Huëtstraat 11.</p></div>
+      </div>
+      <div class="faq-item">
+        <button type="button" class="faq-q">
+          Kan iedereen deze operatie doen?
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a"><p>Ja! Heb je een pot Ellemel waar deze operatie aan gekoppeld is, dan kun je 'm doen. Deel de link gerust met vrienden en familie die ook een pot hebben.</p></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Scanner overlay -->
+<div id="scanner-overlay">
+  <div id="scanner-frame">
+    <video id="scanner-video" playsinline muted></video>
+  </div>
+  <div class="hint">Richt de camera op de Ellemel QR-code</div>
+  <button type="button" class="cancel" id="scanner-cancel">Annuleer</button>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<!-- Schermvullende audio player -->
+<div id="fullscreen-backdrop"></div>
+<div id="fullscreen-player">
+  <div class="fp-drawer-handle-hit" id="fp-handle-hit"><div class="fp-drawer-handle"></div></div>
+  <div class="fp-audio-area">
+    <div class="fp-lyrics" id="fp-lyrics"></div>
+    <div class="fp-controls">
+      <button type="button" class="fp-play-btn" id="fp-play-btn" aria-label="Speel of pauzeer">
+        <svg class="play" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+        <svg class="pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="fp-answer-card">
+    <div class="instruction-title" id="fp-question">Wat denk jij?</div>
+    <div class="instruction-sub" id="fp-sub">Luister naar de hint en kies één van de antwoorden.</div>
+    <div class="fp-options" id="fp-options"></div>
+    <div class="fp-name-boxes" id="fp-name-boxes" hidden></div>
+    <button type="button" class="fp-submit-btn" id="fp-name-submit" hidden>Bevestig naam</button>
+    <div class="fp-error" id="fp-error"></div>
+  </div>
+</div>
+
+<script type="module">
+  import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
+
+  const $ = sel => document.querySelector(sel);
+
+  const POT_ID = (location.pathname.match(/POT-\d{3}/i) || [''])[0].toUpperCase();
+  const PARAMS = new URLSearchParams(location.search);
+  // Admin-mode triggers: ?admin=1, ?password=…, of bestaande admin-session in localStorage.
+  function hasAdminSession() {
+    try {
+      const raw = localStorage.getItem('ellemelle_admin_session_v1');
+      if (!raw) return false;
+      const o = JSON.parse(raw);
+      return !!(o && o.password);
+    } catch { return false; }
+  }
+  const IS_ADMIN = PARAMS.get('admin') === '1' || !!PARAMS.get('password') || hasAdminSession();
+  // Terug-knop linksboven:
+  //   - admin → terug naar /bestellingen (admin omgeving)
+  //   - klant → /pot/POT-XXX of history.back als er een geschiedenis is.
+  const _backBtn = document.getElementById('back-to-pot');
+  if (_backBtn) {
+    if (IS_ADMIN) {
+      _backBtn.href = '/bestellingen';
+      _backBtn.setAttribute('aria-label', 'Terug naar bestellingen');
+    } else if (POT_ID) {
+      _backBtn.href = '/pot/' + POT_ID;
+      _backBtn.addEventListener('click', (e) => {
+        if (window.history.length > 1 && document.referrer && document.referrer !== location.href) {
+          e.preventDefault();
+          window.history.back();
+        }
+      });
+    }
+  }
+
+  // Hamburger + notifications bell are intentionally hidden on the game page.
+  // Admin auth flows still work via other admin pages (bestellingen, koken, etc.).
+  // Preview-mode: forceer per operatie een specifieke status zodat je alle blokken naast elkaar kan beoordelen.
+  // /game/POT-XXX?preview=all → 1 voltooid · 2 audio+form · 3 nieuw (maps+scan) · 4 vergrendeld
+  const IS_PREVIEW = PARAMS.get('preview') === 'all';
+  let STATE = null;
+  let GAME = null;
+  let qrScanner = null;
+  let synth = window.speechSynthesis;
+  let currentUtter = null;
+
+  function getAdminPassword() {
+    try {
+      const raw = localStorage.getItem('ellemelle_admin_session_v1');
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      return (o && o.password) || null;
+    } catch { return null; }
+  }
+
+  // --- Audio (TTS placeholder) ---
+  function speakDutch(text, btnEl) {
+    if (!text) return;
+    if (!synth) { alert('Audio wordt niet ondersteund op dit apparaat.'); return; }
+    synth.cancel();
+    if (btnEl) btnEl.classList.add('playing');
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'nl-NL'; u.rate = 0.95; u.pitch = 1.0;
+    u.onend = () => { if (btnEl) btnEl.classList.remove('playing'); };
+    u.onerror = () => { if (btnEl) btnEl.classList.remove('playing'); };
+    synth.speak(u);
+    currentUtter = u;
+  }
+
+  function stopAudio() {
+    if (synth) synth.cancel();
+    document.querySelectorAll('.audio-player.playing, .audio-btn.playing').forEach(b => b.classList.remove('playing'));
+  }
+
+  // --- Schermvullende audio player (Spotify-stijl meelezen) ---
+  let __fpText = '';
+  let __fpRanges = [];
+  let __fpAudioFile = null;     // URL naar een MP3/M4A; als gevuld speelt dit i.p.v. TTS
+  let __fpAudioEl = null;       // Actieve HTMLAudioElement
+
+  function splitSentences(text) {
+    // Split op . ! ? (behoud delimiter). Pak ook losse 'punten' tussenin.
+    const out = [];
+    const re = /[^.!?]+[.!?]+|[^.!?]+$/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const seg = m[0].trim();
+      if (seg) out.push(seg);
+    }
+    return out.length ? out : [text];
+  }
+
+  function buildRanges(text, sentences) {
+    const ranges = [];
+    let cursor = 0;
+    for (const s of sentences) {
+      const idx = text.indexOf(s, cursor);
+      const start = idx >= 0 ? idx : cursor;
+      ranges.push({ start, end: start + s.length });
+      cursor = start + s.length;
+    }
+    return ranges;
+  }
+
+  function openFullscreenPlayer(text, mainTitle, subTitle, opts) {
+    if (!text) return;
+    opts = opts || {};
+    const overlay = $('#fullscreen-player');
+    const lyricsEl = $('#fp-lyrics');
+    const sentences = splitSentences(text);
+    lyricsEl.innerHTML = sentences.map((s, i) => `<p data-idx="${i}"></p>`).join('');
+    lyricsEl.querySelectorAll('p').forEach((p, i) => { p.textContent = sentences[i]; });
+    __fpText = text;
+    __fpRanges = buildRanges(text, sentences);
+    __fpAudioFile = opts.audioFile || null;
+    overlay.classList.toggle('has-answer', !!opts.showAnswer);
+    $('#fp-error').textContent = '';
+    // Reset beide puzzle UI's
+    const optsContainer = document.getElementById('fp-options');
+    const nameContainer = document.getElementById('fp-name-boxes');
+    const nameSubmit = document.getElementById('fp-name-submit');
+    const subEl = document.getElementById('fp-sub');
+    optsContainer.innerHTML = '';
+    nameContainer.innerHTML = '';
+    nameContainer.hidden = true;
+    nameSubmit.hidden = true;
+    if (subEl) subEl.hidden = false;
+    if (opts.showAnswer) {
+      $('#fp-question').textContent = opts.puzzleQuestion || 'Wat denk jij?';
+      if (opts.puzzleType === 'name_input' && opts.nameTemplate) {
+        // Naam-invoer puzzel (kan ook een nummer/cijfer-invoer zijn als sjabloon alleen _ bevat)
+        nameContainer.hidden = false;
+        nameSubmit.hidden = false;
+        const template = String(opts.nameTemplate).toUpperCase();
+        // Bepaal toetsenbord-mode: override via puzzleKeyboard, anders heuristiek o.b.v. sjabloon.
+        // 'numeric' = cijfers, 'alpha' = letters, 'text' = standaard alfanumeriek toetsenbord.
+        const kbOverride = (opts.puzzleKeyboard || '').toLowerCase();
+        let mode = kbOverride;
+        if (!mode) mode = /[A-Z]/.test(template) ? 'alpha' : 'numeric';
+        const numericMode = (mode === 'numeric');
+        const textMode = (mode === 'text');
+        if (subEl) subEl.textContent = numericMode
+          ? 'Typ het nummer in dat je hebt gevonden.'
+          : (textMode
+            ? 'Typ het antwoord in dat je hebt gevonden.'
+            : 'Sommige letters waren al leesbaar. Vul de ontbrekende letters in.');
+        nameSubmit.textContent = numericMode
+          ? 'Bevestig nummer'
+          : (textMode ? 'Bevestig antwoord' : 'Bevestig naam');
+        nameSubmit.dataset.label = nameSubmit.textContent;
+        for (let i = 0; i < template.length; i++) {
+          const ch = template[i];
+          const isBlank = ch === '_';
+          const box = document.createElement('input');
+          box.type = 'text';
+          box.maxLength = 1;
+          box.autocomplete = 'off';
+          box.spellcheck = false;
+          if (numericMode) {
+            box.inputMode = 'numeric';
+            box.pattern = '[0-9]*';
+          } else if (textMode) {
+            box.inputMode = 'text';
+          }
+          box.className = 'fp-name-box ' + (isBlank ? 'empty' : 'visible');
+          box.dataset.pos = String(i);
+          if (!isBlank) {
+            box.value = ch;
+            box.readOnly = true;
+            box.tabIndex = -1;
+          }
+          nameContainer.appendChild(box);
+        }
+        bindNameBoxes(nameContainer, nameSubmit);
+      } else if (Array.isArray(opts.puzzleOptions) && opts.puzzleOptions.length) {
+        // Meerkeuze (A/B/C)
+        if (subEl) subEl.textContent = 'Luister naar de hint en kies één van de antwoorden.';
+        opts.puzzleOptions.forEach((label, i) => {
+          const letter = String.fromCharCode(65 + i);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'fp-option';
+          btn.dataset.value = letter;
+          btn.innerHTML = `<span class="letter">${letter}</span><span class="label"></span>`;
+          btn.querySelector('.label').textContent = label;
+          btn.addEventListener('click', () => submitFpOption(btn, letter));
+          optsContainer.appendChild(btn);
+        });
+      }
+    }
+    document.getElementById('fullscreen-backdrop').classList.add('open');
+    overlay.classList.add('open');
+    startFullscreenPlayback();
+  }
+
+  function bindNameBoxes(container, submitBtn) {
+    const boxes = [...container.querySelectorAll('.fp-name-box')];
+    const editableBoxes = boxes.filter(b => b.classList.contains('empty'));
+    editableBoxes.forEach((box, i) => {
+      box.addEventListener('input', () => {
+        let raw = (box.value || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        if (!raw) {
+          box.value = '';
+          box.classList.remove('filled');
+          return;
+        }
+        // Eerste teken blijft in dit vakje, de rest verdelen over de volgende vakjes.
+        box.value = raw[0];
+        box.classList.add('filled');
+        let cursor = i + 1;
+        let rest = raw.slice(1);
+        while (rest && cursor < editableBoxes.length) {
+          const next = editableBoxes[cursor];
+          next.value = rest[0];
+          next.classList.add('filled');
+          rest = rest.slice(1);
+          cursor++;
+        }
+        // Focus naar het eerstvolgende lege vakje (of het laatste vakje als alles vol is).
+        const focusTarget = editableBoxes[Math.min(cursor, editableBoxes.length - 1)];
+        if (focusTarget) focusTarget.focus();
+      });
+      box.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !box.value) {
+          const prev = editableBoxes[i - 1];
+          if (prev) {
+            prev.focus();
+            prev.value = '';
+            prev.classList.remove('filled');
+            e.preventDefault();
+          }
+        } else if (e.key === 'Enter') {
+          submitBtn.click();
+          e.preventDefault();
+        }
+      });
+      box.addEventListener('focus', () => box.select());
+    });
+    submitBtn.onclick = () => submitFpName(boxes, submitBtn);
+    // Focus eerste lege vakje automatisch
+    if (editableBoxes[0]) setTimeout(() => editableBoxes[0].focus(), 100);
+  }
+
+  async function submitFpName(boxes, submitBtn) {
+    if (__fpSubmitting) return;
+    const errEl = document.getElementById('fp-error');
+    errEl.textContent = '';
+    const name = boxes.map(b => (b.value || '').toUpperCase()).join('');
+    if (boxes.some(b => !b.value)) {
+      errEl.textContent = 'Vul alle vakjes in.';
+      return;
+    }
+    __fpSubmitting = true;
+    submitBtn.disabled = true; submitBtn.textContent = 'Bezig…';
+    try {
+      const r = await fetch('/.netlify/functions/game-submit-code', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pot_id: POT_ID, code: name }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) {
+        // Fout: shake de hele rij
+        boxes.forEach(b => b.classList.add('wrong'));
+        setTimeout(() => boxes.forEach(b => b.classList.remove('wrong')), 350);
+        errEl.textContent = j.detail || 'Klopt niet, probeer het opnieuw.';
+        return;
+      }
+      if (j.state) STATE = j.state;
+      setTimeout(() => {
+        closeFullscreenPlayer();
+        burstConfetti();
+        if (j.won) {
+          showWin(j.prize_label || GAME.prize_label);
+        } else {
+          alert('Top, goed antwoord! Je kunt door naar de volgende stop.');
+          setTimeout(() => render(), 500);
+        }
+      }, 250);
+    } catch {
+      errEl.textContent = 'Iets ging mis. Probeer opnieuw.';
+    } finally {
+      __fpSubmitting = false;
+      submitBtn.disabled = false; submitBtn.textContent = submitBtn.dataset.label || 'Bevestig';
+    }
+  }
+
+  function setFpPlaying(on) {
+    const btn = $('#fp-play-btn');
+    if (btn) btn.classList.toggle('playing', !!on);
+  }
+
+  // Reactive waveform — RAF loop met sine-noise voor levendiger uiterlijk.
+  // Bars reageren ook op word-boundary events (zie u.onboundary in startFullscreenPlayback).
+  let __fpRafId = null;
+  let __fpWaveStart = 0;
+  let __fpWaveBoost = 0;        // pulse-amplitude getriggerd op word boundary
+  let __fpWaveBoostDecay = 0.92;
+  let __fpProgress01 = 0;       // 0..1
+
+  function startWaveAnimation() {
+    const wave = document.getElementById('fp-wave');
+    if (!wave) return;
+    const bars = [...wave.children];
+    if (!bars.length) return;
+    cancelAnimationFrame(__fpRafId);
+    __fpWaveStart = performance.now();
+    const minH = 8, maxH = 78;
+    function tick() {
+      const t = (performance.now() - __fpWaveStart) / 1000;
+      __fpWaveBoost *= __fpWaveBoostDecay;
+      bars.forEach((bar, i) => {
+        const phase = i * 0.55;
+        // Combinatie van twee sines + pseudo-noise per bar voor levendiger uiterlijk
+        const base = (
+          0.55 * Math.sin(t * 7.3 + phase) +
+          0.35 * Math.sin(t * 13.7 + phase * 1.6) +
+          0.30 * Math.sin(t * 3.1 + phase * 0.7 + i)
+        ); // -1.2..1.2
+        const norm = (base + 1.2) / 2.4; // 0..1
+        const h = minH + (maxH - minH) * (norm * 0.6 + __fpWaveBoost * 0.7);
+        bar.style.height = Math.max(minH, Math.min(maxH, h)) + 'px';
+      });
+      wave.style.setProperty('--fp-progress', (__fpProgress01 * 100).toFixed(1) + '%');
+      __fpRafId = requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  function stopWaveAnimation() {
+    cancelAnimationFrame(__fpRafId);
+    __fpRafId = null;
+    const wave = document.getElementById('fp-wave');
+    if (!wave) return;
+    [...wave.children].forEach(bar => { bar.style.height = '12px'; });
+  }
+
+  function startFullscreenPlayback() {
+    if (!__fpText) return;
+    // Stop alles wat eventueel nog speelt
+    if (synth) synth.cancel();
+    stopAudioFilePlayback();
+    __fpProgress01 = 0;
+    __fpWaveBoost = 0;
+
+    // Als er een echt audiobestand is, speel dat. Anders TTS.
+    if (__fpAudioFile) {
+      startAudioFilePlayback(__fpAudioFile);
+      return;
+    }
+    startTtsPlayback();
+  }
+
+  function startTtsPlayback() {
+    if (!synth) return;
+    setFpPlaying(true);
+    const u = new SpeechSynthesisUtterance(__fpText);
+    u.lang = 'nl-NL'; u.rate = 0.95; u.pitch = 1.0;
+    u.onboundary = (e) => {
+      if (e.name && e.name !== 'word' && e.name !== 'sentence') return;
+      const idx = e.charIndex || 0;
+      if (__fpText.length > 0) {
+        __fpProgress01 = Math.max(__fpProgress01, Math.min(1, idx / __fpText.length));
+      }
+      if (e.name === 'word') __fpWaveBoost = Math.min(1, __fpWaveBoost + 0.55);
+      highlightFpSentence(idx);
+    };
+    u.onend = () => {
+      __fpProgress01 = 1;
+      setFpPlaying(false);
+      $('#fp-lyrics').querySelectorAll('p').forEach(p => {
+        p.classList.remove('active'); p.classList.add('past');
+      });
+    };
+    u.onerror = () => { setFpPlaying(false); };
+    synth.speak(u);
+    currentUtter = u;
+  }
+
+  function startAudioFilePlayback(url) {
+    setFpPlaying(true);
+    const audio = new Audio(url);
+    audio.preload = 'auto';
+    __fpAudioEl = audio;
+    let lastBoost = 0;
+    audio.addEventListener('timeupdate', () => {
+      const dur = audio.duration || 0;
+      if (dur > 0) {
+        const ratio = Math.min(1, audio.currentTime / dur);
+        __fpProgress01 = Math.max(__fpProgress01, ratio);
+        // Highlight zin op basis van proportionele char-positie
+        const charIdx = Math.floor(ratio * Math.max(1, __fpText.length - 1));
+        highlightFpSentence(charIdx);
+        // Pulse de wave af en toe
+        if (audio.currentTime - lastBoost > 0.18) {
+          __fpWaveBoost = Math.min(1, __fpWaveBoost + 0.55);
+          lastBoost = audio.currentTime;
+        }
+      }
+    });
+    audio.addEventListener('ended', () => {
+      __fpProgress01 = 1;
+      setFpPlaying(false);
+      $('#fp-lyrics').querySelectorAll('p').forEach(p => {
+        p.classList.remove('active'); p.classList.add('past');
+      });
+    });
+    audio.addEventListener('error', () => {
+      // Fallback: als het bestand niet laadt, val terug op TTS
+      setFpPlaying(false);
+      __fpAudioEl = null;
+      startTtsPlayback();
+    });
+    audio.play().catch(() => {
+      setFpPlaying(false);
+      __fpAudioEl = null;
+      // Als autoplay wordt geblokkeerd, val terug op TTS
+      startTtsPlayback();
+    });
+  }
+
+  function stopAudioFilePlayback() {
+    if (__fpAudioEl) {
+      try { __fpAudioEl.pause(); } catch {}
+      try { __fpAudioEl.currentTime = 0; } catch {}
+      __fpAudioEl = null;
+    }
+  }
+
+  function highlightFpSentence(charIdx) {
+    const idx = __fpRanges.findIndex(r => charIdx >= r.start && charIdx < r.end);
+    if (idx < 0) return;
+    const lyricsEl = $('#fp-lyrics');
+    let activeEl = null;
+    lyricsEl.querySelectorAll('p').forEach((p, i) => {
+      p.classList.remove('active', 'past');
+      if (i < idx) p.classList.add('past');
+      else if (i === idx) { p.classList.add('active'); activeEl = p; }
+    });
+    if (activeEl) {
+      try { activeEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
+    }
+  }
+
+  function closeFullscreenPlayer() {
+    if (synth) synth.cancel();
+    stopAudioFilePlayback();
+    $('#fullscreen-player').classList.remove('open');
+    document.getElementById('fullscreen-backdrop').classList.remove('open');
+    setFpPlaying(false);
+  }
+
+  // FAQ accordion — exclusive: er kan maar één item tegelijk open staan
+  document.querySelectorAll('.faq-section .faq-item').forEach(item => {
+    const q = item.querySelector('.faq-q');
+    if (!q) return;
+    q.addEventListener('click', () => {
+      const wasOpen = item.classList.contains('open');
+      // Sluit alle andere FAQ-items in dezelfde sectie
+      const section = item.closest('.faq-section');
+      if (section) section.querySelectorAll('.faq-item.open').forEach(other => {
+        if (other !== item) other.classList.remove('open');
+      });
+      // Toggle de aangetapte
+      item.classList.toggle('open', !wasOpen);
+    });
+  });
+
+  // Bindings: handle + backdrop sluiten de player
+  document.getElementById('fp-handle-hit').addEventListener('click', closeFullscreenPlayer);
+  document.getElementById('fullscreen-backdrop').addEventListener('click', closeFullscreenPlayer);
+  document.getElementById('fp-play-btn').addEventListener('click', () => {
+    const btn = document.getElementById('fp-play-btn');
+    if (btn.classList.contains('playing')) {
+      if (synth) synth.cancel();
+      stopAudioFilePlayback();
+      setFpPlaying(false);
+    } else {
+      startFullscreenPlayback();
+    }
+  });
+
+  // Meerkeuze antwoord submit — getriggered op klik van een optie-knop
+  let __fpSubmitting = false;
+  async function submitFpOption(btn, value) {
+    if (__fpSubmitting) return;
+    const errEl = document.getElementById('fp-error');
+    const allBtns = [...document.querySelectorAll('#fp-options .fp-option')];
+    errEl.textContent = '';
+    __fpSubmitting = true;
+    allBtns.forEach(b => { b.disabled = true; b.classList.remove('wrong', 'correct'); });
+    try {
+      const r = await fetch('/.netlify/functions/game-submit-code', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pot_id: POT_ID, code: value }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) {
+        // Fout antwoord — markeer geklikte knop in het rood, andere knoppen weer actief
+        btn.classList.add('wrong');
+        errEl.textContent = j.detail || 'Helaas, probeer een ander antwoord.';
+        setTimeout(() => {
+          btn.classList.remove('wrong');
+          allBtns.forEach(b => { b.disabled = false; });
+        }, 700);
+        return;
+      }
+      // Goed antwoord — markeer groen, sluit player, confetti, ga door
+      btn.classList.add('correct');
+      if (j.state) STATE = j.state;
+      setTimeout(() => {
+        closeFullscreenPlayer();
+        burstConfetti();
+        if (j.won) {
+          showWin(j.prize_label || GAME.prize_label);
+        } else {
+          alert('Top, goed antwoord! Je kunt door naar de volgende stop.');
+          setTimeout(() => render(), 500);
+        }
+      }, 350);
+    } catch {
+      errEl.textContent = 'Iets ging mis. Probeer opnieuw.';
+      allBtns.forEach(b => { b.disabled = false; });
+    } finally {
+      __fpSubmitting = false;
+    }
+  }
+
+  // --- Render stops ---
+  function render() {
+    if (!STATE || !GAME) return;
+    // Titel + lead — persoonlijk met klant z'n naam
+    const name = GAME.customer_name || 'avonturier';
+    $('#game-name').textContent = STATE.won
+      ? `Welkom in de Crew, ${name}!`
+      : (GAME.welcome_title || `Hé ${name}, kunnen we op je rekenen?`);
+    $('#game-lead').textContent = STATE.won
+      ? 'Top gedaan — bestelling compleet. Je rol-bandjes worden meegestuurd bij je volgende Ellemel-bestelling.'
+      : (GAME.welcome_lead || 'We hebben jouw hulp nodig om de hazelnoten terug te vinden.');
+
+    const totalMissions = GAME.total_missions;
+    const unlocked = STATE.current_mission_idx;
+    // Progress bar — gebaseerd op aantal voltooide operaties
+    const doneCount = (Array.isArray(STATE.completed) ? STATE.completed.length : 0);
+    const pct = Math.max(0, Math.min(100, Math.round((doneCount / totalMissions) * 100)));
+    $('#progress-text').textContent = `Operatie ${doneCount}/${totalMissions}`;
+    const fill = $('#missions-progress-fill');
+    if (fill) fill.style.width = pct + '%';
+
+    const list = $('#missions-list');
+    list.innerHTML = '';
+
+    const completedSet = new Set(Array.isArray(STATE.completed) ? STATE.completed : []);
+    const stops = GAME.stops || [];
+    stops.forEach(b => {
+      let isCompleted, isCurrent, scanned, startOpen;
+      if (IS_PREVIEW) {
+        // Forceer statussen per operatie-index voor de design review
+        isCompleted = b.idx === 1;
+        isCurrent = b.idx === 2 || b.idx === 3;
+        scanned = b.idx === 2;
+        // Voltooide operatie blijft dicht; alleen de "current" operaties (2 en 3) open
+        startOpen = isCurrent;
+      } else {
+        isCompleted = completedSet.has(b.idx);
+        isCurrent = !isCompleted && b.idx === unlocked && !STATE.won;
+        scanned = isCurrent && STATE.scanned;
+        startOpen = isCurrent;
+      }
+      const isUnlocked = isCompleted || isCurrent;
+      const isLastStop = b.idx === totalMissions;
+      const card = document.createElement('div');
+      card.className = 'mission-card'
+        + (!isUnlocked ? ' locked' : '')
+        + (isCompleted ? ' completed-state' : '')
+        + (startOpen ? ' open' : '')
+        + (isCurrent ? ' current' : '');
+      card.dataset.idx = String(b.idx);
+      const badge = isCompleted ? '<span class="badge completed">Klaar ✓</span>'
+                  : isCurrent && scanned ? '<span class="badge unlocked">Luister check-in</span>'
+                  : isCurrent ? '<span class="badge find-qr">Vind QR code</span>'
+                  : '<span class="badge locked">Vergrendeld</span>';
+      const chevron = `<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+      const lockIcon = `<svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
+      // Body-tekst past zich aan op basis van de operatie stage
+      let displayBody = b.body || '';
+      let displaySubheading = '';
+      let displayExtra = '';
+      if (isCompleted) {
+        displayBody = 'Operatie volbracht — top gedaan!';
+      } else if (isCurrent && scanned) {
+        displayBody = 'Top, je hebt de QR-code gevonden! Luister naar de check-in en typ het juiste antwoord in.';
+      } else if (isCurrent && !scanned) {
+        // Nieuwe-operatie state: extra subkop + paragraaf voor meer richting
+        displaySubheading = b.body_subheading || '';
+        displayExtra = b.body_extra || '';
+      }
+      // Maps + Start jouw operatie alleen tonen vóór de scan (verbergen zodra audio + raadsel actief zijn)
+      const showMaps = isCurrent && !scanned && !STATE.won;
+      const mapsHtml = (showMaps && b.lat && b.lng) ? `
+        <div class="maps-wrap">
+          <iframe loading="lazy" src="https://maps.google.com/maps?q=${b.lat},${b.lng}&z=17&output=embed" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          <div class="search-area"></div>
+        </div>
+        <a class="start-mission-btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}">
+          Open maps →
+        </a>
+      ` : '';
+      // Audio + input alleen zichtbaar wanneer:
+      //   - audio: huidige stop is gescand (voltooide stops tonen geen audio)
+      //   - input: huidige stop is gescand en game is nog niet gewonnen
+      //   - scan:  huidige stop is nog niet gescand en game is nog niet gewonnen
+      const showAudio = isCurrent && scanned;
+      const showInput = isCurrent && scanned && !STATE.won;
+      const showScan = isCurrent && !scanned && !STATE.won;
+      const audioText = b.audio_text || '';
+      const audioFile = b.audio_file || '';
+      const puzzleQ = b.puzzle_question || '';
+      const puzzleOpts = Array.isArray(b.puzzle_options) ? b.puzzle_options : [];
+      const puzzleType = b.puzzle_type || 'multiple_choice';
+      const nameTemplate = b.name_template || '';
+      const puzzleKeyboard = b.puzzle_keyboard || '';
+      const audioHtml = showAudio ? `
+        <div class="audio-player"
+             data-audio-text="${escapeAttr(audioText)}"
+             data-audio-file="${escapeAttr(audioFile)}"
+             data-show-answer="${showInput ? '1' : '0'}"
+             data-puzzle-type="${escapeAttr(puzzleType)}"
+             data-puzzle-question="${escapeAttr(puzzleQ)}"
+             data-puzzle-options="${escapeAttr(JSON.stringify(puzzleOpts))}"
+             data-name-template="${escapeAttr(nameTemplate)}"
+             data-puzzle-keyboard="${escapeAttr(puzzleKeyboard)}">
+          <button type="button" class="play-btn" aria-label="Luister naar de check-in">
+            <svg class="play" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+            <svg class="pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          </button>
+          <div class="info">
+            <div class="label">Luister naar de check-in</div>
+            <div class="wave">${'<span></span>'.repeat(14)}</div>
+          </div>
+        </div>
+      ` : '';
+      // Het antwoord-formulier is verplaatst naar de audio pop-up.
+      const instructionHtml = '';
+      const inputHtml = '';
+      // Voltooide operaties: tap op de hele kaart opent een confirm popup (geen restart-knop meer in de body).
+      const restartHtml = '';
+      const scanHtml = showScan ? `
+        <div class="scan-row">
+          <button type="button" class="scan-btn" data-scan="1">Scan de QR code</button>
+          <button type="button" class="help-btn" data-help="1" aria-label="Hulp">?</button>
+        </div>
+      ` : '';
+      card.innerHTML = `
+        <div class="mission-card-content">
+          ${b.mission_image ? `
+            <div class="mission-header-wrap">
+              <img class="mission-header-img" src="${b.mission_image}?v=20260611e" alt="">
+            </div>
+          ` : ''}
+          <div class="head" data-toggle="1">
+            <div class="head-info">
+              <h2>${b.title}</h2>
+              <div class="tag-row">
+                <div class="mission-tag">Operatie ${b.idx}</div>
+                ${badge}
+              </div>
+            </div>
+            ${isCurrent ? chevron : ''}
+          </div>
+          <div class="body">
+            ${displayBody ? `<p>${displayBody}</p>` : ''}
+            ${mapsHtml}
+            ${showScan ? `
+              <div class="find-qr-subheading">Zoek de QR-code</div>
+              <p class="find-qr-caption">${b.find_qr_hint || 'Kijk goed rond: de Ellemel check-in sticker zit op een paaltje of muur in deze hoek.'}</p>
+              <div class="mission-inline-image"><img src="/Images/qr-sticker-example.jpg?v=20260613a" alt=""></div>
+              <p class="find-qr-tip">${isLastStop ? "Dit is de laatste vraag — beantwoord 'm goed en je vindt de zak hazelnoten. Operatie afgerond!" : "Zodra je 'm scant, checkt Michiel je in via een geluidsbericht en hoor je wat de volgende stap is."}</p>
+            ` : ''}
+            ${audioHtml}
+            ${instructionHtml}
+            ${scanHtml}
+            ${inputHtml}
+            ${restartHtml}
+          </div>
+        </div>
+        ${!isUnlocked ? `
+          <div class="mission-lock-overlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+        ` : ''}
+        ${isCompleted ? `
+          <div class="mission-check-overlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"/></svg>
+          </div>
+        ` : ''}
+      `;
+      list.appendChild(card);
+    });
+
+    // Bind head: voor afgeronde operaties opent een confirm popup → herstart. Voor huidige: toggle open/dicht. Locked: niks.
+    list.querySelectorAll('.mission-card').forEach(card => {
+      if (card.classList.contains('locked')) return;
+      const head = card.querySelector('.head[data-toggle]');
+      if (!head) return;
+      if (card.classList.contains('completed-state')) {
+        head.addEventListener('click', async () => {
+          const ok = window.confirm('Je hebt deze afgerond. Wil je deze stop weer openen?\n\nOK = Start opnieuw\nAnnuleer = laten zoals het is');
+          if (!ok) return;
+          const idx = Number(card.dataset.idx);
+          if (!idx) return;
+          try {
+            const r = await fetch('/.netlify/functions/game-restart-mission', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pot_id: POT_ID, mission_idx: idx }),
+            });
+            const j = await r.json();
+            if (!r.ok || !j.ok) { alert(j.detail || j.error || 'Herstart mislukt.'); return; }
+            if (j.state) STATE = j.state;
+            $('#win-screen').classList.remove('show');
+            $('#content').hidden = false;
+            render();
+          } catch { alert('Iets ging mis. Probeer opnieuw.'); }
+        });
+        return;
+      }
+      head.addEventListener('click', () => { commitGameStart(); card.classList.toggle('open'); });
+    });
+    // Bind audio players — opent schermvullende player
+    list.querySelectorAll('.audio-player').forEach(player => {
+      const btn = player.querySelector('.play-btn');
+      if (!btn) return;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const text = player.dataset.audioText;
+        if (!text) return;
+        const card = player.closest('.mission-card');
+        const titleEl = card ? card.querySelector('h2') : null;
+        const main = titleEl ? titleEl.textContent : 'Audio';
+        const showAnswer = player.dataset.showAnswer === '1';
+        let puzzleQuestion = '', puzzleOptions = [], puzzleType = 'multiple_choice', nameTemplate = '', puzzleKeyboard = '';
+        try {
+          puzzleQuestion = player.dataset.puzzleQuestion || '';
+          puzzleOptions = JSON.parse(player.dataset.puzzleOptions || '[]');
+          puzzleType = player.dataset.puzzleType || 'multiple_choice';
+          nameTemplate = player.dataset.nameTemplate || '';
+          puzzleKeyboard = player.dataset.puzzleKeyboard || '';
+        } catch {}
+        const audioFile = player.dataset.audioFile || null;
+        openFullscreenPlayer(text, main, (GAME && GAME.name) || 'Ellemel', {
+          showAnswer, puzzleQuestion, puzzleOptions, puzzleType, nameTemplate, puzzleKeyboard, audioFile,
+        });
+      });
+    });
+    list.querySelectorAll('.scan-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); startScan(); });
+    });
+    list.querySelectorAll('.help-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const code = window.prompt('Voer de unlock code in:');
+        if (code == null) return;
+        handleScannedToken(String(code).trim());
+      });
+    });
+    // Herstart-knop per voltooide operatie
+    list.querySelectorAll('.restart-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const idx = Number(btn.dataset.restartIdx);
+        if (!idx) return;
+        const ok = window.confirm('Weet je het zeker? Deze operatie wordt opnieuw gestart. Andere operaties blijven intact.');
+        if (!ok) return;
+        btn.disabled = true;
+        try {
+          const r = await fetch('/.netlify/functions/game-restart-mission', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pot_id: POT_ID, mission_idx: idx }),
+          });
+          const j = await r.json();
+          if (!r.ok || !j.ok) { alert(j.detail || j.error || 'Herstart mislukt.'); return; }
+          if (j.state) STATE = j.state;
+          // Win screen verbergen, content tonen (was misschien zichtbaar bij herstart na win)
+          $('#win-screen').classList.remove('show');
+          $('#content').hidden = false;
+          render();
+        } catch { alert('Iets ging mis. Probeer opnieuw.'); }
+        finally { btn.disabled = false; }
+      });
+    });
+
+    // Antwoord-formulier zit nu in de schermvullende player (bindings hieronder, buiten render).
+
+    if (STATE.won) showWin(GAME.prize_label);
+
+    // Admin debug: per-stop qr_token + riddle_answer
+    if (IS_ADMIN) {
+      const tbl = $('#admin-stop-table');
+      if (tbl) {
+        tbl.innerHTML = stops.map(s => `
+          <div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px dashed rgba(0,0,0,0.06);">
+            <span style="font-weight:700; color:var(--red); width:18px;">${s.idx}</span>
+            <span style="flex:1; color:#333;">${s.title}</span>
+            <code style="font-size:12px; background:rgba(0,0,0,0.04); padding:2px 6px; border-radius:4px;">${s.qr_token || '—'}</code>
+            <code style="font-size:12px; background:rgba(217,48,30,0.08); color:var(--red); padding:2px 6px; border-radius:4px; font-weight:700;">${s.riddle_answer || '—'}</code>
+          </div>
+        `).join('');
+      }
+    }
+  }
+
+  function escapeAttr(s) {
+    return String(s).replace(/"/g, '&quot;');
+  }
+
+  // --- Scanner ---
+  async function startScan() {
+    $('#scanner-overlay').classList.add('open');
+    const video = $('#scanner-video');
+    if (qrScanner) qrScanner.destroy();
+    qrScanner = new QrScanner(video, async (result) => {
+      const text = (result && (result.data || result)) || '';
+      // Stop scanner direct na herkenning zodat we niet dubbel scannen
+      qrScanner.stop();
+      $('#scanner-overlay').classList.remove('open');
+      await handleScannedToken(text);
+    }, { highlightScanRegion: true, returnDetailedScanResult: true });
+    try { await qrScanner.start(); }
+    catch (e) {
+      $('#scanner-overlay').classList.remove('open');
+      alert('Kon de camera niet openen. Geef Ellemel-app toestemming voor de camera.');
+    }
+  }
+  function stopScan() {
+    if (qrScanner) { qrScanner.stop(); qrScanner.destroy(); qrScanner = null; }
+    $('#scanner-overlay').classList.remove('open');
+  }
+  $('#scanner-cancel').addEventListener('click', stopScan);
+
+  // Scan-verwerking — vraag backend om huidige tegel te valideren en state.scanned op true te zetten.
+  // Bij succes: re-render (audio + invoerveld worden zichtbaar). Bij mismatch: tekst tonen.
+  // Geluid van juichende mensen bij een succesvolle scan.
+  // Probeert eerst een echt cheer-bestand (/Sounds/cheer.mp3); fallt back naar een synthese-akkoord.
+  let __cheerAudio = null;
+  function playCheer() {
+    try {
+      if (!__cheerAudio) {
+        __cheerAudio = new Audio('/Sounds/cheer.mp3');
+        __cheerAudio.volume = 0.7;
+        __cheerAudio.preload = 'auto';
+      }
+      __cheerAudio.currentTime = 0;
+      const p = __cheerAudio.play();
+      if (p && p.catch) p.catch(() => playSynthCelebration());
+    } catch {
+      playSynthCelebration();
+    }
+  }
+  function playSynthCelebration() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C-E-G-C major
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const t = ctx.currentTime + i * 0.07;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.18, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        osc.start(t);
+        osc.stop(t + 0.5);
+      });
+    } catch {}
+  }
+
+  async function handleScannedToken(token) {
+    try {
+      const r = await fetch('/.netlify/functions/game-mission-advance', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pot_id: POT_ID, qr_token: token }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) {
+        alert(j.detail || j.error || 'Onbekende fout bij scannen.');
+        return;
+      }
+      // Succesvolle check-in: confetti + juich-geluid + bevestiging, dan state ophalen
+      burstConfetti();
+      playCheer();
+      alert('Top, het is je gelukt! Luister nu naar de check-in.');
+      await refreshState();
+    } catch (e) {
+      alert('Iets ging mis. Probeer het opnieuw.');
+    }
+  }
+
+  async function refreshState() {
+    const adminPw = IS_ADMIN ? getAdminPassword() : null;
+    const url = '/.netlify/functions/game-state-get?pot_id=' + POT_ID + (adminPw ? '&password=' + encodeURIComponent(adminPw) : '');
+    const r = await fetch(url);
+    const j = await r.json();
+    if (r.ok && j.ok && j.has_game) {
+      STATE = j.state; GAME = j.game;
+      render();
+    }
+  }
+
+  // Markeer de game als officieel gestart wanneer speler intro-audio start of
+  // een stop opent. Idempotent — één succesvolle server-call is genoeg.
+  let __committedStart = false;
+  async function commitGameStart() {
+    if (__committedStart) return;
+    if (STATE && STATE.started_at) { __committedStart = true; return; }
+    if (IS_PREVIEW) return; // preview-modus (design review) triggert niets
+    __committedStart = true; // optimistic: voorkomt dubbele fetch bij snel klikken
+    try {
+      const adminPw = IS_ADMIN ? getAdminPassword() : null;
+      const url = '/.netlify/functions/game-state-get?pot_id=' + POT_ID
+        + '&commit=1' + (adminPw ? '&password=' + encodeURIComponent(adminPw) : '');
+      const r = await fetch(url);
+      const j = await r.json();
+      if (r.ok && j.ok && j.has_game && j.state) STATE = j.state;
+    } catch { __committedStart = false; }
+  }
+
+  function showWin(prizeLabel) {
+    $('#content').hidden = true;
+    $('#no-game').hidden = true;
+    // Verberg de top header — de header image leeft nu binnen het win-blok zelf.
+    // Body-class + hidden attribute samen om CSS-overrides veilig af te dwingen.
+    document.body.classList.add('win-visible');
+    const pageHeader = document.getElementById('game-header');
+    if (pageHeader) { pageHeader.hidden = true; pageHeader.style.display = 'none'; }
+    $('#win-screen').classList.add('show');
+    // Vul hero image met header image van game
+    const heroImg = document.getElementById('win-hero-image');
+    if (heroImg && GAME && GAME.header_image) {
+      heroImg.style.backgroundImage = "url('" + GAME.header_image + "')";
+    }
+    // Vul product image boven de rode knop (chocopasta pot van de homepage — geen card)
+    const prodImg = document.getElementById('win-product-image');
+    if (prodImg) {
+      prodImg.style.backgroundImage = "url('/Images/koken-pot.jpg?v=6')";
+    }
+    const titleEl = $('#win-title');
+    if (titleEl) titleEl.textContent = 'Gelukt, de hazelnoten zijn weer terecht! 🎉';
+    const nameEl = $('#win-name');
+    if (nameEl) nameEl.textContent = 'Dankzij jou kunnen Ellis en Melle weer chocopasta maken, en krijgen de kids hun bestelling op tijd. Goed gedaan, en welkom bij de chocopasta crew!';
+    $('#win-prize').textContent = 'Gefeliciteerd, je hebt een crew bandje verdiend';
+    burstConfetti();
+    playCheer();
+    bindWinActions();
+  }
+
+  // --- Win-actions: herstart-alles + bestel-nieuwe-pot ---
+  let __winActionsBound = false;
+  function bindWinActions() {
+    if (__winActionsBound) return;
+    __winActionsBound = true;
+    const reorderBtn = $('#reorder-btn');
+    if (reorderBtn) reorderBtn.addEventListener('click', () => {
+      // Bestaande klant — open de bijbehorende pot retourpagina ipv de algemene website.
+      window.location.href = POT_ID ? ('/pot/' + POT_ID) : '/';
+    });
+    const restartAllBtn = $('#restart-all-btn');
+    if (restartAllBtn) restartAllBtn.addEventListener('click', async () => {
+      const ok = window.confirm('Weet je het zeker? Alle check-ins worden gereset en je begint weer bij stop 1.');
+      if (!ok) return;
+      restartAllBtn.disabled = true;
+      restartAllBtn.textContent = 'Bezig…';
+      try {
+        const r = await fetch('/.netlify/functions/game-restart-all', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pot_id: POT_ID }),
+        });
+        const j = await r.json();
+        if (!r.ok || !j.ok) {
+          alert(j.detail || j.error || 'Herstart mislukt. Probeer opnieuw.');
+          restartAllBtn.disabled = false;
+          restartAllBtn.textContent = 'Herstart operatie';
+          return;
+        }
+        // Herlaad pagina zodat alles vers binnenkomt
+        window.location.reload();
+      } catch {
+        alert('Iets ging mis. Probeer opnieuw.');
+        restartAllBtn.disabled = false;
+        restartAllBtn.textContent = 'Herstart operatie';
+      }
+    });
+  }
+
+  // --- Confettikanon: twee kanonnen onderaan vuren naar boven, particles vallen + faden uit ---
+  function burstConfetti() {
+    const c = $('#confetti');
+    const ctx = c.getContext('2d');
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    const parts = [];
+    const colors = ['#D9301E', '#FFD24A', '#1f9d55', '#2176ff', '#feece2', '#ffffff'];
+    const cannons = [
+      { x: c.width * 0.12, y: c.height * 0.96, biasX: 2 },
+      { x: c.width * 0.88, y: c.height * 0.96, biasX: -2 },
+    ];
+    cannons.forEach(cn => {
+      for (let i = 0; i < 80; i++) {
+        const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.9; // omhoog ± spreid
+        const speed = 13 + Math.random() * 12;
+        parts.push({
+          x: cn.x, y: cn.y,
+          vx: Math.cos(angle) * speed + cn.biasX,
+          vy: Math.sin(angle) * speed,
+          size: 6 + Math.random() * 8,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rot: Math.random() * Math.PI, vrot: (Math.random() - 0.5) * 0.3,
+          alpha: 1,
+        });
+      }
+    });
+    let frame = 0;
+    function tick() {
+      ctx.clearRect(0, 0, c.width, c.height);
+      parts.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.4; // zwaartekracht
+        p.vx *= 0.99;                          // luchtweerstand
+        p.rot += p.vrot;
+        if (frame > 110) p.alpha = Math.max(0, p.alpha - 0.018);
+        ctx.save();
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+        ctx.restore();
+      });
+      frame++;
+      if (frame < 200) requestAnimationFrame(tick);
+      else { ctx.globalAlpha = 1; ctx.clearRect(0, 0, c.width, c.height); }
+    }
+    tick();
+  }
+
+  // --- Boot ---
+  async function boot() {
+    if (!POT_ID || !/^POT-\d{3}$/.test(POT_ID)) {
+      $('#loading').textContent = 'Geen geldige pot in de URL.';
+      return;
+    }
+    try {
+      const adminPw = IS_ADMIN ? getAdminPassword() : null;
+      // Admin preview flow: link the requested game_id to POT_ID up-front so the rest
+      // of the game endpoints (state-get, submit-code, mission-advance) work without a
+      // separate "koppel game" step. Idempotent — pot-game-link no-ops if already linked.
+      const wantedGameId = PARAMS.get('game_id');
+      if (IS_ADMIN && adminPw && wantedGameId) {
+        try {
+          await fetch('/.netlify/functions/pot-game-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: adminPw, pot_ids: [POT_ID], game_id: wantedGameId }),
+          });
+        } catch { /* niet blokkeren; game-state-get returned zelf "no-game" als link mislukt */ }
+      }
+      const url = '/.netlify/functions/game-state-get?pot_id=' + POT_ID + (adminPw ? '&password=' + encodeURIComponent(adminPw) : '');
+      const r = await fetch(url);
+      const j = await r.json();
+      $('#loading').hidden = true;
+      if (!r.ok || !j.ok) {
+        alert(j.error || 'Kan game niet laden');
+        return;
+      }
+      if (!j.has_game) {
+        $('#no-game').hidden = false;
+        return;
+      }
+      STATE = j.state;
+      GAME = j.game;
+      $('#content').hidden = false;
+
+      // Header image (full bleed boven de pagina)
+      if (j.game.header_image) {
+        const hdr = $('#game-header');
+        const img = $('#game-header-img');
+        img.src = j.game.header_image;
+        img.alt = j.game.name || '';
+        hdr.hidden = false;
+      }
+
+      // Intro audio player (welkomst) — opent schermvullende player.
+      // Als welcome_audio_file is gevuld speelt het echte MP3/M4A-bestand i.p.v. TTS.
+      if (j.game.welcome_audio) {
+        const intro = $('#intro-audio');
+        intro.dataset.audioText = j.game.welcome_audio;
+        if (j.game.welcome_audio_file) intro.dataset.audioFile = j.game.welcome_audio_file;
+        intro.hidden = false;
+        const introBtn = intro.querySelector('.play-btn');
+        if (introBtn) introBtn.addEventListener('click', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          commitGameStart();
+          openFullscreenPlayer(intro.dataset.audioText, 'Luister, dit is er gebeurd', j.game.name || 'Ellemel', {
+            audioFile: intro.dataset.audioFile || null,
+          });
+        });
+      }
+
+      // Admin extras
+      if (j.admin_mode) {
+        $('#admin-debug').hidden = false;
+        const realState = j.real_state || {};
+        $('#admin-real-state').textContent =
+          'Echte voortgang van deze klant — Stop ' + (realState.current_mission_idx || 1) +
+          ' / ' + j.game.total_missions +
+          (realState.scanned ? ' (QR gescand)' : '') +
+          (realState.won ? ' · VOLTOOID op ' + (realState.won_at || '?').slice(0, 10) : '');
+      }
+      render();
+    } catch (e) {
+      $('#loading').textContent = 'Iets ging mis bij het laden.';
+    }
+  }
+  boot();
+
+</script>
+<script src="/assets/pull-to-refresh.js" defer></script>
+</body>
+</html>

@@ -126,8 +126,9 @@
   }
   .order-card .badge.todo      { background: rgba(0,0,0,0.06); color: #555; }
   .order-card .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
-  .order-card .badge.neighbors { background: rgba(255,210,74,0.25); color: #b85c00; }
+  .order-card .badge.neighbors { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .order-card .badge.retry     { background: rgba(139,26,14,0.08); color: var(--red-dark); }
+  .order-card .badge.pickup_requested      { background: rgba(139,26,14,0.10); color: var(--red-dark); }
   .order-card .badge.pickup_self_requested { background: rgba(255,193,7,0.18); color: #b75d00; }
   .order-card .badge.picked_up { background: rgba(28,125,63,0.18); color: #1c7d3f; }
   .order-card .addr { color: #666; font-size: 14px; margin-top: 4px; }
@@ -312,7 +313,7 @@
 
   /* Floating + FAB */
   .fab {
-    position: fixed; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom));
+    position: fixed !important; right: 22px !important; bottom: calc(22px + env(safe-area-inset-bottom));
     width: 56px; height: 56px; border-radius: 50%;
     background: var(--white); color: var(--red);
     border: none; cursor: pointer;
@@ -366,6 +367,8 @@
     flex: 1; width: 100%; border: 0; background: var(--cream);
   }
 
+
+
 </style>
 <script>
 (function(){
@@ -389,6 +392,7 @@
   html.sess-no  #login-view { display: block; }
   /* JS may still toggle [hidden] attribute on these sections; it wins via specificity bump */
   #login-view[hidden], #main-view[hidden], #detail-view[hidden], #list-view[hidden] { display: none !important; }
+
 </style>
 <link rel="manifest" href="/admin-manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -397,6 +401,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-touch-icon-152.png">
 <link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/apple-touch-icon-167.png">
+<script src="/assets/notifications.js" defer></script>
+<script src="/assets/settings.js?v=3" defer></script>
 </head>
 <body>
 
@@ -404,12 +410,29 @@
 <div class="menu-backdrop" id="menu-backdrop"></div>
 <div class="menu-panel" id="menu-panel">
   <div class="drawer-handle"></div>
-  <a href="/koken">Koken</a>
-  <a href="/voorraad">Voorraad</a>
-  <a href="/bezorger">Bezorgen</a>
   <a href="/bestellingen">Bestellingen</a>
-  <button class="btn-outline" id="push-toggle-btn" type="button" style="margin-bottom: 10px;">🔔 Schakel meldingen in</button>
-  <button class="btn-outline menu-logout-btn" id="menu-logout" type="button">Uitloggen</button>
+  <a href="/koken">Koken</a>
+  <a href="/voorraad">Potten</a>
+  <a href="/bezorger">Bezorgen</a>
+  <a href="/game/POT-001?password=100knuffels&game_id=quest-1-hazelnoten">Speurtocht</a>
+</div>
+
+<!-- Delivery-confirm bottom drawer (opens after QR scan, before coupling to order) -->
+<div class="menu-backdrop" id="deliver-confirm-backdrop"></div>
+<div class="menu-panel" id="deliver-confirm-panel">
+  <div class="drawer-handle"></div>
+  <p style="font-size: 14px; color: #555; margin: 0 0 6px;">Je koppelt</p>
+  <p style="font: 700 26px/1.1 'DM Sans', system-ui, sans-serif; color: var(--red); margin: 0 0 14px;" id="deliver-confirm-potid">POT-…</p>
+  <p style="font-size: 14px; color: #555; margin: 0 0 6px;">aan</p>
+  <p style="font: 700 20px/1.2 'DM Sans', system-ui, sans-serif; color: var(--black); margin: 0 0 2px;" id="deliver-confirm-name">…</p>
+  <p style="font-size: 15px; color: #555; margin: 0 0 20px;" id="deliver-confirm-address">…</p>
+  <button class="btn-primary" id="deliver-confirm-yes" type="button" style="margin-top: 0;">Bevestig koppeling →</button>
+  <button class="btn-outline" id="deliver-confirm-no" type="button" style="margin-top: 8px;">Annuleer</button>
+</div>
+<!-- Hidden fallback controls — settings page delegates to these so the underlying push + session logic stays untouched. -->
+<div style="display: none;">
+  <button id="push-toggle-btn" type="button">🔔 Schakel meldingen in</button>
+  <button id="menu-logout" type="button">Uitloggen</button>
 </div>
 
 <main id="app">
@@ -427,8 +450,10 @@
 
   <!-- LIST -->
   <section id="list-view">
-    <div class="topbar">
-      <h1 class="step-question" style="margin-bottom: 0;">Bezorgen</h1>
+    <div class="topbar" style="align-items: flex-start;">
+      <div style="flex: 1; min-width: 0;">
+        <h1 class="step-question" style="margin-bottom: 0;">Bezorgen</h1>
+      </div>
       <button class="menu-btn" id="menu-open" aria-label="Menu" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <line x1="3" y1="6"  x2="21" y2="6"/>
@@ -717,12 +742,13 @@
     sel.disabled = false;
     STATE.weeks.forEach(w => {
       const opt = document.createElement('option');
-      opt.value = w.iso;
+      // Compound value zodat een week met + zonder custom label naast elkaar bestaan.
+      opt.value = w.iso + '::' + (w.custom_label || '');
       const weekNum = (w.iso.match(/W(\d+)/) || [,'?'])[1].replace(/^0+/, '') || '0';
-      const stockTag = w.has_all_stock ? ' (op voorraad)' : ' (niet op voorraad)';
-      const doneTag = w.all_done ? ' (klaar)' : '';
-      const suffix = stockTag + doneTag;
-      opt.textContent = 'Week ' + weekNum + suffix;
+      const suffix = w.all_done ? ' · klaar' : '';
+      // Custom label (bv. "Ronde Ellis") vervangt de default weekweergave.
+      const base = w.custom_label ? w.custom_label : ('Week ' + weekNum);
+      opt.textContent = base + suffix;
       sel.appendChild(opt);
     });
     // Default = first chronological week in current-or-future that has orders.
@@ -746,7 +772,7 @@
       const past = STATE.weeks.filter(w => w.total > 0);
       pick = past.length ? past[past.length - 1] : STATE.weeks[STATE.weeks.length - 1];
     }
-    sel.value = pick.iso;
+    sel.value = pick.iso + '::' + (pick.custom_label || '');
     STATE.currentWeek = pick;
     renderOrders();
   }
@@ -814,7 +840,7 @@
       const card = document.createElement('div');
       card.className = 'order-card';
       const status = o.order_status || 'todo';
-      const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
+      const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_requested: 'Lege pot ophalen', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
       const badgeText = STATUS_LABELS[status] || 'Todo';
       const addr = [o.straat, [o.huisnummer, o.toevoeging].filter(Boolean).join('-')].filter(Boolean).join(' ');
       const stepHtml = `<span class="step-num">Stop ${idx + 1}</span>`;
@@ -827,6 +853,11 @@
         stop === 'pickup'           ? 'Pickup ' + naam :
         stop === 'pickup_levering'  ? 'Pickup en bezorging ' + naam :
                                       'Bezorging ' + naam;
+      // For bezorgd orders: show delivery date (nooit "te laat") — voor open orders geen extra tekst.
+      const isDeliveredCard = ['delivered', 'neighbors', 'picked_up'].includes(status);
+      const deliveredLine = isDeliveredCard
+        ? `<div class="addr" style="color:#1c7d3f; font-weight:600;">${deliveredAgoLabel(o.delivered_at || o.delivery_date)}</div>`
+        : '';
       card.innerHTML = `
         <div class="head">
           ${stepHtml}
@@ -834,6 +865,7 @@
         </div>
         <div class="name">${titleText}</div>
         <div class="addr">${addr} — ${o.plaats || ''}</div>
+        ${deliveredLine}
         <a class="btn-outline open-route" href="${mapsUrl}" target="_blank" rel="noopener">Route</a>
       `;
       // Whole-card click → open detail; ignore clicks on the Route link
@@ -943,7 +975,7 @@
   function historyLabel(entry) {
     switch (entry.action) {
       case 'pot-delivered':     return `Pot ${entry.pot_id || ''} bezorgd`;
-      case 'pot-returned':      return `Pot ${entry.pot_id || ''} ingenomen (+€1)`;
+      case 'pot-returned':      return `Pot ${entry.pot_id || ''} ingenomen (+€3)`;
       case 'extra-pot-ordered': return `Extra pot besteld${entry.credit_used ? ' (−' + fmtEuro(entry.credit_used) + ')' : ''}`;
       default: return entry.action || '-';
     }
@@ -957,7 +989,7 @@
     if (!res.ok) { creditEl.textContent = '–'; return; }
     const credit  = Number(res.data.statiegeld_credit || 0);
     const history = res.data.history || [];
-    creditEl.textContent = fmtEuro(credit);
+    creditEl.textContent = fmtEuro(credit * 3); // 1 unit = €3 statiegeld
     if (history.length === 0) {
       listEl.innerHTML = '<div class="sub" style="color:#666; font-size:13px; padding-top:6px;">Nog geen historie</div>';
       return;
@@ -975,7 +1007,7 @@
   // --- Lege pot innemen (return) ---
   // Two routes, admin picks after the scan:
   //   1. Crediet (internal balance, oude flow) → bezorger-pot-return → klant.statiegeld_credit -= 1
-  //   2. Direct terugstorten naar IBAN → refund-deposit → Stripe refund van €1
+  //   2. Direct terugstorten naar IBAN → refund-deposit → Stripe refund van €3
   function showReturnChoice(potId) {
     STATE.returnChoicePotId = potId;
     $('#return-choice-potid').textContent = potId;
@@ -1005,20 +1037,42 @@
     if (!STATE.currentOrder) return;
     const name = STATE.currentOrder.voornaam || 'de klant';
     const confirmed = window.confirm(
-      `Weet je zeker dat je €1 terug wil storten naar ${name}'s IBAN?\n\n` +
+      `Weet je zeker dat je €3 terug wil storten naar ${name}'s IBAN?\n\n` +
       `Het geld komt binnen ~5 werkdagen op de rekening waarmee betaald is.`
     );
     if (!confirmed) return;
     const res = await api('refund-deposit', { order_id: STATE.currentOrder.id, pot_id: potId });
     if (res.ok) {
-      const ibanPart = res.data.iban_last4 ? ` op IBAN ****${res.data.iban_last4}` : ' op de iDeal-rekening';
-      const eta = res.data.eta_days || 5;
-      showToast(`Statiegeld €1 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
+      if (res.data.manual) {
+        showToast(`Statiegeld €3 gemarkeerd als handmatig teruggestort — vergeet niet de IBAN-overboeking te doen.`, 'success');
+      } else {
+        const ibanPart = res.data.iban_last4 ? ` op IBAN ****${res.data.iban_last4}` : ' op de iDeal-rekening';
+        const eta = res.data.eta_days || 5;
+        showToast(`Statiegeld €3 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
+      }
       hideReturnChoice();
       await loadCustomerHistory(STATE.currentOrder.id);
-    } else {
-      showToast(res.data.error || 'Terugstorten mislukt', 'error');
+      return;
     }
+    // Stripe-refund niet mogelijk (order zonder PI, bv. Tikkie/handmatig betaald) →
+    // bied handmatige-refund fallback aan als de backend dat signaleert.
+    if (res.data && res.data.manual_available) {
+      const doManual = window.confirm(
+        `Deze order is niet via Stripe betaald, dus Stripe-refund gaat niet.\n\n` +
+        `Wil je 'em handmatig markeren als teruggestort? Doe dan zelf de IBAN- of Tikkie-overboeking van €3 naar ${name}.`
+      );
+      if (!doManual) return;
+      const res2 = await api('refund-deposit', { order_id: STATE.currentOrder.id, pot_id: potId, manual: true });
+      if (res2.ok) {
+        showToast(`Statiegeld €3 gemarkeerd als handmatig teruggestort — vergeet niet de IBAN-overboeking naar ${name}.`, 'success');
+        hideReturnChoice();
+        await loadCustomerHistory(STATE.currentOrder.id);
+      } else {
+        showToast(res2.data.error || 'Handmatig markeren mislukt', 'error');
+      }
+      return;
+    }
+    showToast(res.data.error || 'Terugstorten mislukt', 'error');
   }
   async function startReturnScanner() {
     const video = $('#return-scanner-video');
@@ -1067,18 +1121,37 @@ Ellis en Melle`;
   }
 
   // --- Delivery / undo ---
+  // Ask browser for coordinates (silent fail — location is optional audit-trail only).
+  function getScanLocation() {
+    return new Promise(resolve => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(
+        pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 4000, maximumAge: 60000 }
+      );
+    });
+  }
+
   async function deliverPot(potId) {
     if (!STATE.currentOrder) return;
-    const res = await api('bezorger-deliver', { order_id: STATE.currentOrder.id, pot_id: potId });
-    if (res.ok) {
-      showToast(`Pot ${res.data.pot_id} geregistreerd bij ${STATE.currentOrder.voornaam}`, 'success');
-      stopScanner();
-      await loadOrders();
-      const updated = STATE.weeks.flatMap(w => w.orders).find(o => o.id === STATE.currentOrder.id);
-      if (updated) openDetail(updated); else showView('list-view');
+    const ctx = STATE.scanContext;
+    const scanLocation = await getScanLocation();
+    const res = await api('bezorger-deliver', { order_id: STATE.currentOrder.id, pot_id: potId, scan_location: scanLocation });
+    if (!res.ok) { showToast(res.data.error || 'Registratie mislukt', 'error'); return; }
+    if (ctx && ctx.mode === 'neighbors') {
+      // Direct daarna status terug naar 'neighbors' + bericht naar klant openen
+      await api('bezorger-set-status', { order_id: STATE.currentOrder.id, status: 'neighbors' });
+      openContactWith(ctx.tekst);
+      showToast(`Pot ${res.data.pot_id} bij buren afgegeven`, 'success');
     } else {
-      showToast(res.data.error || 'Registratie mislukt', 'error');
+      showToast(`Pot ${res.data.pot_id} geregistreerd bij ${STATE.currentOrder.voornaam}`, 'success');
     }
+    STATE.scanContext = null;
+    stopScanner();
+    await loadOrders();
+    const updated = STATE.weeks.flatMap(w => w.orders).find(o => o.id === STATE.currentOrder.id);
+    if (updated) openDetail(updated); else showView('list-view');
   }
 
   async function startScanner() {
@@ -1093,7 +1166,9 @@ Ellis en Melle`;
       const m = /POT-\d{3}/i.exec(text);
       if (!m) return;
       playScanSuccess();
-      await deliverPot(m[0].toUpperCase());
+      // Pause camera + show confirm drawer so bezorger reads pot-ID + klant vóór coupling.
+      if (STATE.qrScanner) STATE.qrScanner.pause();
+      openDeliverConfirm(m[0].toUpperCase());
     }, { highlightScanRegion: true, returnDetailedScanResult: true });
     try {
       await STATE.qrScanner.start();
@@ -1107,7 +1182,41 @@ Ellis en Melle`;
     $('#scanner-wrap').hidden = true;
     $('#start-scan-btn').textContent = 'Geef pot af →';
     if (STATE.qrScanner) { STATE.qrScanner.stop(); STATE.qrScanner.destroy(); STATE.qrScanner = null; }
+    STATE.scanContext = null;
   }
+
+  // --- Deliver-confirm bottom drawer (post-scan, pre-couple check) ---
+  function openDeliverConfirm(potId) {
+    const o = STATE.currentOrder;
+    if (!o) return;
+    STATE.pendingDeliverPotId = potId;
+    $('#deliver-confirm-potid').textContent = potId;
+    $('#deliver-confirm-name').textContent = o.voornaam || 'klant';
+    const addrParts = [o.straat, o.huisnummer].filter(Boolean).join(' ');
+    const addrLine = [addrParts + (o.toevoeging ? ' ' + o.toevoeging : ''), o.postcode, o.plaats].filter(Boolean).join(', ');
+    $('#deliver-confirm-address').textContent = addrLine;
+    $('#deliver-confirm-backdrop').classList.add('open');
+    $('#deliver-confirm-panel').classList.add('open');
+  }
+  function closeDeliverConfirm() {
+    $('#deliver-confirm-backdrop').classList.remove('open');
+    $('#deliver-confirm-panel').classList.remove('open');
+    STATE.pendingDeliverPotId = null;
+  }
+  $('#deliver-confirm-yes').addEventListener('click', async () => {
+    const pid = STATE.pendingDeliverPotId;
+    closeDeliverConfirm();
+    if (pid) await deliverPot(pid);
+  });
+  $('#deliver-confirm-no').addEventListener('click', () => {
+    closeDeliverConfirm();
+    // Resume scanner so bezorger kan opnieuw scannen zonder Stop → Start.
+    if (STATE.qrScanner) { try { STATE.qrScanner.start(); } catch {} }
+  });
+  $('#deliver-confirm-backdrop').addEventListener('click', () => {
+    closeDeliverConfirm();
+    if (STATE.qrScanner) { try { STATE.qrScanner.start(); } catch {} }
+  });
 
   async function undoDelivery() {
     if (!STATE.currentOrder) return;
@@ -1132,9 +1241,10 @@ Ellis en Melle`;
 
 Tot snel!
 Ellis en Melle`;
-    openContactWith(tekst);
-    await api('bezorger-set-status', { order_id: o.id, status: 'neighbors' });
-    await loadOrders();
+    // Scanner openen met "neighbors"-context — bij eerste pot-scan koppelen we de pot,
+    // zetten we de status op 'neighbors' en sturen we het bericht naar de klant.
+    STATE.scanContext = { mode: 'neighbors', huisnr, tekst };
+    await startScanner();
   }
   async function requestPickupSelf() {
     const o = STATE.currentOrder;
@@ -1176,6 +1286,7 @@ Ellis en Melle`;
       STATE.weeks = (res.data.weeks || []).map(w => Object.assign({}, w, { orders: optimiseRoute(w.orders) }));
       renderWeekSelect();
       showView('list-view');
+      initTopbarButtons();
     } else {
       $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
     }
@@ -1183,8 +1294,12 @@ Ellis en Melle`;
   $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-btn').click(); });
 
   $('#week-select').addEventListener('change', () => {
-    const iso = $('#week-select').value;
-    STATE.currentWeek = STATE.weeks.find(w => w.iso === iso) || null;
+    const val = $('#week-select').value;
+    // Compound value: "isoWeek::customLabel"
+    const sepIdx = val.indexOf('::');
+    const iso = sepIdx >= 0 ? val.slice(0, sepIdx) : val;
+    const label = sepIdx >= 0 ? val.slice(sepIdx + 2) : '';
+    STATE.currentWeek = STATE.weeks.find(w => w.iso === iso && (w.custom_label || '') === label) || null;
     renderOrders();
   });
 
@@ -1219,6 +1334,7 @@ Ellis en Melle`;
         STATE.weeks = (res.data.weeks || []).map(w => Object.assign({}, w, { orders: optimiseRoute(w.orders) }));
         renderWeekSelect();
         showView('list-view');
+        initTopbarButtons();
       } else {
         clearSession();
         STATE.password = null;
@@ -1228,9 +1344,26 @@ Ellis en Melle`;
   } else {
     showView('login-view');
   }
+
+  // Notifications bell — hooks up left of the hamburger menu
+  function initTopbarButtons(attempts) {
+    attempts = attempts || 0;
+    const btn = document.getElementById('menu-open');
+    if (btn && STATE.password && window.EllemelNotif && window.EllemelSettings) {
+      window.EllemelSettings.init({
+        password: STATE.password,
+        mountBefore: btn,
+        onLogout: () => { clearSession(); location.reload(); },
+      });
+      const gear = document.getElementById('settings-gear-btn');
+      window.EllemelNotif.init({ password: STATE.password, mountBefore: gear || btn });
+    } else if (STATE.password && attempts < 20) {
+      setTimeout(() => initTopbarButtons(attempts + 1), 100);
+    }
+  }
 </script>
 
-<a class="fab" id="fab-add" href="https://ellemelle.netlify.app/?start=admin" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
+<a class="fab" id="fab-add" href="https://ellemel.nl/?start=admin" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </a>
 
@@ -1412,8 +1545,9 @@ Ellis en Melle`;
     <line x1="21" y1="17" x2="21" y2="21"/>
   </svg>
 </button>
-<script type="module" src="/assets/scan-fab.js?v=14"></script>
+<script type="module" src="/assets/scan-fab.js?v=19"></script>
 
-<script src="/assets/pull-to-refresh.js" defer></script>
+<script src="/assets/pull-to-refresh.js" defer>
+</script>
 </body>
 </html>

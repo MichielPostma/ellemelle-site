@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TXDQ6849');</script>
+<!-- End Google Tag Manager -->
 <script>
   // Detect embed mode (iframe inside admin drawer) — adds body class so we can trim chrome later.
   (function(){
@@ -203,9 +210,41 @@
   .confetti { position: fixed; width: 8px; height: 14px; border-radius: 2px; pointer-events: none; will-change: transform; z-index: 9999; }
   .success-help { color: #666; font-size: 14.5px; line-height: 1.5; text-align: center; margin: 28px auto 10px; max-width: 340px; }
 
+  /* Game speurtocht banner — bovenaan retour-pagina; matcht option-card stijl */
+  .game-banner {
+    display: block; text-decoration: none; color: inherit;
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 0;
+    margin: 0 0 14px; box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: transform 90ms ease;
+  }
+  .game-banner:active { transform: scale(0.995); }
+  .game-banner-img-wrap {
+    width: 100%; aspect-ratio: 16/9; background: #f2ecdf;
+    overflow: hidden;
+  }
+  .game-banner-img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .game-banner-body {
+    padding: 16px 16px 18px;
+  }
+  .game-banner-title {
+    font-size: 17px; font-weight: 700; color: var(--black);
+    line-height: 1.3; letter-spacing: -0.2px;
+    margin: 0 0 14px;
+  }
+  .game-banner .btn-primary { margin-top: 0; }
+  .game-banner.won .btn-primary { background: #1f9d55; }
+
 </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TXDQ6849"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
 <main id="app">
   <span class="progress-text" id="pot-label">Pot</span>
@@ -229,6 +268,15 @@
   </section>
 
   <section id="delivered-view" hidden>
+    <a id="game-banner" class="game-banner" hidden href="#">
+      <div class="game-banner-img-wrap">
+        <img class="game-banner-img" id="game-banner-img" src="" alt="" loading="lazy">
+      </div>
+      <div class="game-banner-body">
+        <div class="game-banner-title" id="game-banner-title"></div>
+        <span class="btn-primary" id="game-banner-btn">Start de speurtocht →</span>
+      </div>
+    </a>
     <h1 class="step-question" id="delivered-h1">Wat kunnen we voor je doen?</h1>
 
     <div class="option-card">
@@ -269,7 +317,7 @@
     <h1 class="step-question" id="pickup-h1">Bedankt!</h1>
     <div class="info-card">
       <strong>We komen je pot snel halen.</strong>
-      <span class="sub">Bedankt dat je de glazen pot teruggeeft — €1 statiegeld krijg je terug bij je volgende bestelling.</span>
+      <span class="sub">Bedankt dat je de glazen pot teruggeeft — €3 statiegeld krijg je terug bij je volgende bestelling.</span>
     </div>
   </section>
 
@@ -315,9 +363,9 @@
   <section id="reorder-aantal-view" hidden>
     <h1 class="step-question">Hoeveel potten wil je, <span id="reorder-aantal-name">jij</span>?</h1>
     <div class="kanaal-options">
-      <button class="kanaal-card aantal-card" data-reorder-aantal="1" type="button"><span><span class="label">1 pot</span><span class="sub">5 euro plus 1 euro statiegeld</span></span></button>
-      <button class="kanaal-card aantal-card" data-reorder-aantal="2" type="button"><span><span class="label">2 potten</span><span class="sub">10 euro plus 2 euro statiegeld</span></span></button>
-      <button class="kanaal-card aantal-card" data-reorder-aantal="3" type="button"><span><span class="label">3 potten</span><span class="sub">15 euro plus 3 euro statiegeld</span></span></button>
+      <button class="kanaal-card aantal-card" data-reorder-aantal="1" type="button"><span><span class="label">1 pot</span><span class="sub">5 euro plus 3 euro statiegeld</span></span></button>
+      <button class="kanaal-card aantal-card" data-reorder-aantal="2" type="button"><span><span class="label">2 potten</span><span class="sub">10 euro plus 6 euro statiegeld</span></span></button>
+      <button class="kanaal-card aantal-card" data-reorder-aantal="3" type="button"><span><span class="label">3 potten</span><span class="sub">15 euro plus 9 euro statiegeld</span></span></button>
     </div>
     <div class="step-actions">
       <button type="button" class="back-pill" id="reorder-aantal-back" aria-label="Vorige">
@@ -448,7 +496,7 @@
     const rows = [
       { k: 'Geproduceerd', v: p.production_date ? fmtDateLong(p.production_date) : '—' },
       { k: 'Houdbaar t/m', v: p.expiry_date ? fmtDateLong(p.expiry_date) : '—' },
-      { k: 'Statiegeld', v: '€1' },
+      { k: 'Statiegeld', v: '€3' },
       { k: 'Besteller', v: p.voornaam || '—' },
     ];
     $('#pot-info-blok').innerHTML = rows.map(r => '<div class="row"><span class="k">'+escapeHtml(r.k)+'</span><span class="v">'+escapeHtml(r.v)+'</span></div>').join('');
@@ -495,10 +543,39 @@
     list.innerHTML = entries.map(e => '<div class="entry"><span class="ts">'+escapeHtml(fmtDateTime(e.ts))+'</span><span class="label">'+escapeHtml(e.label)+'</span></div>').join('');
   }
 
+  // Game-metadata fallback (single game vandaag; centraliseer wanneer meerdere bestaan).
+  const GAMES_META = {
+    'quest-1-hazelnoten': {
+      header_image: '/Images/game-hazelnoten-header.jpg?v=20260616a',
+      title:        'Help ons de zak hazelnoten in de Potgietersbuurt te vinden!',
+      cta_start:    'Start de speurtocht →',
+      cta_resume:   'Verder spelen →',
+      cta_won:      'Bekijk je route →',
+      title_won:    'Speurtocht voltooid — jij bent officieel Crew-lid!',
+      title_resume: 'Ga verder waar je bleef in de speurtocht',
+    },
+  };
+  function renderGameBanner(p) {
+    const $b = document.getElementById('game-banner');
+    if (!p || !p.game_id || !GAMES_META[p.game_id]) { $b.hidden = true; return; }
+    const meta = GAMES_META[p.game_id];
+    const state = p.game_state || null;
+    let title = meta.title, cta = meta.cta_start, won = false;
+    if (state && state.won) { title = meta.title_won; cta = meta.cta_won; won = true; }
+    else if (state)         { title = meta.title_resume; cta = meta.cta_resume; }
+    $b.hidden = false;
+    $b.classList.toggle('won', won);
+    document.getElementById('game-banner-img').src = meta.header_image;
+    document.getElementById('game-banner-title').textContent = title;
+    document.getElementById('game-banner-btn').textContent = cta;
+    $b.href = '/game/' + encodeURIComponent(p.id);
+  }
+
   function renderForCurrentState() {
     const p = STATE.pot;
     if (!p) { showView('notfound-view'); return; }
     $('#pot-label').textContent = p.id;
+    renderGameBanner(p);
     if (p.status === 'available') showView('available-view');
     else if (p.status === 'delivered') {
       $('#delivered-h1').textContent = p.voornaam ? p.voornaam + ', wat kunnen we voor je doen?' : 'Wat kunnen we voor je doen?';
@@ -630,7 +707,7 @@
       '</div>' +
       '<div class="statiegeld-note">' +
         '<div class="head">Over je statiegeld</div>' +
-        '<div class="text">Je statiegeld van €1 voor de oude pot wordt teruggestort wanneer we \u2019em ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
+        '<div class="text">Je statiegeld van €3 voor de oude pot wordt teruggestort wanneer we \u2019em ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
       '</div>';
 
     function leveringHtml(info) {
@@ -753,7 +830,7 @@
       '</div>' +
       '<div class="statiegeld-note">' +
         '<div class="head">Over je statiegeld</div>' +
-        '<div class="text">Je statiegeld van €1 wordt teruggestort zodra we de pot ' + (isBrengen ? 'ontvangen' : 'hebben opgehaald') + '.</div>' +
+        '<div class="text">Je statiegeld van €3 wordt teruggestort zodra we de pot ' + (isBrengen ? 'ontvangen' : 'hebben opgehaald') + '.</div>' +
       '</div>';
 
     function leveringHtml(info) {
@@ -815,14 +892,14 @@
     // Confirmation message depends on chosen methode.
     if (bringSelf) {
       $('#pickup-confirm-headline').textContent = 'Top, we zien je snel!';
-      $('#pickup-confirm-sub').textContent = 'Bedankt voor je feedback! Statiegeld €1 storten we terug zodra we de pot ontvangen.';
+      $('#pickup-confirm-sub').textContent = 'Bedankt voor je feedback! Statiegeld €3 storten we terug zodra we de pot ontvangen.';
     } else {
       const today = new Date();
       const day = today.getDay();
       const offset = ((6 - day + 7) % 7) || 7;
       const next = new Date(today.getTime() + offset * 86400000);
       $('#pickup-confirm-headline').textContent = 'We halen je pot op zaterdag ' + next.getDate() + ' ' + NL_MAANDEN[next.getMonth()] + '.';
-      $('#pickup-confirm-sub').textContent = 'Bedankt voor je feedback! Statiegeld €1 storten we terug zodra we de pot hebben opgehaald.';
+      $('#pickup-confirm-sub').textContent = 'Bedankt voor je feedback! Statiegeld €3 storten we terug zodra we de pot hebben opgehaald.';
     }
     // Hide the top progress label on the final confirmation view.
     const pl = document.getElementById('pot-label'); if (pl) { pl.textContent = ''; pl.style.display = 'none'; }
@@ -959,7 +1036,7 @@
       '</div>' +
       '<div class="statiegeld-note">' +
         '<div class="head">Over je statiegeld</div>' +
-        '<div class="text">Je statiegeld van €1 voor de oude pot wordt teruggestort wanneer we \u2019em ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
+        '<div class="text">Je statiegeld van €3 voor de oude pot wordt teruggestort wanneer we \u2019em ' + (isPickup ? 'innemen' : 'ophalen') + '.</div>' +
       '</div>';
   }
 

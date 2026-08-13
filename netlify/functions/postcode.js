@@ -29,7 +29,7 @@ exports.handler = async (event) => {
       `?q=${q}&fl=woonplaatsnaam,straatnaam,huisnummer,postcode,centroide_ll&rows=1&fq=type:adres`;
 
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'ELLEMELLE-site/1.0 (ellis-melle@example.nl)' },
+      headers: { 'User-Agent': 'Ellemel-site/1.0 (ellis-melle@example.nl)' },
     });
     if (!res.ok) throw new Error('PDOK ' + res.status);
     const json = await res.json();

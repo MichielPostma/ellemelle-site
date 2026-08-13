@@ -200,6 +200,8 @@ async function listEnrichedOrders() {
       uiterlijke_bezorgdatum_override: state.uiterlijke_bezorgdatum_override || null,
       // Manual override of GEPLANDE bezorgweek
       delivery_date_override: state.delivery_date_override || null,
+      // Custom label voor bezorging (bv. "Ronde Ellis") — override op de standaard weeknaam
+      custom_delivery_label: state.custom_delivery_label || null,
       // Update-message tracker (for koken batch flow)
       update_message_status: state.update_message_status || 'not_sent',
       update_message_status_at: state.update_message_status_at || null,
@@ -216,6 +218,21 @@ async function listEnrichedOrders() {
       order_status:  state.order_status  || (state.delivered_pot ? 'delivered' : 'todo'),
       deleted: !!state.deleted,
       history: Array.isArray(state.history) ? state.history : [],
+      // Stripe-payment context — bedrag dat daadwerkelijk is afgerekend.
+      // paid_amount_cents wordt door stripe-webhook op het order-blob gezet
+      // bij payment_intent.succeeded. Ontbreekt bij Tikkie/handmatige orders.
+      payment_intent_id: state.payment_intent_id || null,
+      paid_amount_cents: (typeof state.paid_amount_cents === 'number')
+        ? state.paid_amount_cents
+        // Fallback voor historische Stripe-orders vóór de €3-fix: statiegeld
+        // was toen €1/pot, dus €5 product + €1 statiegeld − €1 credit/pot.
+        : (state.payment_intent_id
+            ? (function() {
+                const a = Math.max(1, parseInt(d.aantal || 1, 10) || 1);
+                const credit = Math.max(0, parseInt(d.statiegeld_credit || 0, 10) || 0);
+                return Math.max(50, a * 500 + a * 100 - Math.min(credit, a) * 100);
+              })()
+            : null),
     });
   }
 

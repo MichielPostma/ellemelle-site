@@ -235,6 +235,7 @@ exports.handler = async (event) => {
       await ordersStore.setJSON(netlifyOrderId, Object.assign({}, existing, {
         payment_intent_id: piId,
         paid_at: new Date().toISOString(),
+        paid_amount_cents: typeof pi.amount === 'number' ? pi.amount : (pi.amount_received || null),
       }));
     } catch { /* non-critical */ }
   }

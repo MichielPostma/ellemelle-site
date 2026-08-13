@@ -3,7 +3,8 @@
 /api/count       /.netlify/functions/count       200
 /api/admin-list  /.netlify/functions/admin-list  200
 /api/admin-mark-paid /.netlify/functions/admin-mark-paid 200
-/admin           /admin.html                     200
+/admin           /bestellingen                   301
+/admin.html      /bestellingen                   301
 /api/admin/seed-pots /.netlify/functions/admin-seed-pots 200
 /api/admin/list-pots /.netlify/functions/admin-list-pots 200
 /api/bezorger/orders /.netlify/functions/bezorger-orders 200
@@ -43,3 +44,16 @@
 /api/klanten/refund-credit /.netlify/functions/refund-klant-credit 200
 /klant/* /klant.html 200
 /pay/* /pay.html 200
+/game/* /game.html 200
+/api/games/list /.netlify/functions/games-list 200
+/api/games/pot-link /.netlify/functions/pot-game-link 200
+/api/game/state /.netlify/functions/game-state-get 200
+/api/game/mission-advance /.netlify/functions/game-mission-advance 200
+/api/game/submit-code /.netlify/functions/game-submit-code 200
+/api/game/restart-mission /.netlify/functions/game-restart-mission 200
+/api/game/restart-all /.netlify/functions/game-restart-all 200
+/api/klanten/games /.netlify/functions/klant-games 200
+/api/bestellingen/games /.netlify/functions/bestelling-games 200
+/t/* /.netlify/functions/tile-redirect 200
+/tegels-print /tiles-print.html 200
+/game-qr-print /game-qr-print.html 200

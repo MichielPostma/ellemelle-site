@@ -150,7 +150,7 @@
     if (isNaN(d.getTime())) return iso;
     return d.getDate() + '/' + (d.getMonth() + 1);
   }
-  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_requested: 'Lege pot ophalen', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
 
   function renderDetail() {
     const c = STATE.customer;
@@ -161,7 +161,7 @@
     const ct = c.kanaal === 'whatsapp' ? c.telefoon : c.email;
     $('#d-contact').textContent = ct || '—';
     $('#d-pots-home').textContent = String(c.pots_at_home || 0);
-    const creditCents = (c.statiegeld_credit || 0) * 100;
+    const creditCents = (c.statiegeld_credit || 0) * 300;
     $('#d-credit-amount').textContent = fmtEuro(creditCents);
     const refundBtn = $('#refund-credit-btn');
     refundBtn.disabled = creditCents < 50;
@@ -197,7 +197,7 @@
 
   async function refundCredit() {
     const c = STATE.customer;
-    const creditCents = (c.statiegeld_credit || 0) * 100;
+    const creditCents = (c.statiegeld_credit || 0) * 300;
     if (creditCents < 50) return;
     const name = c.voornaam || 'de klant';
     const eur = fmtEuro(creditCents);

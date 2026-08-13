@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#D9301E">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TXDQ6849');</script>
+<!-- End Google Tag Manager -->
 <title>ELLEMELLE — bestelling</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,8 +172,9 @@
   .badge.todo      { background: rgba(0,0,0,0.06); color: #555; }
   .badge.confirmed { background: rgba(33,118,255,0.10); color: #2176ff; }
   .badge.delivered { background: rgba(28,125,63,0.12); color: #1c7d3f; }
-  .badge.neighbors { background: rgba(255,210,74,0.25); color: #b85c00; }
+  .badge.neighbors { background: rgba(28,125,63,0.12); color: #1c7d3f; }
   .badge.retry     { background: rgba(139,26,14,0.08); color: var(--red-dark); }
+  .badge.pickup_requested      { background: rgba(139,26,14,0.10); color: var(--red-dark); }
   .badge.pickup_self_requested { background: rgba(255,193,7,0.18); color: #b75d00; }
   .badge.picked_up { background: rgba(28,125,63,0.18); color: #1c7d3f; }
 
@@ -209,6 +217,39 @@
   #d-activity .log-desc { color: var(--black); font-size: 14px; line-height: 1.4; }
   #d-activity .empty { padding: 14px 16px; color: #888; font-size: 13px; }
 
+  /* Game cards (zelfde patroon als klant detail) */
+  .game-card {
+    background: #fff; border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--shadow-card);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .game-card:active { transform: scale(0.99); }
+  .game-card .info { flex: 1; min-width: 0; }
+  .game-card .name { font-weight: 700; font-size: 16px; color: var(--black); }
+  .game-card .sub  { color: #666; font-size: 13px; margin-top: 3px; line-height: 1.4; }
+  .game-card .status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .status-badge.gekoppeld  { background: rgba(0,0,0,0.06); color: #555; }
+  .status-badge.gestart    { background: rgba(102,179,255,0.18); color: #1e5d99; }
+  .status-badge.bezig      { background: rgba(240,173,0,0.18); color: #a06c00; }
+  .status-badge.gewonnen   { background: rgba(31,157,85,0.18); color: #1c7d3f; }
+  .game-card .game-btn {
+    flex: 0 0 56px; width: 56px; height: 56px;
+    background: var(--red); color: var(--white);
+    border: none; border-radius: var(--radius-md);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0;
+    box-shadow: 0 4px 12px rgba(217,48,30,0.25);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .game-card .game-btn:active { transform: scale(0.96); }
+  .game-card .game-btn svg { width: 22px; height: 22px; }
+
   /* Floating buttons */
   /* Admin order drawer (iframe with bestelflow for existing klant) */
   .admin-drawer-backdrop {
@@ -238,7 +279,7 @@
   .admin-drawer iframe { flex: 1; width: 100%; border: 0; background: var(--cream); }
 
   .fab {
-    position: fixed; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom));
+    position: fixed !important; right: 22px !important; bottom: calc(22px + env(safe-area-inset-bottom));
     width: 56px; height: 56px; border-radius: 50%;
     background: var(--white); color: var(--red);
     border: none; cursor: pointer;
@@ -250,6 +291,8 @@
   .fab svg { width: 24px; height: 24px; }
   .fab:hover { transform: scale(1.05); }
   .fab:active { transform: scale(0.95); }
+
+
 </style>
 <script>
 (function(){
@@ -273,19 +316,31 @@
   html.sess-no  #login-view { display: block; }
   /* JS may still toggle [hidden] attribute on these sections; it wins via specificity bump */
   #login-view[hidden], #main-view[hidden], #detail-view[hidden], #list-view[hidden] { display: none !important; }
+
 </style>
+<script src="/assets/notifications.js" defer></script>
+<script src="/assets/settings.js?v=3" defer></script>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TXDQ6849"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
 <!-- Hamburger -->
 <div class="menu-backdrop" id="menu-backdrop"></div>
 <div class="menu-panel" id="menu-panel">
   <div class="drawer-handle"></div>
-  <a href="/bezorger">Bezorgen</a>
   <a href="/bestellingen">Bestellingen</a>
-  <a href="/voorraad">Voorraad</a>
   <a href="/koken">Koken</a>
-  <button class="btn-outline menu-logout-btn" id="menu-logout" type="button">Uitloggen</button>
+  <a href="/voorraad">Voorraad</a>
+  <a href="/bezorger">Bezorgen</a>
+  <a href="/game/POT-001?password=100knuffels&game_id=quest-1-hazelnoten">Speurtocht</a>
+</div>
+<!-- Hidden fallback controls — settings page delegates to these so the underlying push + session logic stays untouched. -->
+<div style="display: none;">
+  <button id="push-toggle-btn" type="button">🔔 Schakel meldingen in</button>
+  <button id="menu-logout" type="button">Uitloggen</button>
 </div>
 
 <main id="app">
@@ -339,7 +394,7 @@
     <div class="actions-label">Bestelling</div>
     <div class="info-card">
       <div class="detail-row"><span class="k">Aantal potten</span><span class="v" id="d-aantal">1</span></div>
-      <div class="detail-row"><span class="k">Prijs</span><span class="v" id="d-prijs">€6</span></div>
+      <div class="detail-row"><span class="k">Prijs</span><span class="v" id="d-prijs">€8</span></div>
       <div class="detail-row"><span class="k">Besteldatum</span><span class="v" id="d-created">—</span></div>
       <div class="detail-row" id="d-pot-row" hidden><span class="k">Gekoppelde pot(ten)</span><span class="v" id="d-pot-ids">—</span></div>
       <button class="btn-outline" id="couple-pot-btn" type="button" hidden style="margin-top: 14px;">Koppel pot(ten)</button>
@@ -354,6 +409,7 @@
       <div class="detail-row"><span class="k">Updates</span><span class="v" id="d-kanaal">—</span></div>
       <div class="detail-row"><span class="k">Contact</span><span class="v" id="d-contact">—</span></div>
       <div class="detail-row"><span class="k">Statiegeld credit</span><span class="v" id="d-credit">€0</span></div>
+      <button class="btn-outline" id="view-klant-btn" type="button" hidden style="margin-top: 14px;">Bekijk klant</button>
     </div>
 
     <div id="d-feedback-wrap" hidden>
@@ -367,6 +423,9 @@
 
     <div class="actions-label">Bestelhistorie van deze klant</div>
     <div class="info-card" id="d-history"></div>
+
+    <div class="actions-label" id="games-label" hidden>Games</div>
+    <div id="d-games"></div>
 
     <div class="actions-label">Activiteit</div>
     <div class="info-card" id="d-activity"></div>
@@ -564,7 +623,7 @@
     clearTimeout(window.__t); window.__t = setTimeout(() => t.style.opacity = '0', 2800);
   }
 
-  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
+  const STATUS_LABELS = { todo: 'Nieuw', confirmed: 'Bevestigd', delivered: 'Bezorgd', neighbors: 'Buren bezorgd', retry: 'Nieuwe bezorgpoging', pickup_requested: 'Lege pot ophalen', pickup_self_requested: 'Verzoek zelf ophalen', picked_up: 'Opgehaald' };
   function modeLabel(o) {
     const d = fmtDate(o.delivery_date);
     if (o.delivery_mode === 'stock') return 'Op voorraad — ' + d;
@@ -613,8 +672,72 @@
       const iban = entry.iban_last4 ? ` naar IBAN ****${entry.iban_last4}` : '';
       return `Statiegeld €${eur} teruggestort${iban} (pot ${entry.pot_id || ''})`.trim();
     }
+    if (a === 'pot_coupled')   return `Pot ${entry.pot_id || ''} gekoppeld`;
+    if (a === 'pot_uncoupled') return `Pot ${entry.pot_id || ''} ontkoppeld`;
+    if (a === 'message_shared') {
+      const recip = entry.recipient ? ` aan ${entry.recipient}` : '';
+      const photo = entry.has_photo ? ' (+ foto)' : '';
+      const preview = (entry.message || '').slice(0, 80);
+      return `App-bericht verstuurd${recip}${photo}${preview ? ': "' + preview + (entry.message && entry.message.length > 80 ? '…' : '') + '"' : ''}`;
+    }
     return a;
   }
+  const STATUS_BADGE_LABEL = { gekoppeld: 'Gekoppeld', gestart: 'Gestart', bezig: 'Bezig', gewonnen: 'Voltooid' };
+  const GAME_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><line x1="15" y1="12" x2="15" y2="12"/><line x1="18" y1="10" x2="18" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.98 3.55L1.05 16.45A2 2 0 0 0 3 19h2.4l3.1-4h7l3.1 4H21a2 2 0 0 0 1.95-2.55L21.3 8.55A4 4 0 0 0 17.32 5z"/></svg>';
+  async function renderGames() {
+    const wrap = $('#d-games');
+    const label = $('#games-label');
+    wrap.innerHTML = '';
+    try {
+      const r = await fetch('/.netlify/functions/bestelling-games', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: STATE.password, order_id: STATE.order && STATE.order.id }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok || !j.games || j.games.length === 0) { label.hidden = true; return; }
+      label.hidden = false;
+      j.games.forEach(g => {
+        const card = document.createElement('div');
+        card.className = 'game-card';
+        // Prioritize the pot's game_state.won flag — dat is de bron van waarheid voor voltooid.
+        const rawStatus = g.customer_status || 'gekoppeld';
+        const status = (g.state && g.state.won) ? 'gewonnen' : rawStatus;
+        const stateText = g.state && g.state.won
+          ? 'Speurtocht voltooid door klant.'
+          : g.state
+            ? `Klant is op operatie ${g.state.current_mission_idx} bezig.`
+            : 'Klant heeft de game nog niet gestart.';
+        card.innerHTML = `
+          <div class="info">
+            <div class="name">${escapeHtml(g.game_name)}</div>
+            <div class="sub">${escapeHtml(g.pot_id)} · ${escapeHtml(stateText)}</div>
+            <div class="status-badge ${status}">${STATUS_BADGE_LABEL[status] || status}</div>
+          </div>
+          <button type="button" class="game-btn" aria-label="Open game">${GAME_ICON}</button>
+        `;
+        card.addEventListener('click', () => openGameDrawer(g.pot_id));
+        wrap.appendChild(card);
+      });
+    } catch {
+      label.hidden = true;
+    }
+  }
+  function openGameDrawer(potId) {
+    const iframe = document.getElementById('game-iframe');
+    iframe.src = '/game/' + potId + '?admin=1';
+    document.getElementById('game-drawer-backdrop').classList.add('open');
+    document.getElementById('game-drawer').classList.add('open');
+  }
+  function closeGameDrawer() {
+    document.getElementById('game-drawer-backdrop').classList.remove('open');
+    document.getElementById('game-drawer').classList.remove('open');
+    setTimeout(() => { document.getElementById('game-iframe').src = 'about:blank'; }, 300);
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const bd = document.getElementById('game-drawer-backdrop');
+    if (bd) bd.addEventListener('click', closeGameDrawer);
+  });
+
   function renderActivity() {
     const wrap = $('#d-activity');
     if (!wrap) return;
@@ -664,7 +787,7 @@
     // override it. Use style.display directly so the button truly disappears when not eligible.
     const potBtn = document.getElementById('customer-pot-btn');
     if (potBtn) {
-      const visibleStatuses = ['delivered', 'neighbors', 'pickup_self_requested', 'picked_up'];
+      const visibleStatuses = ['delivered', 'neighbors', 'pickup_requested', 'pickup_self_requested', 'picked_up'];
       const linkedPot = o.delivered_pot
         || (Array.isArray(o.assigned_pots) && o.assigned_pots.length ? o.assigned_pots[0] : null);
       const showPot = !!linkedPot && visibleStatuses.includes(status);
@@ -699,13 +822,18 @@
       coupleBtn.hidden = !showCouple;
       coupleBtn.style.display = showCouple ? 'block' : 'none';
     }
-    // Visual cleanup: when Besteldatum is the last visible thing in the Bestelling-kaart
-    // (no pot row, no koppel button), strip its bottom hairline so the card doesn't end on a divider.
+    // Visual cleanup for the Bestelling-kaart bottom hairline. Drop it on whichever row is
+    // visually the last (Besteldatum if no pot row + no koppel-knop; Gekoppelde pot(ten) if
+    // there's a pot row but no koppel-knop below it).
     const besteldatumRow = document.getElementById('d-created');
     const besteldatumDetail = besteldatumRow && besteldatumRow.closest('.detail-row');
     if (besteldatumDetail) {
       const hasFollowers = (potDisplay.length > 0) || showCouple;
       besteldatumDetail.style.borderBottom = hasFollowers ? '' : 'none';
+    }
+    if (potRow) {
+      // Pot row is the last visible item when there's no couple button rendered below it.
+      potRow.style.borderBottom = (potDisplay.length > 0 && !showCouple) ? 'none' : '';
     }
     const uiterlijkeText = fmtDateShort(o.uiterlijke_bezorgdatum);
     const geplandeText = fmtDateShort(o.delivery_date);
@@ -724,10 +852,26 @@
       c.innerHTML = `<a href="mailto:${o.email}">${o.email}</a>`;
     } else { c.textContent = '—'; }
     // Statiegeld credit (deposit outstanding) — comes from /bestellingen-get .customer.statiegeld_credit
+    // statiegeld_credit is in UNITS (1 unit per outstanding pot); display as euros at €3/unit.
     const credit = (STATE.customer && Number(STATE.customer.statiegeld_credit)) || 0;
-    $('#d-credit').textContent = '€' + (Number.isInteger(credit) ? String(credit) : credit.toFixed(2).replace('.', ','));
+    const creditEur = credit * 3;
+    $('#d-credit').textContent = '€' + (Number.isInteger(creditEur) ? String(creditEur) : creditEur.toFixed(2).replace('.', ','));
+    // "Bekijk klant" button — toon zodra we een customer_key hebben (uit customer-blob of order zelf).
+    const klantKey = (STATE.customer && STATE.customer.contact_key) || o.customer_key || '';
+    const klantBtn = $('#view-klant-btn');
+    if (klantBtn) {
+      if (klantKey) {
+        klantBtn.hidden = false;
+        klantBtn.onclick = () => { location.href = '/klant/' + encodeURIComponent(klantKey); };
+      } else {
+        klantBtn.hidden = true;
+      }
+    }
     $('#d-aantal').textContent = String(o.aantal || 1);
-    $('#d-prijs').textContent = '€6';
+    // Prijs = aantal × (€5 pot + €3 statiegeld). Credit-verrekening laten we
+    // buiten deze weergave omdat het credit-veld apart wordt getoond.
+    const _aantal = Number(o.aantal) || 1;
+    $('#d-prijs').textContent = '€' + (_aantal * 8);
     $('#d-created').textContent = fmtDateTime(o.created_at);
 
     // Feedback ratings — hide the whole section unless the customer actually submitted a rating.
@@ -749,6 +893,7 @@
 
     // History
     renderActivity();
+    renderGames();
         const h = $('#d-history'); h.innerHTML = '';
     if (!STATE.history || STATE.history.length === 0) {
       h.innerHTML = '<div style="color:#666; font-size:13px;">Eerste bestelling van deze klant.</div>';
@@ -894,6 +1039,7 @@
       document.body.classList.remove('on-login');
       STATE.order = res.data.order; STATE.history = res.data.history || [];
       renderDetail();
+      initTopbarButtons();
     } else {
       $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
     }
@@ -924,12 +1070,30 @@
       if (res.ok) {
         STATE.order = res.data.order; STATE.history = res.data.history || []; STATE.customer = res.data.customer || null;
         renderDetail();
+        initTopbarButtons();
       } else {
         clearSession(); STATE.password = null;
         document.body.classList.add('on-login');
         $('#login-view').hidden = false; $('#detail-view').hidden = true;
       }
     });
+  }
+
+  // Notifications bell — hooks up left of the hamburger menu
+  function initTopbarButtons(attempts) {
+    attempts = attempts || 0;
+    const btn = document.getElementById('menu-open');
+    if (btn && STATE.password && window.EllemelNotif && window.EllemelSettings) {
+      window.EllemelSettings.init({
+        password: STATE.password,
+        mountBefore: btn,
+        onLogout: () => { clearSession(); location.reload(); },
+      });
+      const gear = document.getElementById('settings-gear-btn');
+      window.EllemelNotif.init({ password: STATE.password, mountBefore: gear || btn });
+    } else if (STATE.password && attempts < 20) {
+      setTimeout(() => initTopbarButtons(attempts + 1), 100);
+    }
   }
 })();
 </script>
@@ -957,6 +1121,12 @@
     </button>
   </div>
   <iframe id="customer-pot-iframe" src="about:blank" title="Retourpagina klant"></iframe>
+</div>
+
+<!-- Game admin drawer (iframe naar /game/POT-XXX?admin=1) -->
+<div class="admin-drawer-backdrop" id="game-drawer-backdrop"></div>
+<div class="admin-drawer" id="game-drawer" role="dialog" aria-modal="true">
+  <iframe id="game-iframe" src="about:blank" title="Game admin" style="flex:1; width:100%; border:0; background: var(--cream);"></iframe>
 </div>
 
 <!-- Admin order drawer -->
@@ -1130,8 +1300,17 @@
       });
       const j = await r.json();
       if (!r.ok) { grid.innerHTML = '<div class="pot-empty-msg">Kon voorraad niet laden.</div>'; return; }
-      // Only voorraad-state pots; include ones already linked to THIS order so admin can uncheck.
-      pots = (j.pots || []).filter(p => p.status === 'voorraad' && (!p.order_id || p.order_id === o.id));
+      // Drie buckets in de drawer (allemaal tonen, in deze volgorde):
+      //  (1) pots in order.assigned_pots — admin moet ze altijd kunnen ontkoppelen, ook als
+      //      pot.order_id verouderd is of pot.status intussen 'available' is geworden
+      //  (2) pots met p.order_id === deze order maar nog niet in assigned_pots — losse coupling
+      //  (3) verse voorraad-potten zonder order — kandidaten om te koppelen
+      const assignedSet = new Set(Array.isArray(o.assigned_pots) ? o.assigned_pots : []);
+      pots = (j.pots || []).filter(p => {
+        if (assignedSet.has(p.id))     return true;
+        if (p.order_id === o.id)       return true;
+        return p.status === 'voorraad' && !p.order_id;
+      });
       // Sort: already-selected first, then by id
       pots.sort((a, b) => {
         const sa = selected.has(a.id) ? 0 : 1;
@@ -1148,6 +1327,21 @@
   async function save() {
     const o = window.STATE && window.STATE.order;
     if (!o) return;
+    // Detecteer ontkoppelingen — eerder gekoppelde potten die nu gedeselecteerd zijn.
+    // Bij minimaal 1 ontkoppeling: systeem-confirmation tonen voor we de wijziging doorvoeren.
+    const previous = Array.isArray(o.assigned_pots) ? o.assigned_pots : [];
+    const desiredSet = selected;
+    const removed = previous.filter(pid => !desiredSet.has(pid));
+    if (removed.length > 0) {
+      const list = removed.join(', ');
+      const ok = window.confirm(
+        'Weet je het zeker? Je ontkoppelt ' +
+        (removed.length === 1 ? ('pot ' + list) : (removed.length + ' potten (' + list + ')')) +
+        ' van deze bestelling.\n\n' +
+        'Bevestig om de wijziging op te slaan, of Annuleer om terug te gaan zonder iets te veranderen.'
+      );
+      if (!ok) { close(); return; }
+    }
     saveBtn.disabled = true; saveBtn.textContent = 'Bezig…';
     try {
       const pwd = (window.STATE && window.STATE.password) || '';
@@ -1193,7 +1387,7 @@
     <line x1="21" y1="17" x2="21" y2="21"/>
   </svg>
 </button>
-<script type="module" src="/assets/scan-fab.js?v=14"></script>
+<script type="module" src="/assets/scan-fab.js?v=19"></script>
 
 <script src="/assets/pull-to-refresh.js" defer></script>
 </body>

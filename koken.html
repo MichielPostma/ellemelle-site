@@ -146,6 +146,7 @@
   .drawer h2 { font-size: 22px; font-weight: 700; color: var(--red); margin-bottom: 8px; }
   .drawer .sub { color: #666; font-size: 14px; line-height: 1.4; margin-bottom: 18px; }
 
+
   /* Recipe — Albert Heijn-style */
   .recipe-header {
     background: var(--white); border-radius: var(--radius-md);
@@ -234,6 +235,87 @@
   .order-card .send-btn:active { transform: scale(0.97); }
   #deel-update-empty { color: #666; font-size: 14px; padding: 12px 0; }
 
+  /* Shopping section — Bestel ingrediënten via Cowork */
+  #shopping-wrap { margin-top: 22px; }
+  #shopping-wrap .section-eyebrow {
+    color: #666; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .shop-req-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 12px 14px;
+    margin-top: 10px; font-size: 14px; line-height: 1.4;
+    box-shadow: var(--shadow-card);
+  }
+  .shop-req-card .head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; margin-bottom: 4px;
+  }
+  .shop-req-card .title { font-weight: 700; color: var(--black); }
+  .shop-req-card .meta  { color: #888; font-size: 12px; }
+  .shop-req-card .notes { color: #555; font-size: 13px; margin-top: 6px; line-height: 1.45; }
+  .shop-req-card .refs  { color: #555; font-size: 12px; margin-top: 4px; }
+  .shop-badge {
+    display: inline-block; padding: 3px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+    text-transform: uppercase; white-space: nowrap;
+  }
+  .shop-badge.queued           { background: rgba(102,179,255,0.18); color: #1e5d99; }
+  .shop-badge.in_progress      { background: rgba(240,173,0,0.18);   color: #a06c00; }
+  .shop-badge.awaiting_payment { background: rgba(217,48,30,0.16);   color: var(--red); }
+  .shop-badge.in_order         { background: rgba(102,179,255,0.18); color: #1e5d99; }
+  .shop-badge.ready            { background: rgba(31,157,85,0.16);   color: #1c7d3f; }
+  .shop-badge.completed        { background: rgba(31,157,85,0.16);   color: #1c7d3f; }
+  .shop-badge.failed           { background: rgba(217,48,30,0.16);   color: var(--red); }
+  .shop-badge.cancelled        { background: rgba(0,0,0,0.08);       color: #555; }
+  .shop-action-btn {
+    display: inline-block; margin-top: 10px;
+    background: var(--red); color: var(--white) !important;
+    border: none; border-radius: var(--radius-md);
+    padding: 10px 16px; font-weight: 700; font-size: 14px;
+    cursor: pointer; text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shop-action-link {
+    display: inline-block; margin-top: 8px;
+    color: var(--red); font-weight: 700; font-size: 13px;
+    text-decoration: underline;
+  }
+  /* Ingredient tile grid — multi-select in shopping confirm drawer, zelfde patroon als pot-cards */
+  .shopping-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 6px 0 4px; }
+  .shopping-card {
+    background: var(--white); border: 1px solid rgba(0,0,0,0.08);
+    border-radius: var(--radius-md); padding: 12px 12px 10px;
+    cursor: pointer; text-align: center;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 90ms, border-color 90ms, background 90ms, opacity 120ms;
+    position: relative; opacity: 0.55;
+  }
+  .shopping-card:active { transform: scale(0.98); }
+  .shopping-card.sel { opacity: 1; border-color: var(--red); outline: 2px solid var(--red); outline-offset: -2px; }
+  .shopping-card.sel::after {
+    content: '✓'; position: absolute; top: 8px; right: 10px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    font-size: 13px; line-height: 22px; text-align: center; font-weight: 700;
+  }
+  .shopping-card .ing-img {
+    width: 64px; height: 64px; display: block; margin: 4px auto 8px;
+    object-fit: contain;
+  }
+  .shopping-card .ing-emoji {
+    font-size: 38px; line-height: 64px; text-align: center;
+    display: block; margin: 4px auto 4px;
+  }
+  .shopping-card .ing-name {
+    font-weight: 700; font-size: 13px; color: var(--black);
+    line-height: 1.25; min-height: 32px;
+  }
+  .shopping-card .ing-qty {
+    color: var(--red); font-weight: 700; font-size: 12px; margin-top: 4px;
+  }
+
   #scan-section-wrap { margin-top: 22px; }
   #scan-section-wrap .section-eyebrow {
     color: #666; font-size: 12px; font-weight: 700;
@@ -294,6 +376,127 @@
   .btn-gcal:active { transform: scale(0.97); }
   
   .recipe-section { margin-top: 22px; }
+  /* Swipe-to-edit voor ingrediënt-rijen — zelfde patroon als bereiding-stap-rijen */
+  .ingredient-row.has-swipe {
+    position: relative; overflow: hidden;
+    border-bottom: 1px solid var(--cream-dark);
+    padding: 0; align-items: stretch;
+    -webkit-tap-highlight-color: transparent;
+    background: transparent; cursor: grab;
+    touch-action: pan-y;
+  }
+  .ingredient-row.has-swipe:last-child { border-bottom: none; }
+  .ingredient-row.has-swipe.swiping .ingredient-content { transition: none; }
+  .ingredient-swipe-bg {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding: 0 18px;
+    pointer-events: none;
+    background: var(--white);
+  }
+  .ingredient-swipe-bg .swipe-icon {
+    width: 26px; height: 26px;
+    color: var(--red);
+    opacity: var(--swipe-progress, 0);
+    transform: scale(calc(0.7 + var(--swipe-progress, 0) * 0.5));
+    transition: transform 0.12s;
+  }
+  .ingredient-content {
+    position: relative;
+    display: flex; gap: 12px; padding: 10px 0;
+    background: var(--white);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: transform;
+    touch-action: pan-y;
+  }
+  .ingredient-content .qty {
+    font-weight: 700; color: var(--black);
+    min-width: 70px; flex-shrink: 0;
+  }
+  .ingredient-content .name { color: var(--black); flex: 1; }
+  .ingredient-content .note { color: #888; font-size: 13px; }
+  .recipe-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .recipe-actions.hidden { display: none; }
+  .recipe-actions .save {
+    flex: 1; min-height: 48px; padding: 0 16px;
+    background: var(--red); color: var(--white); border: none; border-radius: var(--radius-md);
+    font: 700 15px 'DM Sans', system-ui, sans-serif; cursor: pointer;
+    box-shadow: var(--shadow-cta); -webkit-tap-highlight-color: transparent;
+  }
+  .recipe-actions .save:active { transform: scale(0.98); }
+  .recipe-actions .revert {
+    flex: 0 0 48px; width: 48px; min-height: 48px; padding: 0;
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red); border-radius: var(--radius-md);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .recipe-actions .revert svg { width: 20px; height: 20px; }
+  .recipe-actions .revert:active { transform: scale(0.96); }
+  /* Changelog block */
+  .recipe-changelog { margin-top: 18px; background: var(--white); border-radius: var(--radius-md); overflow: hidden; }
+  .recipe-changelog .ch-entry {
+    display: flex !important; flex-direction: row !important;
+    align-items: center; gap: 12px;
+    padding: 12px 16px; border-bottom: 1px solid var(--cream-dark);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    background: transparent; border-left: none; border-right: none; border-top: none;
+    text-align: left; font-family: inherit; color: inherit; width: 100%;
+    box-sizing: border-box;
+  }
+  .recipe-changelog .ch-entry .ch-body {
+    flex: 1 1 auto; min-width: 0;
+    display: flex; flex-direction: column; gap: 2px;
+    overflow: hidden;
+  }
+  .recipe-changelog .ch-body .ch-desc {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .recipe-changelog .ch-photo {
+    flex: 0 0 56px; width: 56px; height: 56px; padding: 0;
+    background: transparent; border: none; border-radius: 8px; overflow: hidden;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .recipe-changelog .ch-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .recipe-changelog .ch-photo:active { transform: scale(0.96); }
+  .recipe-changelog .ch-entry:last-child { border-bottom: none; }
+  .recipe-changelog .ch-entry:active { background: rgba(217,48,30,0.04); }
+  .recipe-changelog .ch-time { color: #888; font-size: 12px; }
+  .recipe-changelog .ch-desc { color: var(--black); font-size: 14px; line-height: 1.4; }
+  .recipe-changelog .ch-empty { padding: 14px 16px; color: #888; font-size: 13px; text-align: center; }
+  .recipe-changelog .ch-note {
+    color: #555; font-size: 13px; font-style: italic; line-height: 1.4; margin-top: 2px;
+    background: var(--cream); padding: 6px 10px; border-radius: 8px; align-self: flex-start;
+  }
+  /* Notitie-textarea met clip-icoon rechtsonder */
+  .note-input-wrap { position: relative; }
+  .note-input-wrap textarea {
+    width: 100%; min-height: 96px; padding: 12px 48px 12px 14px;
+    background: var(--white); border: 2px solid transparent; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card); color: var(--black);
+    font: 400 15px 'DM Sans', system-ui, sans-serif; resize: vertical;
+    box-sizing: border-box;
+  }
+  .note-input-wrap textarea:focus { outline: none; border-color: var(--red); }
+  .note-input-wrap .note-attach-btn {
+    position: absolute; right: 8px; bottom: 8px;
+    background: transparent; border: none; cursor: pointer;
+    padding: 6px 8px; color: var(--red);
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px; -webkit-tap-highlight-color: transparent;
+  }
+  .note-input-wrap .note-attach-btn:hover { background: rgba(217,48,30,0.06); }
+  /* Ingredient edit drawer */
+  .recipe-edit-input-wrap { display: flex; gap: 10px; align-items: stretch; }
+  .recipe-edit-input-wrap input[type="number"] {
+    flex: 1; min-height: 56px; padding: 0 16px;
+    background: var(--white); border: 2px solid transparent; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card); font: 700 18px 'DM Sans', system-ui, sans-serif;
+    color: var(--black); appearance: textfield; -webkit-appearance: textfield;
+  }
+  .recipe-edit-input-wrap input[type="number"]:focus { outline: none; border-color: var(--red); }
+  .recipe-edit-input-wrap .unit { align-self: center; font-weight: 700; color: #666; font-size: 18px; padding-right: 4px; }
+  /* Scope-dropdown binnen ingrediënt-edit drawer (Per pot / Per N potten) gebruikt de globale select-styling */
   .recipe-section h3 {
     color: #666; font-size: 12px; font-weight: 700;
     letter-spacing: 0.5px; text-transform: uppercase;
@@ -342,6 +545,137 @@
   }
   .step-row .body { flex: 1; color: var(--black); }
   .step-row .body strong { color: var(--black); }
+
+  /* Stap-rij met swipe-to-start (alleen bij timer-stappen) */
+  .step-row.has-timer {
+    position: relative; overflow: hidden;
+    padding: 0;
+    border-bottom: 1px solid var(--cream-dark);
+    background: var(--white);
+  }
+  .step-row.has-timer:last-child { border-bottom: none; }
+  .step-swipe-bg {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding: 0 18px;
+    pointer-events: none;
+    background: var(--white);
+  }
+  .step-swipe-bg .swipe-icon {
+    width: 30px; height: 30px;
+    color: var(--red);
+    opacity: var(--swipe-progress, 0);
+    transform: scale(calc(0.7 + var(--swipe-progress, 0) * 0.5));
+    transition: transform 0.12s;
+  }
+  .step-content {
+    position: relative;
+    display: flex; gap: 14px; padding: 14px 0;
+    background: var(--white);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: transform;
+    touch-action: pan-y;
+  }
+  .step-row.has-timer.swiping .step-content { transition: none; }
+  .swipe-hint {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 8px;
+    font-size: 12.5px; color: #999;
+  }
+  .swipe-hint svg { width: 14px; height: 14px; opacity: 0.7; }
+  .swipe-hint .timer-amount {
+    color: var(--red); font-weight: 700;
+  }
+
+  /* Centrale keukentimer — huisstijl */
+  .kitchen-timer {
+    background: var(--white); border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    padding: 22px 20px 18px;
+    text-align: center;
+  }
+  .timer-digits {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 72px; line-height: 1;
+    font-weight: 700;
+    color: var(--black);
+    letter-spacing: -1.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .timer-sub {
+    color: #888; font-size: 13px;
+    margin-top: 8px; font-weight: 500;
+    min-height: 1.4em;
+  }
+  .kitchen-timer.alarm .timer-digits {
+    animation: pulseTimer 0.55s ease-in-out infinite;
+  }
+  .kitchen-timer.alarm .timer-sub { color: var(--red); font-weight: 700; }
+  @keyframes pulseTimer { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  .timer-actions {
+    display: flex; gap: 10px;
+    margin-top: 16px;
+  }
+  .timer-btn {
+    flex: 1; min-height: 56px; padding: 12px 14px;
+    border-radius: var(--radius-md); border: none;
+    font-family: inherit; font-size: 16px; font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    appearance: none; -webkit-appearance: none;
+    transition: background 0.15s, transform 0.08s, opacity 0.15s;
+  }
+  .timer-btn:active:not(:disabled) { transform: scale(0.97); }
+  .timer-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .timer-btn-start {
+    background: var(--red); color: var(--white);
+    box-shadow: var(--shadow-cta);
+  }
+  .timer-btn-start:hover:not(:disabled) { background: var(--red-dark); }
+  .timer-btn-reset {
+    background: transparent; color: var(--red);
+    border: 2px solid var(--red);
+  }
+  .timer-btn-reset:hover:not(:disabled) { background: #fdecea; }
+
+  .wake-toggle {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    font-size: 15px; color: var(--black);
+    cursor: pointer;
+    text-align: left;
+  }
+  .wake-toggle input { display: none; }
+  .wake-toggle .switch {
+    position: relative;
+    width: 40px; height: 24px;
+    /* Default = OFF state: rood (waarschuwing dat scherm wél uit kan gaan) */
+    background: var(--red);
+    border-radius: 12px;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .wake-toggle .switch::after {
+    content: ''; position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    background: var(--white);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+  }
+  /* ON state: rustig grijs */
+  .wake-toggle input:checked + .switch { background: #c4c4c4; }
+  .wake-toggle input:checked + .switch::after { transform: translateX(16px); }
+  .wake-toggle .label-text { flex: 1; font-weight: 700; color: var(--black); }
+  .wake-toggle .label-text small {
+    display: block; color: #888; font-size: 12.5px;
+    font-weight: 400; margin-top: 2px; line-height: 1.4;
+  }
 
   .tip-box {
     background: rgba(31,157,85,0.08);
@@ -410,7 +744,7 @@
 
   /* Floating + FAB */
   .fab {
-    position: fixed; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom));
+    position: fixed !important; right: 22px !important; bottom: calc(22px + env(safe-area-inset-bottom));
     width: 56px; height: 56px; border-radius: 50%;
     background: var(--white); color: var(--red);
     border: none; cursor: pointer;
@@ -464,6 +798,8 @@
     flex: 1; width: 100%; border: 0; background: var(--cream);
   }
 
+
+
 </style>
 <script>
 (function(){
@@ -489,6 +825,7 @@
   #login-view[hidden], #main-view[hidden], #detail-view[hidden], #list-view[hidden] { display: none !important; }
   /* Global: [hidden] always wins */
   [hidden] { display: none !important; }
+
 </style>
 <link rel="manifest" href="/admin-manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -497,6 +834,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-touch-icon-152.png">
 <link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/apple-touch-icon-167.png">
+<script src="/assets/notifications.js" defer></script>
+<script src="/assets/settings.js?v=3" defer></script>
 </head>
 <body>
 
@@ -504,19 +843,23 @@
 <div class="menu-backdrop" id="menu-backdrop"></div>
 <div class="menu-panel" id="menu-panel">
   <div class="drawer-handle"></div>
-  <a href="/koken">Koken</a>
-  <a href="/voorraad">Voorraad</a>
-  <a href="/bezorger">Bezorgen</a>
   <a href="/bestellingen">Bestellingen</a>
-  <button class="btn-outline" id="push-toggle-btn" type="button" style="margin-bottom: 10px;">🔔 Schakel meldingen in</button>
-  <button class="btn-outline menu-logout-btn" id="menu-logout" type="button">Uitloggen</button>
+  <a href="/koken">Koken</a>
+  <a href="/voorraad">Potten</a>
+  <a href="/bezorger">Bezorgen</a>
+  <a href="/game/POT-001?password=100knuffels&game_id=quest-1-hazelnoten">Speurtocht</a>
+</div>
+<!-- Hidden fallback controls — settings page delegates to these so the underlying push + session logic stays untouched. -->
+<div style="display: none;">
+  <button id="push-toggle-btn" type="button">🔔 Schakel meldingen in</button>
+  <button id="menu-logout" type="button">Uitloggen</button>
 </div>
 
 <main id="app">
 
   <!-- LOGIN -->
   <section id="login-view">
-    <img class="login-hero" src="/Images/koken-pot.jpg" alt="ELLEMELLE pot" loading="eager">
+    <img class="login-hero" src="/Images/koken-pot.jpg?v=6" alt="ELLEMELLE pot" loading="eager">
     <h1 class="step-question" style="text-align: center;">Voer je wachtwoord in</h1>
     <div class="field">
       <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord">
@@ -557,13 +900,61 @@
     </div>
 
     <section class="product-hero">
-      <img class="product-img" src="/Images/koken-pot.jpg" alt="ELLEMELLE chocopasta pot" loading="lazy">
+      <img class="product-img" src="/Images/koken-pot.jpg?v=6" alt="ELLEMELLE chocopasta pot" loading="lazy">
     </section>
 
     <!-- Ingredients -->
     <div class="recipe-section">
       <h3><span>Ingredienten</span><span class="yield" id="recipe-yield">Voor 1 pot</span></h3>
       <div class="ingredients" id="ingredients"></div>
+      <div class="recipe-actions hidden" id="recipe-actions">
+        <button type="button" class="save" id="recipe-save-btn">Bewaar als versie</button>
+        <button type="button" class="revert" id="recipe-revert-btn" aria-label="Wijzigingen ongedaan maken">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Ingredient edit drawer -->
+    <div class="drawer-backdrop" id="ingredient-edit-backdrop"></div>
+    <div class="drawer" id="ingredient-edit-drawer" role="dialog" aria-modal="true">
+      <div class="drawer-handle"></div>
+      <h2 id="ingredient-edit-name">Wijzig hoeveelheid</h2>
+      <div class="sub" id="ingredient-edit-sub">Pas de hoeveelheid aan voor het recept.</div>
+      <select id="ing-edit-scope" style="margin-top: 12px;">
+        <option value="per-n">Per 3 potten (geselecteerd)</option>
+        <option value="per-pot">Per pot</option>
+      </select>
+      <div class="recipe-edit-input-wrap" style="margin-top: 14px;">
+        <input type="number" id="ingredient-edit-qty" inputmode="decimal" step="0.5" min="0">
+        <span class="unit" id="ingredient-edit-unit">Gram</span>
+      </div>
+      <button class="btn-primary" id="ingredient-edit-save" type="button" style="margin-top: 16px;">Opslaan</button>
+    </div>
+
+    <!-- Scherm-aan toggle (altijd zichtbaar) -->
+    <div class="recipe-section">
+      <label class="wake-toggle">
+        <span class="label-text">
+          Scherm aan houden
+          <small>Voorkom dat de telefoon in slaap valt tijdens het koken</small>
+        </span>
+        <input type="checkbox" id="wake-lock-toggle" checked>
+        <span class="switch"></span>
+      </label>
+    </div>
+
+    <!-- Centrale keukentimer (alleen zichtbaar wanneer een timer is gestart) -->
+    <div class="recipe-section" id="kitchen-timer-wrap" hidden>
+      <h3>Keukentimer</h3>
+      <div class="kitchen-timer" id="kitchen-timer">
+        <div class="timer-digits" id="timer-digits">00:00</div>
+        <div class="timer-sub" id="timer-sub">—</div>
+        <div class="timer-actions">
+          <button type="button" class="timer-btn timer-btn-start" id="timer-start-btn">Start</button>
+          <button type="button" class="timer-btn timer-btn-reset" id="timer-reset-btn">Reset</button>
+        </div>
+      </div>
     </div>
 
     <!-- Steps -->
@@ -572,13 +963,8 @@
       <div class="steps" id="steps"></div>
     </div>
 
-    <!-- Deel update -->
-    <div id="deel-update-wrap" hidden>
-      <div class="section-eyebrow">Update bestellingen</div>
-      <button class="btn-primary" id="batch-update-cta" type="button" hidden style="margin-bottom: 12px;">Update bestellingen →</button>
-      <div id="deel-update-list"></div>
-      <div id="deel-update-empty" hidden>Geen openstaande bestellingen om te updaten.</div>
-    </div>
+    <!-- Deel update — verwijderd op verzoek -->
+    <div id="deel-update-wrap" hidden></div>
 
     <!-- Zet pot op voorraad -->
     <div id="scan-section-wrap">
@@ -592,8 +978,74 @@
         <button class="btn-outline" id="koken-scan-cancel" type="button">Annuleer</button>
       </div>
     </div>
+
+    <!-- Bestel ingrediënten via Cowork (laatste sectie) — tijdelijk verborgen, Michiel bestelt handmatig -->
+    <div id="shopping-wrap" hidden>
+      <div class="section-eyebrow">Bestel ingrediënten</div>
+      <button class="btn-outline" id="shopping-cta" type="button">Bestel ingrediënten →</button>
+      <div id="shopping-list-wrap"></div>
+    </div>
+
+    <!-- Recept versiehistorie — onderaan, alleen zichtbaar wanneer er versies zijn -->
+    <div class="recipe-section" id="recipe-changelog-wrap" hidden>
+      <div class="actions-label">Versies</div>
+      <div class="recipe-changelog" id="recipe-changelog"></div>
+    </div>
+
+    <!-- Versie detail drawer -->
+    <div class="drawer-backdrop" id="version-detail-backdrop"></div>
+    <div class="drawer" id="version-detail-drawer" role="dialog" aria-modal="true">
+      <div class="drawer-handle"></div>
+      <h2 id="version-detail-title">Versie</h2>
+      <div class="sub" id="version-detail-sub">—</div>
+      <div class="actions-label" style="margin-top: 14px;">Notitie</div>
+      <input type="file" id="version-detail-file" accept="image/*" hidden>
+      <div class="note-input-wrap">
+        <textarea id="version-detail-note" rows="3" placeholder="Optioneel — bv. waarom je dit wijzigde, hoe het smaakte, …"></textarea>
+        <button type="button" id="version-detail-attach" aria-label="Foto toevoegen" class="note-attach-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+      </div>
+      <div id="version-detail-photo-preview" style="margin-top: 12px; display: none;">
+        <div style="position: relative;">
+          <img id="version-detail-photo-img" alt="Foto" style="width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--radius-md); display: block;">
+          <button type="button" id="version-detail-photo-remove" aria-label="Foto verwijderen" style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; -webkit-tap-highlight-color: transparent; display: inline-flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn-primary" id="version-detail-save" type="button" style="margin-top: 14px;">Bewaar notitie</button>
+      <button class="btn-outline" id="version-detail-revert" type="button" style="margin-top: 10px;">Herstel recept naar deze versie</button>
+    </div>
+
+    <!-- Photo viewer drawer (60vh) -->
+    <div class="drawer-backdrop" id="photo-view-backdrop"></div>
+    <div class="drawer" id="photo-view-drawer" role="dialog" aria-modal="true" style="height: 60vh; max-height: 60vh; overflow-y: auto;">
+      <div class="drawer-handle"></div>
+      <h2 id="photo-view-title">Foto</h2>
+      <div class="sub" id="photo-view-sub">—</div>
+      <img id="photo-view-img" alt="Recept versie foto" style="width: 100%; max-height: calc(60vh - 120px); object-fit: contain; border-radius: var(--radius-md); margin-top: 14px; display: block;">
+    </div>
   </section>
 </main>
+
+<!-- Bestel ingrediënten confirm drawer -->
+<div class="drawer-backdrop" id="shopping-confirm-backdrop"></div>
+<div class="drawer" id="shopping-confirm-drawer" role="dialog" aria-modal="true">
+  <div class="drawer-handle"></div>
+  <h2 id="shopping-confirm-title">Bestel ingrediënten</h2>
+  <div class="sub" id="shopping-confirm-sub">Cowork plaatst de bestelling bij De Notenshop (bio).</div>
+  <div style="margin-top: 14px;">
+    <div class="actions-label">Voor hoeveel potten?</div>
+    <select id="shopping-potten-select"></select>
+  </div>
+  <div style="margin-top: 16px;">
+    <div class="actions-label">Welke ingrediënten?</div>
+    <div class="shopping-grid" id="shopping-tile-grid"></div>
+  </div>
+  <button class="btn-primary" id="shopping-confirm-btn" type="button" style="margin-top: 18px;">Start bestelling</button>
+  <button class="btn-outline"  id="shopping-cancel-btn"  type="button" style="margin-top: 10px;">Annuleer</button>
+</div>
 
 <!-- Update status drawer -->
 <div class="drawer-backdrop" id="msg-status-backdrop"></div>
@@ -658,24 +1110,39 @@
   const SESSION_TTL = 90 * 24 * 60 * 60 * 1000;
   const STATE = { password: null, config: { next_production_date: null }, potten: 1, todoCount: 0 };
 
-  // --- Recipe data (per 1 pot) ---
+  // --- Recipe data (per 1 pot van 370g) ---
+  // Gecorrigeerd 2026-07-05: eerdere hoeveelheden "voor 5 potten" leverden in
+  // praktijk 6 potten op. Nieuwe per-pot-waarden = oude × 5/6 (afgerond).
+  // Check: 368.75g totaal per pot (target = 370g). ✅
+  //
+  // OUD (voor revert — hoeveelheden hoorden bij "6 potten output" niet 5):
+  //   hazelnoten 137 · cashew 18.5 · olijfolie 45 · zonnebloem 40
+  //   cacao 52    · agave 59    · melkpoeder 15 · vanille 11 · water 65
+  //
+  // Server-side versies met de oude waarden blijven staan — te vinden via
+  // "Recept-versies" in de UI. Ga terug via "Herstel deze versie" indien nodig.
   const INGREDIENTS = [
-    { qty: 100, unit: 'g',  name: 'Hazelnoten',              note: '(geroosterd, gepeld)' },
-    { qty: 30,  unit: 'g',  name: 'Pure cacaopoeder',        note: '' },
-    { qty: 40,  unit: 'g',  name: 'Honing of agavesiroop',   note: '' },
-    { qty: 20,  unit: 'g',  name: 'Kokosolie',               note: '' },
-    { qty: 10,  unit: 'ml', name: 'Plantaardige melk',       note: '(haver of amandel)' },
-    { qty: null, unit: '', name: 'Snufje zout',              note: '' },
-    { qty: null, unit: '', name: 'Vanille-extract',          note: '(optioneel)' },
+    { key: 'hazelnoten', qty: 114,   unit: 'g',  name: 'Hazelnoten',         note: '(gepeld, geroosterd)' },
+    { key: 'cashew',     qty: 15,    unit: 'g',  name: 'Cashewnoten',        note: '' },
+    { key: 'olijfolie',  qty: 38,    unit: 'ml', name: 'Olijfolie',          note: '(koudgeperst)' },
+    { key: 'zonnebloem', qty: 33,    unit: 'ml', name: 'Zonnebloemolie',     note: '(koudgeperst)' },
+    { key: 'cacao',      qty: 43,    unit: 'g',  name: 'Cacaopoeder',        note: '' },
+    { key: 'agave',      qty: 49,    unit: 'g',  name: 'Agavesiroop',        note: '' },
+    { key: 'melkpoeder', qty: 13,    unit: 'g',  name: 'Magere melkpoeder',  note: '' },
+    { key: 'vanille',    qty: 9,     unit: 'g',  name: 'Vanille natuurlijk', note: '(vloeibare smaakstof)' },
+    { key: 'water',      qty: 54,    unit: 'ml', name: 'Water',              note: '' },
   ];
+  // Expose voor de recipe-editor (in een andere IIFE) zodat tap-to-edit + versioning over INGREDIENTS heen werkt
+  window.__INGREDIENTS = INGREDIENTS;
+  window.__renderRecipeFromOutside = renderRecipe;
   const STEPS = [
-    'Verwarm de oven op <strong>180°C</strong>. Rooster de hazelnoten <strong>8-10 min</strong> tot lichtbruin.',
-    'Laat afkoelen en wrijf met een schone theedoek om de velletjes te verwijderen.',
-    'Mix de noten in een keukenmachine <strong>5-7 min</strong> tot een gladde notenpasta.',
-    'Voeg cacao, honing, kokosolie, melk en zout toe. Mix nog <strong>2-3 min</strong>.',
-    'Proef en pas de zoetheid aan naar smaak.',
-    'Vul in schone glazen pot (<strong>200g per pot</strong>) en plak een QR-sticker op het deksel.',
-    'Houdbaarheid: <strong>8 weken</strong> in de koelkast.',
+    { body: 'Rooster de gepelde hazelnoten in de oven op <strong>145–150°C</strong> voor <strong>20–25 min</strong> tot licht- tot middelbruin. Niet te ver doorroosteren — anders wordt het bitter en oxideert het sneller.', timer_min: 22, summary: 'Roosteren · oven 145–150°C · licht-/middelbruin' },
+    { body: 'Koel de noten direct af tot onder <strong>30°C</strong>, binnen <strong>30–45 min</strong>. Voorkomt doorroosteren en bevordert het malen.', timer_min: 35, summary: 'Afkoelen · onder 30°C · niet doorroosteren' },
+    { body: 'Maal in de Magimix 4200 XL: hazelnoten, cashewnoten, olijfolie en zonnebloemolie. <strong>10 min</strong> tot een gladde notenpasta. Tussentijds pauzeren om de zijkanten van de kom aan te vegen indien nodig.', timer_min: 10, summary: 'Malen · Magimix 4200 XL · 10 min · gladde notenpasta' },
+    { body: 'Voeg toe: cacaopoeder, magere melkpoeder, agavesiroop en vanille. Mix <strong>2–3 min</strong> tot alles volledig gedispergeerd is.', timer_min: 3, summary: 'Mixen · cacao + melkpoeder + agave + vanille · gedispergeerd' },
+    { body: 'Homogeniseer nog <strong>2–5 min</strong> tot een glad, romig en smeerbaar geheel — geen zichtbare olie-separatie.', timer_min: 3, summary: 'Homogeniseren · glad en romig · geen olie-separatie' },
+    { body: 'Vul direct in schone, droge glazen potten (<strong>370g per pot</strong>), laat wat headspace en sluit meteen. Plak een QR-sticker op het deksel.' },
+    { body: 'Bewaar koel en droog op <strong>15–20°C</strong>, uit direct zonlicht. Houdbaarheid: <strong>9–12 maanden</strong> ongeopend bij omgevingstemperatuur.' },
   ];
   const POTTEN_OPTIONS = [1, 5, 10, 15, 20, 25];
 
@@ -769,7 +1236,7 @@
     const stockTag = hasStock
       ? `<span class="badge has-stock right-tag">Voorraad</span>`
       : `<span class="badge no-stock right-tag">Geen voorraad</span>`;
-    const iconChat = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+    const iconChat = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
     const msgBtnHtml = opts.allowMsgBtn
       ? `<button type="button" class="send-btn" aria-label="Update status voor ${escapeHtml(o.voornaam || '')}">${iconChat}</button>`
       : '';
@@ -801,14 +1268,16 @@
     const empty = $('#deel-update-empty');
     const cta = $('#batch-update-cta');
     if (!wrap || !list) return;
-    wrap.hidden = false;
     list.innerHTML = '';
     const count = orders ? orders.length : 0;
     if (count === 0) {
-      empty.hidden = false;
+      // Geen openstaande bestellingen → de hele sectie weg, niet alleen de lege placeholder.
+      wrap.hidden = true;
+      if (empty) empty.hidden = true;
       if (cta) cta.hidden = true;
       return;
     }
+    wrap.hidden = false;
     empty.hidden = true;
     if (cta) cta.hidden = false;
     const sorted = sortKokenOrders(orders);
@@ -1068,7 +1537,7 @@
     } else {
       const opt = document.createElement('option');
       opt.value = String(teMaken);
-      opt.textContent = `${teMaken} pot${teMaken === 1 ? '' : 'ten'} (te maken voor openstaande bestellingen)`;
+      opt.textContent = `${teMaken} pot${teMaken === 1 ? '' : 'ten'} (openstaande bestellingen)`;
       opt.dataset.dynamic = '1';
       sel.appendChild(opt);
     }
@@ -1091,26 +1560,766 @@
   }
   function renderRecipe() {
     const n = STATE.potten;
-    $('#recipe-yield').textContent = `Voor ${n} pot${n === 1 ? '' : 'ten'} · 200g per pot`;
+    $('#recipe-yield').textContent = `Voor ${n} pot${n === 1 ? '' : 'ten'} · 370g per pot`;
     const ing = $('#ingredients'); ing.innerHTML = '';
     INGREDIENTS.forEach(i => {
       const row = document.createElement('div');
-      row.className = 'ingredient-row';
+      row.className = 'ingredient-row has-swipe';
+      row.dataset.key = i.key;
       const scaled = (i.qty !== null) ? i.qty * n : null;
       row.innerHTML = `
-        <span class="qty">${formatQty(scaled, i.unit) || '—'}</span>
-        <span class="name">${i.name}${i.note ? ' <span class="note">' + i.note + '</span>' : ''}</span>
+        <div class="ingredient-swipe-bg">
+          <svg class="swipe-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+        </div>
+        <div class="ingredient-content">
+          <span class="qty">${formatQty(scaled, i.unit) || '—'}</span>
+          <span class="name">${i.name}${i.note ? ' <span class="note">' + i.note + '</span>' : ''}</span>
+        </div>
       `;
+      bindIngredientSwipe(row, i.key);
       ing.appendChild(row);
     });
+    if (typeof window.renderRecipeActions === 'function') window.renderRecipeActions();
     const stp = $('#steps'); stp.innerHTML = '';
     STEPS.forEach((s, idx) => {
       const row = document.createElement('div');
-      row.className = 'step-row';
-      row.innerHTML = `<div class="num">${idx + 1}</div><div class="body">${s}</div>`;
+      const body = (typeof s === 'string') ? s : s.body;
+      const min = (typeof s === 'object' && s.timer_min) ? s.timer_min : null;
+      if (min) {
+        row.className = 'step-row has-timer';
+        row.dataset.min = String(min);
+        row.dataset.step = String(idx + 1);
+        row.innerHTML = `
+          <div class="step-swipe-bg">
+            <svg class="swipe-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="13" x2="15" y2="15"/><line x1="9" y1="2" x2="15" y2="2"/></svg>
+          </div>
+          <div class="step-content">
+            <div class="num">${idx + 1}</div>
+            <div class="body">${body}</div>
+          </div>`;
+        bindStepSwipe(row);
+      } else {
+        row.className = 'step-row';
+        row.innerHTML = `<div class="num">${idx + 1}</div><div class="body">${body}</div>`;
+      }
       stp.appendChild(row);
     });
   }
+
+  // --- Swipe-to-start: veeg een stap-rij naar links en laat los om de timer te starten ---
+  // Swipe-naar-links op een ingrediënt-rij → opent edit drawer.
+  // Listeners staan op de hele rij (inclusief lege swipe-bg gedeelte), niet alleen op de tekst.
+  function bindIngredientSwipe(row, key) {
+    let startX = 0, dx = 0, activated = false, pointerId = null, active = false;
+    const content = row.querySelector('.ingredient-content');
+    const maxSwipe = () => row.offsetWidth;
+    const threshold = () => row.offsetWidth * 0.35;
+    function onDown(e) {
+      if (e.pointerType === 'touch' && e.isPrimary === false) return;
+      pointerId = e.pointerId;
+      startX = e.clientX;
+      dx = 0; activated = false; active = true;
+      row.classList.add('swiping');
+      try { row.setPointerCapture(pointerId); } catch {}
+    }
+    function onMove(e) {
+      if (!active || e.pointerId !== pointerId) return;
+      const raw = e.clientX - startX;
+      dx = Math.max(-maxSwipe(), Math.min(0, raw));
+      content.style.transform = `translateX(${dx}px)`;
+      const progress = Math.min(1, Math.abs(dx) / threshold());
+      row.style.setProperty('--swipe-progress', progress.toFixed(2));
+      activated = progress >= 1;
+    }
+    function onUp() {
+      if (!active) return;
+      active = false;
+      row.classList.remove('swiping');
+      try { row.releasePointerCapture(pointerId); } catch {}
+      const wasActivated = activated;
+      content.style.transform = '';
+      row.style.setProperty('--swipe-progress', '0');
+      if (wasActivated && typeof window.openIngredientEdit === 'function') {
+        window.openIngredientEdit(key);
+      }
+    }
+    row.addEventListener('pointerdown', onDown);
+    row.addEventListener('pointermove', onMove);
+    row.addEventListener('pointerup', onUp);
+    row.addEventListener('pointercancel', onUp);
+  }
+
+  function bindStepSwipe(row) {
+    let startX = 0; let dx = 0; let activated = false; let pointerId = null; let active = false;
+    const content = row.querySelector('.step-content');
+    function maxSwipe() { return row.offsetWidth; }
+    function threshold() { return row.offsetWidth * 0.45; }
+
+    function onDown(e) {
+      // Negeer multi-touch
+      if (e.pointerType === 'touch' && e.isPrimary === false) return;
+      pointerId = e.pointerId;
+      startX = e.clientX;
+      dx = 0; activated = false; active = true;
+      row.classList.add('swiping');
+      try { content.setPointerCapture(pointerId); } catch {}
+    }
+    function onMove(e) {
+      if (!active || e.pointerId !== pointerId) return;
+      const raw = e.clientX - startX;
+      // Alleen naar links sleepen (negatieve dx)
+      dx = Math.max(-maxSwipe(), Math.min(0, raw));
+      content.style.transform = `translateX(${dx}px)`;
+      const progress = Math.min(1, Math.abs(dx) / threshold());
+      row.style.setProperty('--swipe-progress', progress.toFixed(2));
+      activated = progress >= 1;
+      row.classList.toggle('activated', activated);
+    }
+    function onUp(e) {
+      if (!active) return;
+      active = false;
+      row.classList.remove('swiping');
+      try { content.releasePointerCapture(pointerId); } catch {}
+      const wasActivated = activated;
+      content.style.transform = '';
+      row.style.setProperty('--swipe-progress', '0');
+      row.classList.remove('activated');
+      if (wasActivated) {
+        const min = Number(row.dataset.min || 0);
+        const step = Number(row.dataset.step || 0);
+        if (min) {
+          const def = STEPS[step - 1] || {};
+          const label = def.summary || `Stap ${step}`;
+          startKitchenTimer(min * 60, label);
+          const tw = document.getElementById('kitchen-timer-wrap') || document.querySelector('.kitchen-timer');
+          if (tw) tw.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+    content.addEventListener('pointerdown', onDown);
+    content.addEventListener('pointermove', onMove);
+    content.addEventListener('pointerup', onUp);
+    content.addEventListener('pointercancel', onUp);
+  }
+
+  // --- Centrale walkie-talkie keukentimer ---
+  let TIMER = {
+    target: 0,        // duur in seconden bij start
+    remaining: 0,     // resterend
+    running: false,
+    endAt: 0,         // epoch ms waarop hij hoort af te lopen
+    tickId: null,
+    sourceLabel: '',
+    alarmAudio: null,
+  };
+  function formatTime(s) {
+    s = Math.max(0, Math.round(s));
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }
+  function renderTimer() {
+    const digits = document.getElementById('timer-digits');
+    const sub = document.getElementById('timer-sub');
+    const wrap = document.getElementById('kitchen-timer-wrap');
+    const startBtn = document.getElementById('timer-start-btn');
+    const resetBtn = document.getElementById('timer-reset-btn');
+    if (!digits || !wrap) return;
+    const hasTarget = TIMER.target > 0;
+    // Widget is alleen zichtbaar zodra er een timer geset is
+    wrap.hidden = !hasTarget;
+    if (!hasTarget) return;
+
+    digits.textContent = formatTime(TIMER.remaining);
+    digits.classList.toggle('running', TIMER.running);
+    sub.textContent = TIMER.sourceLabel || '—';
+    startBtn.textContent = TIMER.running
+      ? 'Pauze'
+      : (TIMER.remaining > 0 && TIMER.remaining < TIMER.target ? 'Hervat' : 'Start');
+    resetBtn.textContent = (TIMER.remaining === TIMER.target && !TIMER.running) ? 'Sluit' : 'Reset';
+  }
+  function startKitchenTimer(seconds, label) {
+    // Verse start: target + remaining gelijk, ga lopen
+    TIMER.target = seconds;
+    TIMER.remaining = seconds;
+    TIMER.sourceLabel = label || 'Timer';
+    TIMER.endAt = Date.now() + seconds * 1000;
+    if (TIMER.tickId) clearInterval(TIMER.tickId);
+    TIMER.running = true;
+    document.getElementById('kitchen-timer').classList.remove('alarm');
+    TIMER.tickId = setInterval(tickKitchenTimer, 250);
+    renderTimer();
+  }
+  function tickKitchenTimer() {
+    if (!TIMER.running) return;
+    const left = Math.max(0, (TIMER.endAt - Date.now()) / 1000);
+    TIMER.remaining = left;
+    if (left <= 0) {
+      TIMER.running = false;
+      clearInterval(TIMER.tickId);
+      TIMER.tickId = null;
+      TIMER.remaining = 0;
+      triggerKitchenAlarm();
+    }
+    renderTimer();
+  }
+  function toggleKitchenTimerPlay() {
+    if (TIMER.target <= 0) return;
+    if (TIMER.running) {
+      // Pauzeer
+      TIMER.running = false;
+      TIMER.remaining = Math.max(0, (TIMER.endAt - Date.now()) / 1000);
+      if (TIMER.tickId) clearInterval(TIMER.tickId);
+      TIMER.tickId = null;
+      renderTimer();
+    } else if (TIMER.remaining > 0) {
+      // (Her)start vanaf huidige remaining
+      TIMER.endAt = Date.now() + TIMER.remaining * 1000;
+      TIMER.running = true;
+      if (TIMER.tickId) clearInterval(TIMER.tickId);
+      TIMER.tickId = setInterval(tickKitchenTimer, 250);
+      document.getElementById('kitchen-timer').classList.remove('alarm');
+      renderTimer();
+    }
+  }
+  function resetKitchenTimer() {
+    if (TIMER.target <= 0) return;
+    if (TIMER.tickId) clearInterval(TIMER.tickId);
+    TIMER.tickId = null;
+    document.getElementById('kitchen-timer').classList.remove('alarm');
+    if (TIMER.remaining === TIMER.target && !TIMER.running) {
+      // Niets gestart of al teruggezet — Wis volledig
+      TIMER.target = 0;
+      TIMER.remaining = 0;
+      TIMER.sourceLabel = '';
+    } else {
+      // Stop én zet remaining terug naar oorspronkelijke duur
+      TIMER.running = false;
+      TIMER.remaining = TIMER.target;
+      TIMER.endAt = 0;
+    }
+    renderTimer();
+  }
+  function triggerKitchenAlarm() {
+    document.getElementById('kitchen-timer').classList.add('alarm');
+    // Beep — Web Audio een paar korte tonen
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const beep = (freq, t0, dur) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'square';
+        o.frequency.value = freq;
+        g.gain.value = 0;
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0, ctx.currentTime + t0);
+        g.gain.linearRampToValueAtTime(0.25, ctx.currentTime + t0 + 0.02);
+        g.gain.linearRampToValueAtTime(0, ctx.currentTime + t0 + dur);
+        o.start(ctx.currentTime + t0);
+        o.stop(ctx.currentTime + t0 + dur + 0.05);
+      };
+      [0, 0.5, 1.0, 1.5].forEach(t => beep(900, t, 0.25));
+      setTimeout(() => { try { ctx.close(); } catch {} }, 2500);
+    } catch {}
+    // Trillen op mobile (best-effort)
+    try { if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]); } catch {}
+  }
+
+  // --- Recipe editing + versioning ---
+  // INGREDIENTS leeft in een andere IIFE. We bewerken via window.__INGREDIENTS.
+  let RECIPE_BASELINE = null; // ingredients-array zoals laatst opgeslagen op server
+  let RECIPE_VERSIONS = [];
+  let __editingKey = null;
+  function getIngredients() { return window.__INGREDIENTS || []; }
+  function refreshRecipeUi() {
+    if (typeof window.__renderRecipeFromOutside === 'function') window.__renderRecipeFromOutside();
+    renderRecipeActions();
+  }
+  function recipeIsDirty() {
+    const cur = getIngredients();
+    if (!RECIPE_BASELINE) return false;
+    if (RECIPE_BASELINE.length !== cur.length) return true;
+    for (let i = 0; i < cur.length; i++) {
+      if (!RECIPE_BASELINE[i] || RECIPE_BASELINE[i].key !== cur[i].key) return true;
+      if (Number(RECIPE_BASELINE[i].qty) !== Number(cur[i].qty)) return true;
+    }
+    return false;
+  }
+  // Scope-state: 'per-pot' of 'per-n'. 'per-n' werkt op huidig geselecteerd aantal potten.
+  let __editingScope = 'per-n';
+  function getCurrentPotCount() {
+    try { return Math.max(1, (typeof STATE !== 'undefined' && STATE && STATE.potten) ? Number(STATE.potten) : 1); } catch { return 1; }
+  }
+  function unitFullName(unit) {
+    return (unit || 'g') === 'ml' ? 'Milliliter' : 'Gram';
+  }
+  function syncEditInputValue() {
+    if (!__editingKey) return;
+    const ing = getIngredients().find(x => x.key === __editingKey);
+    if (!ing) return;
+    const n = getCurrentPotCount();
+    const val = __editingScope === 'per-n' ? (Number(ing.qty) * n) : Number(ing.qty);
+    const rounded = Math.round(val * 100) / 100;
+    document.getElementById('ingredient-edit-qty').value = rounded;
+    const sub = document.getElementById('ingredient-edit-sub');
+    if (sub) sub.textContent = __editingScope === 'per-n'
+      ? `Totaal voor ${n} pot${n === 1 ? '' : 'ten'} — wijziging wordt per pot opgeslagen`
+      : `Hoeveelheid per pot (370g)`;
+  }
+  function setEditScope(scope) {
+    __editingScope = scope;
+    const sel = document.getElementById('ing-edit-scope');
+    if (sel) sel.value = scope;
+    syncEditInputValue();
+  }
+  function updateScopeDropdownLabel() {
+    const sel = document.getElementById('ing-edit-scope');
+    if (!sel) return;
+    const n = getCurrentPotCount();
+    const perN = sel.querySelector('option[value="per-n"]');
+    if (perN) perN.textContent = `Per ${n} pot${n === 1 ? '' : 'ten'} (geselecteerd)`;
+  }
+  function openIngredientEdit(key) {
+    const ing = getIngredients().find(x => x.key === key);
+    if (!ing) return;
+    __editingKey = key;
+    document.getElementById('ingredient-edit-name').textContent = 'Wijzig ' + ing.name;
+    document.getElementById('ingredient-edit-unit').textContent = unitFullName(ing.unit);
+    updateScopeDropdownLabel();
+    // Default = "per N potten" (aantal dat geselecteerd is op de pagina).
+    setEditScope('per-n');
+    document.getElementById('ingredient-edit-backdrop').classList.add('open');
+    document.getElementById('ingredient-edit-drawer').classList.add('open');
+    setTimeout(() => { try { document.getElementById('ingredient-edit-qty').focus(); document.getElementById('ingredient-edit-qty').select(); } catch {} }, 60);
+  }
+  function closeIngredientEdit() {
+    document.getElementById('ingredient-edit-backdrop').classList.remove('open');
+    document.getElementById('ingredient-edit-drawer').classList.remove('open');
+    __editingKey = null;
+  }
+  function saveIngredientEdit() {
+    if (!__editingKey) return;
+    const raw = document.getElementById('ingredient-edit-qty').value;
+    const v = Number(String(raw).replace(',', '.'));
+    if (!Number.isFinite(v) || v < 0) { alert('Voer een geldig getal in.'); return; }
+    const ing = getIngredients().find(x => x.key === __editingKey);
+    if (ing) {
+      const n = getCurrentPotCount();
+      // Bij 'per-n' scope: deel door n om per-pot waarde te krijgen voordat we opslaan.
+      const perPot = __editingScope === 'per-n' ? (v / n) : v;
+      ing.qty = Math.round(perPot * 100) / 100;
+    }
+    closeIngredientEdit();
+    refreshRecipeUi();
+  }
+  function renderRecipeActions() {
+    const wrap = document.getElementById('recipe-actions');
+    if (!wrap) return;
+    wrap.classList.toggle('hidden', !recipeIsDirty());
+  }
+  function getKokenPassword() {
+    try {
+      const raw = localStorage.getItem('ellemelle_admin_session_v1');
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      return (o && o.password) || null;
+    } catch { return null; }
+  }
+  // Map server-format (grams/unit/key/name + extra metadata) → INGREDIENTS-format (qty/unit/name/note/key)
+  // INGREDIENTS heeft een NOTE veld dat alleen frontend kent; we behouden 'm via merge op key.
+  function mapFromServer(serverIngredients) {
+    const baseNotes = {
+      hazelnoten: '(gepeld, geroosterd)',
+      cashew:     '',
+      olijfolie:  '(koudgeperst)',
+      zonnebloem: '(koudgeperst)',
+      cacao:      '',
+      agave:      '',
+      melkpoeder: '',
+      vanille:    '(vloeibare smaakstof)',
+      water:      '',
+    };
+    const baseNames = {
+      hazelnoten: 'Hazelnoten',
+      cashew:     'Cashewnoten',
+      olijfolie:  'Olijfolie',
+      zonnebloem: 'Zonnebloemolie',
+      cacao:      'Cacaopoeder',
+      agave:      'Agavesiroop',
+      melkpoeder: 'Magere melkpoeder',
+      vanille:    'Vanille natuurlijk',
+      water:      'Water',
+    };
+    return serverIngredients.map(i => ({
+      key:  i.key,
+      qty:  Number(i.qty !== undefined ? i.qty : i.grams),
+      unit: i.unit || 'g',
+      name: baseNames[i.key] || (i.name || '').replace(' (bio)', ''),
+      note: baseNotes[i.key] !== undefined ? baseNotes[i.key] : '',
+    }));
+  }
+  function mapToServer(frontendIngredients) {
+    return frontendIngredients.map(i => ({
+      key:  i.key,
+      name: i.name,
+      qty:  Number(i.qty),
+      grams: Number(i.qty), // backward compat met oude server-versies
+      unit: i.unit || 'g',
+      note: i.note || '',
+    }));
+  }
+  async function loadRecipeFromServer() {
+    const pw = getKokenPassword(); if (!pw) return;
+    try {
+      const r = await fetch('/.netlify/functions/recipe?password=' + encodeURIComponent(pw));
+      const j = await r.json();
+      if (r.ok && j.ok && Array.isArray(j.current && j.current.ingredients)) {
+        const mapped = mapFromServer(j.current.ingredients);
+        const cur = getIngredients();
+        cur.length = 0;
+        mapped.forEach(x => cur.push({ ...x }));
+        RECIPE_BASELINE = mapped.map(x => ({ ...x }));
+        RECIPE_VERSIONS = Array.isArray(j.versions) ? j.versions : [];
+        renderChangelog();
+        refreshRecipeUi();
+      }
+    } catch (e) {}
+  }
+  async function saveRecipeVersion() {
+    const pw = getKokenPassword();
+    if (!pw) { alert('Niet ingelogd.'); return; }
+    const btn = document.getElementById('recipe-save-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Bewaren…'; }
+    try {
+      const r = await fetch('/.netlify/functions/recipe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw, action: 'save', ingredients: mapToServer(getIngredients()) }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) { alert('Opslaan mislukt: ' + (j.error || 'onbekende fout')); return; }
+      RECIPE_BASELINE = mapFromServer(j.current.ingredients);
+      RECIPE_VERSIONS = j.versions || [];
+      renderChangelog();
+      renderRecipeActions();
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Bewaar als versie'; }
+    }
+  }
+  function revertLocalEdits() {
+    if (!confirm('Wijzigingen ongedaan maken? Het recept gaat terug naar de laatst opgeslagen versie.')) return;
+    if (RECIPE_BASELINE) {
+      const cur = getIngredients();
+      cur.length = 0;
+      RECIPE_BASELINE.forEach(x => cur.push({ ...x }));
+    }
+    refreshRecipeUi();
+  }
+  let __viewingVersionId = null;
+  let __pendingPhotoDataUrl = null;   // tijdelijk: foto die nog niet is opgeslagen voor de huidige versie
+  let __pendingPhotoCleared = false;  // user heeft op verwijder gedrukt — bij save photo: null sturen
+  function showPhotoPreview(dataUrl) {
+    const wrap = document.getElementById('version-detail-photo-preview');
+    const img = document.getElementById('version-detail-photo-img');
+    if (!wrap || !img) return;
+    if (dataUrl) { img.src = dataUrl; wrap.style.display = 'block'; }
+    else         { img.src = ''; wrap.style.display = 'none'; }
+  }
+  function openVersionDetail(versionId) {
+    const v = RECIPE_VERSIONS.find(x => x.id === versionId);
+    if (!v) return;
+    __viewingVersionId = versionId;
+    __pendingPhotoDataUrl = null;
+    __pendingPhotoCleared = false;
+    const ts = new Date(v.at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    document.getElementById('version-detail-title').textContent = 'Versie van ' + ts;
+    document.getElementById('version-detail-sub').textContent = v.summary || 'Recept opgeslagen';
+    document.getElementById('version-detail-note').value = v.note || '';
+    showPhotoPreview(v.photo || null);
+    document.getElementById('version-detail-backdrop').classList.add('open');
+    document.getElementById('version-detail-drawer').classList.add('open');
+  }
+  function closeVersionDetail() {
+    document.getElementById('version-detail-backdrop').classList.remove('open');
+    document.getElementById('version-detail-drawer').classList.remove('open');
+    __viewingVersionId = null;
+    __pendingPhotoDataUrl = null;
+    __pendingPhotoCleared = false;
+    const inp = document.getElementById('version-detail-file'); if (inp) inp.value = '';
+  }
+  async function saveVersionNote() {
+    if (!__viewingVersionId) return;
+    const pw = getKokenPassword(); if (!pw) { alert('Niet ingelogd.'); return; }
+    const note = document.getElementById('version-detail-note').value;
+    const btn = document.getElementById('version-detail-save');
+    if (btn) { btn.disabled = true; btn.textContent = 'Bewaren…'; }
+    try {
+      const payload = { password: pw, action: 'note', version_id: __viewingVersionId, note };
+      if (__pendingPhotoDataUrl) payload.photo = __pendingPhotoDataUrl;
+      else if (__pendingPhotoCleared) payload.photo = null;
+      const r = await fetch('/.netlify/functions/recipe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) { alert('Opslaan mislukt: ' + (j.error || 'onbekende fout')); return; }
+      RECIPE_VERSIONS = j.versions || [];
+      renderChangelog();
+      closeVersionDetail();
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Bewaar notitie'; }
+    }
+  }
+  // Resize via canvas naar max 1000px langste zijde, JPEG quality 80 — meestal 80-200KB.
+  function loadAndResizeImage(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const max = 1000;
+          let w = img.width, h = img.height;
+          if (w > h && w > max) { h = Math.round(h * max / w); w = max; }
+          else if (h > w && h > max) { w = Math.round(w * max / h); h = max; }
+          else if (w > max) { w = max; h = max; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = reject;
+        img.src = fr.result;
+      };
+      fr.onerror = reject;
+      fr.readAsDataURL(file);
+    });
+  }
+  async function onPhotoPicked(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await loadAndResizeImage(file);
+      __pendingPhotoDataUrl = dataUrl;
+      __pendingPhotoCleared = false;
+      showPhotoPreview(dataUrl);
+    } catch (err) {
+      alert('Foto laden mislukt: ' + (err && err.message || err));
+    } finally {
+      e.target.value = '';
+    }
+  }
+  function removePendingPhoto() {
+    __pendingPhotoDataUrl = null;
+    __pendingPhotoCleared = true;
+    showPhotoPreview(null);
+  }
+  function openPhotoViewer(versionId) {
+    const v = RECIPE_VERSIONS.find(x => x.id === versionId);
+    if (!v || !v.photo) return;
+    const ts = new Date(v.at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    document.getElementById('photo-view-title').textContent = 'Foto · ' + ts;
+    document.getElementById('photo-view-sub').textContent = v.summary || '';
+    document.getElementById('photo-view-img').src = v.photo;
+    document.getElementById('photo-view-backdrop').classList.add('open');
+    document.getElementById('photo-view-drawer').classList.add('open');
+  }
+  function closePhotoViewer() {
+    document.getElementById('photo-view-backdrop').classList.remove('open');
+    document.getElementById('photo-view-drawer').classList.remove('open');
+  }
+  async function revertToVersion(versionId) {
+    const id = versionId || __viewingVersionId;
+    if (!id) return;
+    const v = RECIPE_VERSIONS.find(x => x.id === id);
+    if (!v) return;
+    const ts = new Date(v.at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    if (!confirm(`Recept terugzetten naar versie van ${ts}?\n\n"${v.summary}"`)) return;
+    const pw = getKokenPassword();
+    if (!pw) { alert('Niet ingelogd.'); return; }
+    const r = await fetch('/.netlify/functions/recipe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw, action: 'revert', version_id: id }),
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) { alert('Reverten mislukt: ' + (j.error || 'onbekende fout')); return; }
+    const mapped = mapFromServer(j.current.ingredients);
+    const cur = getIngredients();
+    cur.length = 0;
+    mapped.forEach(x => cur.push({ ...x }));
+    RECIPE_BASELINE = mapped.map(i => ({ ...i }));
+    RECIPE_VERSIONS = j.versions || [];
+    renderChangelog();
+    refreshRecipeUi();
+    closeVersionDetail();
+  }
+  function renderChangelog() {
+    const wrap = document.getElementById('recipe-changelog');
+    const outer = document.getElementById('recipe-changelog-wrap');
+    if (!wrap) return;
+    if (!RECIPE_VERSIONS || RECIPE_VERSIONS.length === 0) {
+      if (outer) outer.hidden = true;
+      wrap.innerHTML = '';
+      return;
+    }
+    if (outer) outer.hidden = false;
+    const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    wrap.innerHTML = RECIPE_VERSIONS.map(v => {
+      const ts = new Date(v.at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const photoHtml = v.photo
+        ? `<button type="button" class="ch-photo" data-photo-id="${v.id}" aria-label="Foto bekijken"><img src="${v.photo}" alt=""></button>`
+        : '';
+      return `
+        <div class="ch-entry" data-id="${v.id}" role="button" tabindex="0">
+          ${photoHtml}
+          <div class="ch-body">
+            <span class="ch-time">${ts}</span>
+            <span class="ch-desc">${esc(v.summary || 'Recept opgeslagen')}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+    wrap.querySelectorAll('.ch-entry').forEach(el => {
+      el.addEventListener('click', (e) => {
+        // Voorkom dubbel-trigger wanneer er op de miniatuur foto geklikt wordt (eigen handler).
+        if (e.target.closest('.ch-photo')) return;
+        openVersionDetail(el.dataset.id);
+      });
+    });
+    wrap.querySelectorAll('.ch-photo').forEach(el => {
+      el.addEventListener('click', (e) => { e.stopPropagation(); openPhotoViewer(el.dataset.photoId); });
+    });
+  }
+  // Expose voor renderRecipe binnen IIFE#2 én voor binding event listeners
+  window.openIngredientEdit = openIngredientEdit;
+  window.renderRecipeActions = renderRecipeActions;
+  window.__loadRecipeFromServer = loadRecipeFromServer;
+
+  // --- Wake Lock: voorkom dat het scherm uit gaat ---
+  // Twee parallelle technieken zodat hij robuust werkt op alle browsers / PWA-modes:
+  //   1) navigator.wakeLock.request('screen') — moderne Wake Lock API (iOS 16.4+, Android)
+  //   2) Silent looping video als fallback (NoSleep.js-stijl) — werkt waar Wake Lock niet beschikbaar is
+  let WAKE_LOCK = null;
+  // Tiny silent looping MP4 (base64, ~1KB) — minst-mogelijke valid video voor de fallback.
+  const NO_SLEEP_MP4 = 'data:video/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28ybXA0MQAAAAhmcmVlAAAGF21kYXTeBAAAbGliZmFhYyAxLjI4AABCAJMgBDIARwAAArEGBf//rdxF6b3m2Ui3lizYINkj7u94MjY0IC0gY29yZSAxNDIgcjIgOTU2YzhkOCAtIEguMjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMTQgLSBodHRwOi8vd3d3LnZpZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0wIHJlZj0zIGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDE6MHgxMTEgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4wMCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTAgY3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhyZWFkcz02IGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCB2YnZfbWF4cmF0ZT03NjggdmJ2X2J1ZnNpemU9MzAwMCBjcmZfbWF4PTAuMCBuYWxfaHJkPW5vbmUgZmlsbGVyPTAgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAAFZliIQL8mKAAKvMnJycnJycnJycnXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXIAAAAAAAA2ltb292AAAAbG12aGQAAAAA1YCCX9WAgl8AAAPoAAAH/AABAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAABYnRyYWsAAABcdGtoZAAAAAPVgIJf1YCCXwAAAAEAAAAAAAAH0AAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAEAAAAACgAAAAGAAAAAAAQ7iWWlpdGFsIDIuMC4xMxR0ZWVAdwgAAAAOd2lkdGgAAAAEAAAAAAAAAA==';
+  let __noSleepVideo = null;
+  let __noSleepCanvas = null;
+  let __noSleepCanvasInterval = null;
+  let __wakeReacquireInterval = null;
+  // De static-MP4 fallback wordt door iOS PWA vaak gedeprioriteerd/gepauzeerd
+  // omdat 't geen "live" media is. Canvas.captureStream() maakt een echte MediaStream
+  // die iOS als live behandelt en niet mag pauzeren — dit is de enige betrouwbare
+  // manier om het scherm aan te houden in iOS PWA-standalone modes.
+  function ensureNoSleepVideo() {
+    if (__noSleepVideo) return __noSleepVideo;
+    const v = document.createElement('video');
+    v.setAttribute('playsinline', '');
+    v.setAttribute('webkit-playsinline', '');
+    v.setAttribute('muted', '');
+    v.setAttribute('autoplay', '');
+    v.setAttribute('loop', '');
+    v.muted = true;
+    v.loop = true;
+    v.defaultMuted = true;
+    v.playsInline = true;
+    // 2×2px in de hoek — visueel onzichtbaar maar niet "hidden" volgens iOS' heuristics
+    v.style.cssText = 'position:fixed;bottom:0;right:0;width:2px;height:2px;opacity:0.02;pointer-events:none;z-index:-1;';
+    document.body.appendChild(v);
+    __noSleepVideo = v;
+
+    // Probeer eerst canvas-capture-stream (werkt op iOS PWA)
+    try {
+      if (!__noSleepCanvas) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 4;
+        canvas.height = 4;
+        const ctx = canvas.getContext('2d');
+        // Continu pixel flippen zorgt dat iOS de stream als "live" ziet
+        let flip = 0;
+        __noSleepCanvasInterval = setInterval(() => {
+          flip = 1 - flip;
+          ctx.fillStyle = flip ? '#000' : '#fff';
+          ctx.fillRect(0, 0, 4, 4);
+        }, 500);
+        __noSleepCanvas = canvas;
+      }
+      if (typeof __noSleepCanvas.captureStream === 'function') {
+        const stream = __noSleepCanvas.captureStream(2); // 2 fps
+        v.srcObject = stream;
+        return v;
+      }
+    } catch (e) {}
+    // Fallback: static-MP4 als canvas.captureStream niet ondersteund wordt
+    v.src = NO_SLEEP_MP4;
+    return v;
+  }
+  async function requestWakeLock() {
+    let ok = false;
+    if ('wakeLock' in navigator) {
+      try {
+        WAKE_LOCK = await navigator.wakeLock.request('screen');
+        WAKE_LOCK.addEventListener('release', () => { WAKE_LOCK = null; });
+        ok = true;
+      } catch (e) {}
+    }
+    // Altijd ook de silent-video fallback aanzetten — werkt waar Wake Lock niet beschikbaar is
+    // (iOS PWA-standalone, in-app webview, sommige Android browsers) en als backup.
+    try {
+      const v = ensureNoSleepVideo();
+      if (v.paused) await v.play();
+      ok = true;
+    } catch (e) {}
+    // Periodieke re-acquire elke 20s — dekt het geval dat OS silently het lock dropt
+    // (batterijstand-verandering, tab-inactief-kort, iOS PWA visibility-glitches).
+    if (!__wakeReacquireInterval) {
+      __wakeReacquireInterval = setInterval(async () => {
+        const t = document.getElementById('wake-lock-toggle');
+        if (!t || !t.checked) return;
+        // Re-request wake lock als deze niet meer actief is
+        if ('wakeLock' in navigator && !WAKE_LOCK) {
+          try {
+            WAKE_LOCK = await navigator.wakeLock.request('screen');
+            WAKE_LOCK.addEventListener('release', () => { WAKE_LOCK = null; });
+          } catch (e) {}
+        }
+        // Zorg dat video niet gepauzeerd is
+        if (__noSleepVideo && __noSleepVideo.paused) {
+          try { await __noSleepVideo.play(); } catch (e) {}
+        }
+      }, 20000);
+    }
+    return ok;
+  }
+  async function releaseWakeLock() {
+    if (WAKE_LOCK) {
+      try { await WAKE_LOCK.release(); } catch {}
+      WAKE_LOCK = null;
+    }
+    if (__noSleepVideo) {
+      try { __noSleepVideo.pause(); } catch {}
+    }
+    if (__noSleepCanvasInterval) {
+      clearInterval(__noSleepCanvasInterval);
+      __noSleepCanvasInterval = null;
+    }
+    if (__wakeReacquireInterval) {
+      clearInterval(__wakeReacquireInterval);
+      __wakeReacquireInterval = null;
+    }
+  }
+  // iOS / Android releasen het wake-lock + pauzeren video automatisch bij hide.
+  // We re-acquiren als toggle aan staat én user weer in beeld komt.
+  async function _reacquireIfActive() {
+    const t = document.getElementById('wake-lock-toggle');
+    if (!t || !t.checked) return;
+    if (document.visibilityState === 'visible') {
+      await requestWakeLock();
+    }
+  }
+  document.addEventListener('visibilitychange', _reacquireIfActive);
+  // pageshow vangt iOS PWA-cases waar visibilitychange niet betrouwbaar afgaat
+  // (bijv. app terugkomen uit background na langere tijd)
+  window.addEventListener('pageshow', _reacquireIfActive);
+  window.addEventListener('focus', _reacquireIfActive);
 
   // --- Boot helpers ---
   async function loadInitial() {
@@ -1128,7 +2337,11 @@
     let needsCookOrders = [];
     if (bz.ok) {
       const all = (bz.data.weeks || []).flatMap(w => w.orders || []);
-      todoOrders = all.filter(o => !o.order_status || o.order_status === 'todo');
+      // "Open" = bestellingen die nog geproduceerd / bezorgd moeten worden.
+      // Sluit eindstatussen (delivered/neighbors/picked_up) en heroponingen waar
+      // al een pot voor uitstond (retry/pickup_self_requested) uit.
+      const OPEN_STATUSES = new Set(['', 'todo', 'confirmed']);
+      todoOrders = all.filter(o => OPEN_STATUSES.has(o.order_status || ''));
       // Sum aantal across todo orders (not just count orders) — 1 order × 2 potten = 2 potten to make.
       todoCount = todoOrders.reduce((sum, o) => sum + (Number(o.aantal) || 1), 0);
       // Only show orders that need a fresh batch (no stock) AND have NOT yet had an update message sent
@@ -1143,6 +2356,8 @@
     STATE.potten = STATE.suggestedDefault;
     renderPottenDropdown();
     renderRecipe();
+    // Laad opgeslagen recept-versies van server (overschrijft RECIPE_PER_POT indien nodig)
+    loadRecipeFromServer();
   }
 
   // --- Bindings ---
@@ -1162,6 +2377,7 @@
       });
       $('#login-view').hidden = true; document.body.classList.remove('on-login');
       $('#main-view').hidden = false;
+      initTopbarButtons();
       await loadInitial();
     } else {
       $('#login-err').textContent = res.data.error === 'unauthorized' ? 'Verkeerd wachtwoord' : ('Fout: ' + (res.data.error || 'unknown'));
@@ -1171,8 +2387,8 @@
   $('#prod-date-btn').addEventListener('click', openProdDateDrawer);
   $('#msg-status-backdrop').addEventListener('click', closeMsgStatusDrawer);
   $('#msg-status-save').addEventListener('click', saveMsgStatus);
-  $('#batch-update-cta').addEventListener('click', openBatchUpdateDrawer);
-  $('#batch-update-backdrop').addEventListener('click', closeBatchUpdateDrawer);
+  { const el = $('#batch-update-cta'); if (el) el.addEventListener('click', openBatchUpdateDrawer); }
+  { const el = $('#batch-update-backdrop'); if (el) el.addEventListener('click', closeBatchUpdateDrawer); }
   document.querySelectorAll('#msg-status-cards .msg-status-card').forEach(c => {
     c.addEventListener('click', () => selectMsgCard(c.dataset.status));
   });
@@ -1223,6 +2439,57 @@
   $('#menu-backdrop').addEventListener('click', () => { $('#menu-backdrop').classList.remove('open'); $('#menu-panel').classList.remove('open'); });
   $('#menu-logout').addEventListener('click', () => { clearSession(); location.reload(); });
 
+  // Recipe edit + version bindings
+  document.addEventListener('DOMContentLoaded', () => {
+    const sv = document.getElementById('ingredient-edit-save');   if (sv) sv.addEventListener('click', saveIngredientEdit);
+    const bd = document.getElementById('ingredient-edit-backdrop'); if (bd) bd.addEventListener('click', closeIngredientEdit);
+    const sb = document.getElementById('recipe-save-btn');   if (sb) sb.addEventListener('click', saveRecipeVersion);
+    const rb = document.getElementById('recipe-revert-btn'); if (rb) rb.addEventListener('click', revertLocalEdits);
+    const scopeSel = document.getElementById('ing-edit-scope');
+    if (scopeSel) scopeSel.addEventListener('change', e => setEditScope(e.target.value));
+    const vdSave = document.getElementById('version-detail-save');   if (vdSave) vdSave.addEventListener('click', saveVersionNote);
+    const vdRev  = document.getElementById('version-detail-revert'); if (vdRev) vdRev.addEventListener('click', () => revertToVersion());
+    const vdBd   = document.getElementById('version-detail-backdrop'); if (vdBd) vdBd.addEventListener('click', closeVersionDetail);
+    const vdAtt  = document.getElementById('version-detail-attach'); if (vdAtt) vdAtt.addEventListener('click', () => document.getElementById('version-detail-file').click());
+    const vdFile = document.getElementById('version-detail-file');   if (vdFile) vdFile.addEventListener('change', onPhotoPicked);
+    const vdRem  = document.getElementById('version-detail-photo-remove'); if (vdRem) vdRem.addEventListener('click', removePendingPhoto);
+    const pvBd   = document.getElementById('photo-view-backdrop'); if (pvBd) pvBd.addEventListener('click', closePhotoViewer);
+  });
+
+  // --- Keukentimer + wake-lock bindings (moeten binnen deze IIFE staan, want functies leven hier) ---
+  const _startBtn = $('#timer-start-btn');
+  const _resetBtn = $('#timer-reset-btn');
+  const _wakeT = $('#wake-lock-toggle');
+  if (_startBtn) _startBtn.addEventListener('click', toggleKitchenTimerPlay);
+  if (_resetBtn) _resetBtn.addEventListener('click', resetKitchenTimer);
+  if (_wakeT) {
+    _wakeT.addEventListener('change', async () => {
+      if (_wakeT.checked) {
+        const ok = await requestWakeLock();
+        if (!ok) {
+          alert('Je browser ondersteunt geen scherm-aan-houden. Zet anders je scherm-time-out hoger in de instellingen.');
+          _wakeT.checked = false;
+        }
+      } else {
+        await releaseWakeLock();
+      }
+    });
+    // Default-on: probeer direct het lock op te zetten. Lukt het niet (autoplay/lock policy),
+    // haal 'm bij de eerste user-tap.
+    if (_wakeT.checked) {
+      requestWakeLock().then(ok => {
+        if (!ok) {
+          const acquire = async () => {
+            if (!_wakeT.checked || WAKE_LOCK) return;
+            await requestWakeLock();
+          };
+          document.addEventListener('pointerdown', acquire, { once: true });
+        }
+      });
+    }
+  }
+  renderTimer();
+
   // Boot
   STATE.password = loadSession();
   if (STATE.password) {
@@ -1230,16 +2497,34 @@
       if (res.ok) {
         $('#login-view').hidden = true; document.body.classList.remove('on-login');
         $('#main-view').hidden = false;
+        initTopbarButtons();
         await loadInitial();
       } else {
         clearSession(); STATE.password = null;
       }
     });
   }
+
+  // Notifications bell — hooks up left of the hamburger menu
+  function initTopbarButtons(attempts) {
+    attempts = attempts || 0;
+    const btn = document.getElementById('menu-open');
+    if (btn && STATE.password && window.EllemelNotif && window.EllemelSettings) {
+      window.EllemelSettings.init({
+        password: STATE.password,
+        mountBefore: btn,
+        onLogout: () => { clearSession(); location.reload(); },
+      });
+      const gear = document.getElementById('settings-gear-btn');
+      window.EllemelNotif.init({ password: STATE.password, mountBefore: gear || btn });
+    } else if (STATE.password && attempts < 20) {
+      setTimeout(() => initTopbarButtons(attempts + 1), 100);
+    }
+  }
 })();
 </script>
 
-<a class="fab" id="fab-add" href="https://ellemelle.netlify.app/?start=admin" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
+<a class="fab" id="fab-add" href="https://ellemel.nl/?start=admin" target="_blank" rel="noopener" aria-label="Nieuwe bestelling toevoegen">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </a>
 
@@ -1380,8 +2665,33 @@
         showToast(res.data.error || 'Mislukt', 'error');
       }
     }, { highlightScanRegion: true, returnDetailedScanResult: true });
-    try { await qrScanner.start(); }
-    catch { stopScan(); showToast('Camera niet beschikbaar', 'error'); }
+    // Verify camera API available BEFORE invoking QrScanner — geeft specifieker error in PWA-modes
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      stopScan();
+      showToast('Camera API niet beschikbaar in deze browser/PWA. Open in Safari i.p.v. PWA.', 'error');
+      return;
+    }
+    try {
+      // Vraag eerst expliciet camera-toegang zodat we de native permission-dialog krijgen
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      stream.getTracks().forEach(t => t.stop()); // Direct sluiten; QrScanner opent z'n eigen
+      await qrScanner.start();
+    } catch (err) {
+      stopScan();
+      const name = (err && err.name) || '';
+      const m = (err && err.message) ? err.message : '';
+      let detail;
+      if (name === 'NotAllowedError' || /permission|denied|notAllowed/i.test(m)) {
+        detail = 'Camera-toegang geweigerd. iOS PWA: open in normale Safari, of reset via Instellingen → Safari → Geavanceerd → Website-data → ellemel.nl.';
+      } else if (name === 'NotFoundError' || /notFound|no camera/i.test(m)) {
+        detail = 'Geen camera gevonden op dit apparaat.';
+      } else if (name === 'NotReadableError') {
+        detail = 'Camera in gebruik door andere app — sluit andere apps en probeer opnieuw.';
+      } else {
+        detail = 'Camera fout: ' + (name || 'onbekend') + (m ? ' — ' + m : '');
+      }
+      showToast(detail, 'error');
+    }
   }
   function stopScan() {
     $('#koken-scan-view').hidden = true;
@@ -1509,6 +2819,266 @@
 })();
 </script>
 
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Bestel ingrediënten via Cowork.
+// Button opent confirm-drawer met geschaalde ingredient-lijst; Bevestig → POST
+// shopping-create → Netlify Blob queue. Cowork's scheduled task pakt 'm op en
+// plaatst de bestelling bij De Notenshop (bio). Status wordt onder de knop getoond.
+// ─────────────────────────────────────────────────────────────────────────────
+(function(){
+  const $   = sel => document.querySelector(sel);
+  const $$  = sel => document.querySelectorAll(sel);
+  if (!$('#shopping-cta')) return;
+
+  const STORAGE_KEY = 'ellemelle_admin_session_v1';
+
+  // Per-pot recipe (370g per pot) — wordt geladen uit /api/recipe (incl. versiehistorie).
+  // Fallback voor first-load: harde default die backend ook gebruikt als seed.
+  // Gecorrigeerd 2026-07-05: zelfde 5/6-scaling als INGREDIENTS.
+  // Oude waarden voor revert:
+  //   hazelnoten 137 · cashew 18.5 · olijfolie 45 · zonnebloem 40
+  //   cacao 52 · agave 59 · melkpoeder 15 · vanille 11
+  let RECIPE_PER_POT = [
+    { key: 'hazelnoten', name: 'Hazelnoten gepeld geroosterd (bio)', grams: 114,  unit: 'g',  emoji: '🌰', image: 'https://www.denotenshop.nl/media/catalog/product/2/6/2645_hazelnoten_wit_gebrand_ongezouten_bio_web1.jpg' },
+    { key: 'cashew',     name: 'Cashewnoten ongebrand (bio)',         grams: 15,   unit: 'g',  emoji: '🥜', image: 'https://www.denotenshop.nl/media/catalog/product/7/4/7460_cashew_stukjes_ongebrand_bio_web1.jpg' },
+    { key: 'olijfolie',  name: 'Olijfolie koudgeperst (bio)',         grams: 38,   unit: 'ml', emoji: '🫒', image: 'https://www.denotenshop.nl/media/catalog/product/8/7/olijfolie-extra-vierge-500-ml.jpg' },
+    { key: 'zonnebloem', name: 'Zonnebloemolie koudgeperst (bio)',    grams: 33,   unit: 'ml', emoji: '🌻', image: 'https://www.denotenshop.nl/media/catalog/product/8/7/zonnebloemolie-500-ml.jpg' },
+    { key: 'cacao',      name: 'Cacaopoeder (bio)',                   grams: 43,   unit: 'g',  emoji: '🍫', image: 'https://www.denotenshop.nl/media/catalog/product/5/6/5685-4765_cacaopoeder_en_bio_web1_4.jpg' },
+    { key: 'agave',      name: 'Agavesiroop donker (bio)',            grams: 49,   unit: 'g',  emoji: '🍯', image: 'https://www.denotenshop.nl/media/catalog/product/9/1/9125_v1.png' },
+    { key: 'melkpoeder', name: 'Magere melkpoeder (bio)',             grams: 13,   unit: 'g',  emoji: '🥛', image: 'https://www.denotenshop.nl/media/catalog/product/2/7/2735___8780_melkpoeder_mager_bio_volle_melkpoeder_bio_web1.jpg' },
+    { key: 'vanille',    name: 'Vanille natuurlijke smaakstof (bio)', grams: 9,    unit: 'g',  emoji: '🌱', image: 'https://www.denotenshop.nl/media/catalog/product/4/9/4910_vanille_extract_100_gram_verpakking_web1.jpg' },
+  ];
+  // Note: recipe editing + versioning lives in IIFE#2 (waar INGREDIENTS staat).
+  // RECIPE_PER_POT hier wordt alleen door het Shopping-confirm drawer gebruikt.
+  // Pot-aantal-opties — match met hoofdpagina options (POTTEN_OPTIONS in main JS).
+  const POT_AMOUNTS = [1, 5, 10, 15, 20, 25];
+
+  // Multi-select state — bevat de keys van geselecteerde ingrediënten. Default: alles geselecteerd.
+  let drawerSelected = new Set();
+  let drawerPotCount = 1;
+
+  function getDefaultPotCount() {
+    const sel = document.querySelector('#potten-select');
+    return Math.max(1, parseInt(sel && sel.value, 10) || 1);
+  }
+  function fmtGrams(g, unit) {
+    const u = unit || 'g';
+    if (u === 'ml') {
+      if (g >= 1000) {
+        const l = g / 1000;
+        return (Math.round(l * 100) / 100).toString().replace('.', ',') + ' l';
+      }
+      return Math.round(g) + ' ml';
+    }
+    if (g >= 1000) {
+      const kg = g / 1000;
+      return (Math.round(kg * 100) / 100).toString().replace('.', ',') + ' kg';
+    }
+    return Math.round(g) + ' g';
+  }
+  function getPassword() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      return (o && o.password) || null;
+    } catch { return null; }
+  }
+  async function api(ep, body) {
+    const r = await fetch('/.netlify/functions/' + ep, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ password: getPassword() }, body || {})),
+    });
+    const j = await r.json().catch(() => ({}));
+    return { ok: r.ok, data: j };
+  }
+
+  // ── Confirm drawer ──────────────────────────────────────────────────────────
+  function buildPottenOptions() {
+    const sel = $('#shopping-potten-select');
+    if (!sel) return;
+    sel.innerHTML = '';
+    POT_AMOUNTS.forEach(n => {
+      const o = document.createElement('option');
+      o.value = String(n);
+      o.textContent = `${n} pot${n === 1 ? '' : 'ten'} × 370g`;
+      sel.appendChild(o);
+    });
+    sel.value = String(drawerPotCount);
+  }
+  function renderTiles() {
+    const grid = $('#shopping-tile-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    RECIPE_PER_POT.forEach(i => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'shopping-card' + (drawerSelected.has(i.key) ? ' sel' : '');
+      const visual = i.image
+        ? `<img class="ing-img" src="${i.image}" alt="">`
+        : `<span class="ing-emoji" aria-hidden="true">${i.emoji}</span>`;
+      const totalGrams = Math.round(i.grams * drawerPotCount * 10) / 10;
+      card.innerHTML = `
+        ${visual}
+        <div class="ing-name">${i.name.replace(' (bio)', '')}</div>
+        <div class="ing-qty">${fmtGrams(totalGrams, i.unit)}</div>
+      `;
+      card.addEventListener('click', () => {
+        if (drawerSelected.has(i.key)) drawerSelected.delete(i.key);
+        else drawerSelected.add(i.key);
+        card.classList.toggle('sel');
+      });
+      grid.appendChild(card);
+    });
+  }
+  function updateSubText() {
+    const sub = $('#shopping-confirm-sub');
+    if (sub) sub.textContent = `Cowork plaatst de bestelling bij De Notenshop (bio), voor ${drawerPotCount} pot${drawerPotCount === 1 ? '' : 'ten'} van 370g.`;
+  }
+  function openConfirm() {
+    drawerPotCount = getDefaultPotCount();
+    drawerSelected = new Set(RECIPE_PER_POT.map(i => i.key)); // default: alles geselecteerd
+    buildPottenOptions();
+    updateSubText();
+    renderTiles();
+    $('#shopping-confirm-backdrop').classList.add('open');
+    $('#shopping-confirm-drawer').classList.add('open');
+  }
+  function closeConfirm() {
+    $('#shopping-confirm-backdrop').classList.remove('open');
+    $('#shopping-confirm-drawer').classList.remove('open');
+  }
+
+  // ── Bevestig & POST ─────────────────────────────────────────────────────────
+  async function submitShoppingRequest() {
+    if (drawerSelected.size === 0) {
+      alert('Selecteer minstens één ingrediënt voor je bestelt.');
+      return;
+    }
+    const btn = $('#shopping-confirm-btn');
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Bezig…';
+    try {
+      const ingredients = RECIPE_PER_POT
+        .filter(i => drawerSelected.has(i.key))
+        .map(i => ({
+          name: i.name,
+          grams: Math.round(i.grams * drawerPotCount * 10) / 10,
+          unit: i.unit || 'g',
+          notes: '',
+        }));
+      const res = await api('shopping-create', {
+        pot_count: drawerPotCount,
+        ingredients,
+      });
+      if (!res.ok) {
+        alert('Aanmaken mislukt: ' + ((res.data && res.data.error) || 'onbekende fout'));
+        return;
+      }
+      closeConfirm();
+      await refreshShoppingList();
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  // ── Status list ─────────────────────────────────────────────────────────────
+  function statusLabel(s) {
+    return ({
+      queued:           'In wacht',
+      in_progress:      'Bezig',
+      awaiting_payment: 'Betaling nodig',
+      in_order:         'In bestelling',
+      ready:            'Op te halen',
+      completed:        'Klaar',
+      failed:           'Mislukt',
+      cancelled:        'Geannuleerd',
+    })[s] || s;
+  }
+  function fmtDateLong(iso) {
+    if (!iso) return '';
+    const parts = String(iso).split('-');
+    if (parts.length !== 3) return iso;
+    const d = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+    const dayNames = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+    const monthNames = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+    return `${dayNames[d.getUTCDay()]} ${d.getUTCDate()} ${monthNames[d.getUTCMonth()]}`;
+  }
+  function fmtRelTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 60)   return 'net';
+    if (diff < 3600) return Math.round(diff / 60) + ' min geleden';
+    if (diff < 86400) return Math.round(diff / 3600) + ' uur geleden';
+    const days = Math.round(diff / 86400);
+    return days + ' dag' + (days === 1 ? '' : 'en') + ' geleden';
+  }
+  function renderRequests(requests) {
+    const wrap = $('#shopping-list-wrap');
+    wrap.innerHTML = '';
+    if (!requests || requests.length === 0) return;
+    requests.slice(0, 5).forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'shop-req-card';
+
+      const refs = (Array.isArray(r.order_refs) && r.order_refs.length)
+        ? `<div class="refs">Bestelnummer: ${r.order_refs.join(', ')}</div>` : '';
+      const notes = (r.result_notes || '').trim();
+
+      // Status-specifieke actie/info
+      let action = '';
+      if (r.status === 'awaiting_payment' && r.cart_url) {
+        action = `<a class="shop-action-btn" href="${r.cart_url}" target="_blank" rel="noopener">Open winkelmandje → betaal iDEAL</a>`;
+      } else if (r.status === 'in_order' && r.expected_delivery_date) {
+        action = `<div class="meta" style="margin-top:8px;">Verwachte levering: <b>${fmtDateLong(r.expected_delivery_date)}</b></div>`;
+      } else if (r.status === 'ready' && r.tracking_url) {
+        action = `<a class="shop-action-link" href="${r.tracking_url}" target="_blank" rel="noopener">Track &amp; trace bekijken →</a>`;
+      } else if (r.status === 'ready') {
+        action = `<div class="meta" style="margin-top:8px;">Geleverd${r.delivered_at ? ' op ' + fmtRelTime(r.delivered_at) : ''}.</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="head">
+          <span class="title">${r.pot_count} pot${r.pot_count === 1 ? '' : 'ten'}</span>
+          <span class="shop-badge ${r.status}">${statusLabel(r.status)}</span>
+        </div>
+        <div class="meta">${fmtRelTime(r.created_at)}${r.shops && r.shops.length ? ' · ' + r.shops.join(', ') : ''}</div>
+        ${notes ? `<div class="notes">${notes}</div>` : ''}
+        ${refs}
+        ${action}
+      `;
+      wrap.appendChild(card);
+    });
+  }
+  async function refreshShoppingList() {
+    const res = await api('shopping-list', { limit: 10 });
+    if (res.ok && res.data && Array.isArray(res.data.requests)) {
+      renderRequests(res.data.requests);
+    }
+  }
+
+  // ── Bindings ────────────────────────────────────────────────────────────────
+  $('#shopping-cta').addEventListener('click', openConfirm);
+  $('#shopping-confirm-btn').addEventListener('click', submitShoppingRequest);
+  $('#shopping-cancel-btn').addEventListener('click', closeConfirm);
+  $('#shopping-confirm-backdrop').addEventListener('click', closeConfirm);
+  // Wijzig pot-aantal in drawer → updaten subtekst en grams op tiles.
+  const drawerSel = $('#shopping-potten-select');
+  if (drawerSel) drawerSel.addEventListener('change', () => {
+    drawerPotCount = Math.max(1, parseInt(drawerSel.value, 10) || 1);
+    updateSubText();
+    renderTiles();
+  });
+
+  // Initial load — kort wachten zodat de admin session al binnen is.
+  setTimeout(refreshShoppingList, 600);
+  // Refresh elke minuut zodat de status meebeweegt als Cowork werkt.
+  setInterval(refreshShoppingList, 60 * 1000);
+})();
+</script>
+
 <button class="fab fab-scan" id="fab-scan" type="button" aria-label="Scan een POT-QR" style="bottom: calc(94px + env(safe-area-inset-bottom));">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
     <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -1521,8 +3091,9 @@
     <line x1="21" y1="17" x2="21" y2="21"/>
   </svg>
 </button>
-<script type="module" src="/assets/scan-fab.js?v=14"></script>
+<script type="module" src="/assets/scan-fab.js?v=19"></script>
 
-<script src="/assets/pull-to-refresh.js" defer></script>
+<script src="/assets/pull-to-refresh.js" defer>
+</script>
 </body>
 </html>

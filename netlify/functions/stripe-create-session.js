@@ -1,4 +1,4 @@
-// Create a Stripe Checkout session for an ELLEMELLE order.
+// Create a Stripe Checkout session for an Ellemel order.
 // POST { order_id?, voornaam, aantal, statiegeld_credit?, success_pot_id? }
 // Returns { url } — frontend redirects there.
 //
@@ -28,8 +28,8 @@ exports.handler = async (event) => {
   const aantal = Math.max(1, parseInt(body.aantal, 10) || 1);
   const credit = Math.max(0, Number(body.statiegeld_credit) || 0);
   const productCents = aantal * 500;     // €5 / pot
-  const depositCents = aantal * 100;     // €1 statiegeld / pot
-  const discountCents = Math.min(credit, aantal) * 100;
+  const depositCents = aantal * 300;     // €3 statiegeld / pot
+  const discountCents = Math.min(credit, aantal) * 300;
   const totalCents = productCents + depositCents - discountCents;
   if (totalCents <= 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'total amount must be > 0' }) };
@@ -61,7 +61,7 @@ exports.handler = async (event) => {
   params.set('line_items[0][price_data][currency]', 'eur');
   params.set('line_items[0][price_data][unit_amount]', String(totalCents));
   params.set('line_items[0][price_data][product_data][name]',
-    `ELLEMELLE chocopasta — ${aantal} pot${aantal === 1 ? '' : 'ten'}`);
+    `Ellemel chocopasta — ${aantal} pot${aantal === 1 ? '' : 'ten'}`);
   params.set('line_items[0][price_data][product_data][description]',
     discountCents > 0
       ? `${aantal}× pot (€${(productCents/100).toFixed(2)}) + statiegeld (€${(depositCents/100).toFixed(2)}) − credit (−€${(discountCents/100).toFixed(2)})`

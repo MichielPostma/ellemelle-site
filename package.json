@@ -2,8 +2,12 @@
   "name": "ellemelle-site",
   "version": "1.0.0",
   "private": true,
-  "description": "ELLEMELLE chocopasta launch landing page — door Ellis & Melle uit Haarlem.",
+  "description": "Ellemel chocopasta launch landing page — door Ellis & Melle uit Haarlem.",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^10.7.8",
+    "web-push": "^3.6.7"
   }
 }

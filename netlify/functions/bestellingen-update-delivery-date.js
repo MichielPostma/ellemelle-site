@@ -26,8 +26,9 @@ exports.handler = async (event) => {
 
   const hasGeplande = Object.prototype.hasOwnProperty.call(body, 'delivery_date');
   const hasUiterlijke = Object.prototype.hasOwnProperty.call(body, 'uiterlijke_bezorgdatum');
-  if (!hasGeplande && !hasUiterlijke) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'pass delivery_date or uiterlijke_bezorgdatum' }) };
+  const hasLabel = Object.prototype.hasOwnProperty.call(body, 'custom_delivery_label');
+  if (!hasGeplande && !hasUiterlijke && !hasLabel) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'pass delivery_date, uiterlijke_bezorgdatum or custom_delivery_label' }) };
   }
 
   const dateGeplande   = hasGeplande   ? (body.delivery_date == null ? '' : String(body.delivery_date)).trim() : null;
@@ -59,6 +60,15 @@ exports.handler = async (event) => {
     if (prev !== val) {
       next.uiterlijke_bezorgdatum_override = val;
       history.push({ at: now, action: 'override_uiterlijke_bezorgdatum', from: prev, to: val });
+    }
+  }
+  if (hasLabel) {
+    const rawLabel = (body.custom_delivery_label == null ? '' : String(body.custom_delivery_label)).trim();
+    const prev = current.custom_delivery_label || null;
+    const val = rawLabel || null;
+    if (prev !== val) {
+      next.custom_delivery_label = val;
+      history.push({ at: now, action: 'set_custom_delivery_label', from: prev, to: val });
     }
   }
   next.history = history;

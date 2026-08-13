@@ -93,6 +93,9 @@ exports.handler = async (event) => {
       history:              Array.isArray(pot.history) ? pot.history : [],
       current_cycle_start:  pot.current_cycle_start || null,
       order_id:             pot.order_id || null,
+      // Game linkage — used by pot.html to render the speurtocht-banner.
+      game_id:              pot.game_id || null,
+      game_state:           pot.game_state || null,
     }),
   };
 };

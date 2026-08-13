@@ -304,7 +304,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
   }
 
   async function returnPot(opts) {
-    // opts.swap = true → mark pot as pickup-with-reorder FIRST, then return (so backend skips the -€1)
+    // opts.swap = true → mark pot as pickup-with-reorder FIRST, then return (so backend skips the -€3)
     if (!__currentPot || !__currentPot.order_id) return;
     if (opts && opts.swap) {
       // Mark the pot as pickup-with-reorder via customer-reorder endpoint?
@@ -325,13 +325,13 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     softRefreshPage();
   }
 
-  // Refund the €1 statiegeld back to the customer's IBAN via Stripe (instead of internal credit).
+  // Refund the €3 statiegeld back to the customer's IBAN via Stripe (instead of internal credit).
   // Uses a native confirm() so the admin gets a hard "are you sure" before triggering the API call.
   async function refundDeposit() {
     if (!__currentPot || !__currentPot.order_id) return;
     const name = __currentPot.voornaam || 'de klant';
     const confirmed = window.confirm(
-      `Weet je zeker dat je €1 terug wil storten naar ${name}'s IBAN?\n\n` +
+      `Weet je zeker dat je €3 terug wil storten naar ${name}'s IBAN?\n\n` +
       `Het geld komt binnen ~5 werkdagen op de rekening waarmee betaald is. ` +
       `Daarna staat de bestelling op "Opgehaald".`
     );
@@ -342,7 +342,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     if (!data) return;
     const ibanPart = data.iban_last4 ? ` op IBAN ****${data.iban_last4}` : ' op je iDeal-rekening';
     const eta = data.eta_days || 5;
-    toast(`Statiegeld €1 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
+    toast(`Statiegeld €3 wordt binnen ${eta} werkdagen teruggestort${ibanPart}.`, 'success');
     closeDrawer();
     softRefreshPage();
   }
@@ -428,11 +428,24 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     if (!__currentPot || !__selectedStockTarget) return;
     const target = __selectedStockTarget;
     const curr = __currentPot.status === 'uninitialized' ? 'available' : __currentPot.status;
-    if (curr === target) { toast('Geen wijziging'); return; }
-    if (await setPotStatus(target)) {
-      toast(`${__currentPot.id} → ${target === 'voorraad' ? 'gevuld' : 'leeg'}`, 'success');
-      closeDrawer(); softRefreshPage();
+    const sel = document.getElementById('sfb-game-select');
+    const newGame = sel ? (sel.value || null) : (__currentPot.game_id || null);
+    const oldGame = __currentPot.game_id || null;
+    const stockChanged = curr !== target;
+    const gameChanged = newGame !== oldGame;
+    if (!stockChanged && !gameChanged) { toast('Geen wijziging'); return; }
+    if (gameChanged) {
+      const gd = await withGuard(() => api('pot-game-link', { pot_ids: [__currentPot.id], game_id: newGame }));
+      if (!gd) return;
+      __currentPot.game_id = newGame;
     }
+    if (stockChanged) {
+      if (!(await setPotStatus(target))) return;
+      toast(`${__currentPot.id} → ${target === 'voorraad' ? 'gevuld' : 'leeg'}`, 'success');
+    } else {
+      toast(newGame ? `Game gekoppeld aan ${__currentPot.id}` : `Game ontkoppeld van ${__currentPot.id}`, 'success');
+    }
+    closeDrawer(); softRefreshPage();
   }
 
   // ───── per-status renderers ────────────────────────────────────────────
@@ -454,7 +467,9 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       renderStockPicker(wrap, status);
       // Date input — only relevant for the voorraad target; renderStockPicker toggles it via selectStockTarget.
       document.getElementById('sfb-date').value = todayISO();
-      // Bewaar button below the cards
+      // Game select — above the Bewaar button. Wijziging wordt via Bewaar opgeslagen.
+      appendGameSelect(wrap, pot.game_id);
+      // Bewaar button below the game select
       const saveBtn = actionButton('Bewaar →', { variant: 'primary', onClick: saveStockTarget });
       saveBtn.style.marginTop = '8px';
       wrap.appendChild(saveBtn);
@@ -465,11 +480,13 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       wrap.style.gap = '10px';
       renderStockPicker(wrap, status);
       document.getElementById('sfb-date').value = pot.production_date || todayISO();
+      // Game select — above de Bewaar knop. Wijziging wordt via Bewaar opgeslagen.
+      appendGameSelect(wrap, pot.game_id);
       const saveBtn = actionButton('Bewaar →', { variant: 'primary', onClick: saveStockTarget });
       saveBtn.style.marginTop = '8px';
       wrap.appendChild(saveBtn);
     }
-    else if (status === 'delivered') {
+    else if (status === 'delivered' || status === 'pickup-requested' || status === 'pickup-with-reorder') {
       const name = pot.voornaam || 'klant';
       titleEl.textContent = `Je neemt de pot weer in, wat wil ${name} met z'n statiegeld?`;
       // Two options for closing this pot's loop with the klant. For a wisselen-flow the
@@ -526,8 +543,8 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
     if (pot.adres) {
       rows.push(['Adres', pot.adres]);
     }
-    // Statiegeld is a fixed €1 per pot
-    rows.push(['Statiegeld', '€1']);
+    // Statiegeld is a fixed €3 per pot
+    rows.push(['Statiegeld', '€3']);
     // Note: pot.ratings + pot.rated_at intentionally NOT shown here — ratings belong
     // on the order detail page (/bestelling/:id Feedback section), not on pot info.
     // (Bestelling-link row removed — replaced by a "Bekijk bestelling" outline button below the action buttons.)
@@ -569,9 +586,16 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       const date = entry.at || entry.returned_at || entry.ts || entry.delivered_at || '';
       const dateStr = date ? fmtDateShort(date.slice ? date.slice(0,10) : date) : '';
       const isLast = idx === arr.length - 1;
+      // Scan-location link (Google Maps) — only shown when the entry carries lat/lng.
+      const loc = entry.scan_location;
+      const locLink = (loc && Number.isFinite(loc.lat) && Number.isFinite(loc.lng))
+        ? `<a href="https://www.google.com/maps?q=${loc.lat},${loc.lng}" target="_blank" rel="noopener"
+              style="color:#D9301E;font-size:12px;text-decoration:none;margin-top:2px;">Locatie ↗</a>`
+        : '';
       return `<div style="padding:12px 16px;display:flex;flex-direction:column;gap:2px;${isLast ? '' : 'border-bottom:1px solid rgba(0,0,0,0.06);'}">
         <span style="color:#888;font-size:12px;">${esc(dateStr)}</span>
         <span style="color:#1A1A1A;font-size:14px;line-height:1.4;">${esc(historyLabel(entry))}</span>
+        ${locLink}
       </div>`;
     }).join('');
   }
@@ -612,7 +636,7 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
 
     // Uninitialized has nothing to delete yet
     if (status === 'uninitialized') return;
-    if (status === 'delivered') {
+    if (status === 'delivered' || status === 'pickup-requested' || status === 'pickup-with-reorder') {
       wrap.appendChild(actionButton('Pot verwijderen', {
         variant: 'outline',
         onClick: async () => {
@@ -626,6 +650,37 @@ import QrScanner from 'https://esm.sh/qr-scanner@1.4.2';
       return;
     }
     wrap.appendChild(actionButton('Pot verwijderen', { variant: 'outline', onClick: deleteCurrent }));
+  }
+
+  let __gamesListPromise = null;
+  function loadGames() {
+    if (!__gamesListPromise) {
+      __gamesListPromise = api('games-list').then(r => (r && r.ok && r.data && Array.isArray(r.data.games)) ? r.data.games : []).catch(() => []);
+    }
+    return __gamesListPromise;
+  }
+
+  // Bouwt een select-veld voor game-koppeling en plaatst het in `parent`.
+  // Default empty option toont "Koppel game". Returned select kan gelezen worden bij save.
+  async function appendGameSelect(parent, currentGameId) {
+    const label = document.createElement('div');
+    label.textContent = 'Game';
+    label.style.cssText = 'color:#666;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;margin-top:4px;';
+    parent.appendChild(label);
+    const sel = document.createElement('select');
+    sel.id = 'sfb-game-select';
+    sel.style.cssText = 'display:block;width:100%;height:56px;background:#fff;color:#1A1A1A;border:2px solid transparent;border-radius:14px;box-shadow:0 2px 10px rgba(139,26,14,0.08);font-family:inherit;font-size:16px;font-weight:400;padding:0 44px 0 18px;box-sizing:border-box;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 16 16\'><path d=\'M4 6l4 4 4-4\' stroke=\'%23D9301E\' stroke-width=\'2\' fill=\'none\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/></svg>");background-repeat:no-repeat;background-position:right 18px center;background-size:16px 16px;';
+    sel.innerHTML = '<option value="">Koppel game</option>';
+    parent.appendChild(sel);
+    const games = await loadGames();
+    games.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = g.name;
+      sel.appendChild(opt);
+    });
+    sel.value = currentGameId || '';
+    return sel;
   }
 
   function softRefreshPage() {

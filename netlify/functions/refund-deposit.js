@@ -70,7 +70,7 @@ exports.handler = async (event) => {
 
   const orderId = String(body.order_id || '').trim();
   const potId   = String(body.pot_id   || '').toUpperCase().trim();
-  const amount  = Math.max(50, parseInt(body.amount_cents, 10) || 100); // default €1, Stripe min 50¢
+  const amount  = Math.max(50, parseInt(body.amount_cents, 10) || 300); // default €3, Stripe min 50¢
   if (!orderId || !/^POT-\d{3}$/.test(potId)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid order_id or pot_id' }) };
   }
@@ -84,35 +84,74 @@ exports.handler = async (event) => {
   if (!pot) {
     return { statusCode: 404, headers, body: JSON.stringify({ error: 'pot not found' }) };
   }
-  const piId = orderBlob.payment_intent_id;
+  let piId = orderBlob.payment_intent_id;
+
+  // Fallback: als het order blob geen PI-id heeft (bv. webhook gemist), zoek Stripe direct
+  // op de order-id in de metadata. Zowel PaymentIntents (nieuwe iDeal flow) als Checkout
+  // Sessions (legacy fallback) hebben deze metadata gekregen bij creatie.
   if (!piId) {
-    return { statusCode: 409, headers, body: JSON.stringify({ error: 'no payment intent on order — refund not possible via Stripe' }) };
+    try {
+      const q = encodeURIComponent(`metadata['order_id']:'${orderId}' AND status:'succeeded'`);
+      const found = await stripeGET('/payment_intents/search?query=' + q + '&limit=1', secret);
+      if (found.data && found.data[0] && found.data[0].id) {
+        piId = found.data[0].id;
+        // Persist it terug op het order blob zodat volgende calls direct raken.
+        orderBlob.payment_intent_id = piId;
+        await ordersStore.setJSON(orderId, orderBlob);
+      }
+    } catch { /* value blijft null → 409 hieronder */ }
+  }
+  if (!piId) {
+    try {
+      const q = encodeURIComponent(`metadata['order_id']:'${orderId}'`);
+      const sess = await stripeGET('/checkout/sessions/search?query=' + q + '&limit=1', secret);
+      const s = sess.data && sess.data[0];
+      if (s && s.payment_intent) {
+        piId = typeof s.payment_intent === 'string' ? s.payment_intent : s.payment_intent.id;
+        orderBlob.payment_intent_id = piId;
+        await ordersStore.setJSON(orderId, orderBlob);
+      }
+    } catch { /* still nothing → return 409 */ }
+  }
+
+  const manualMode = !!body.manual; // caller explicitly weet dat er geen Stripe-refund gedaan wordt
+  if (!piId && !manualMode) {
+    return {
+      statusCode: 409, headers,
+      body: JSON.stringify({
+        error: 'no payment intent on order — refund not possible via Stripe',
+        manual_available: true,
+      }),
+    };
   }
 
   // Look up the original charge to surface the last 4 of the IBAN (for the success toast).
   let ibanLast4 = '';
-  try {
-    const pi = await stripeGET('/payment_intents/' + encodeURIComponent(piId) + '?expand[]=latest_charge', secret);
-    const charge = pi.latest_charge && typeof pi.latest_charge === 'object'
-      ? pi.latest_charge
-      : (pi.latest_charge ? await stripeGET('/charges/' + encodeURIComponent(pi.latest_charge), secret) : null);
-    const ideal = charge && charge.payment_method_details && charge.payment_method_details.ideal;
-    if (ideal && ideal.iban_last4) ibanLast4 = String(ideal.iban_last4);
-  } catch { /* the refund itself doesn't depend on us knowing the IBAN */ }
+  let refund = { id: `manual_${orderId}_${Date.now()}` };
 
-  // Issue the refund.
-  let refund;
-  try {
-    refund = await stripePOST('/refunds', secret, {
-      payment_intent: piId,
-      amount: String(amount),
-      reason: 'requested_by_customer',
-      'metadata[order_id]': orderId,
-      'metadata[pot_id]':   potId,
-      'metadata[kind]':     'deposit_refund',
-    });
-  } catch (e) {
-    return { statusCode: 502, headers, body: JSON.stringify({ error: 'stripe_refund_failed', detail: e.detail || String(e) }) };
+  if (!manualMode) {
+    try {
+      const pi = await stripeGET('/payment_intents/' + encodeURIComponent(piId) + '?expand[]=latest_charge', secret);
+      const charge = pi.latest_charge && typeof pi.latest_charge === 'object'
+        ? pi.latest_charge
+        : (pi.latest_charge ? await stripeGET('/charges/' + encodeURIComponent(pi.latest_charge), secret) : null);
+      const ideal = charge && charge.payment_method_details && charge.payment_method_details.ideal;
+      if (ideal && ideal.iban_last4) ibanLast4 = String(ideal.iban_last4);
+    } catch { /* the refund itself doesn't depend on us knowing the IBAN */ }
+
+    // Issue the refund via Stripe.
+    try {
+      refund = await stripePOST('/refunds', secret, {
+        payment_intent: piId,
+        amount: String(amount),
+        reason: 'requested_by_customer',
+        'metadata[order_id]': orderId,
+        'metadata[pot_id]':   potId,
+        'metadata[kind]':     'deposit_refund',
+      });
+    } catch (e) {
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'stripe_refund_failed', detail: e.detail || String(e) }) };
+    }
   }
 
   const now = new Date().toISOString();
@@ -193,7 +232,8 @@ exports.handler = async (event) => {
       refund_id: refund.id,
       amount_cents: amount,
       iban_last4: ibanLast4 || null,
-      eta_days: REFUND_ETA_DAYS,
+      eta_days: manualMode ? null : REFUND_ETA_DAYS,
+      manual: manualMode,
     }),
   };
 };
