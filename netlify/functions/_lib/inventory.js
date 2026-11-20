@@ -12,7 +12,7 @@
 
 const { getStore } = require('@netlify/blobs');
 
-const POT_IDS = Array.from({ length: 25 }, (_, i) => `POT-${String(i + 1).padStart(3, '0')}`);
+const POT_IDS = Array.from({ length: 60 }, (_, i) => `POT-${String(i + 1).padStart(3, '0')}`);
 const VALID_STATUSES = ['uninitialized','available','voorraad','delivered','returned'];
 const EXPIRY_DAYS = 56;
 
